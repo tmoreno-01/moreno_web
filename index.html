@@ -74,31 +74,29 @@
         const isMobile = window.innerWidth < 768;
         const brushBaseScale = isMobile ? 18 : 45;
 
-        // Expanded Library of 23 Palettes
         const palettes = [
-            ['#0a0a0a', '#ff3e00', '#0059ff', '#ffcc00', '#b5179e', '#ffffff', '#8a00d4'], // Neo-Exp Primaries
-            ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'], // Mediterranean
-            ['#588157', '#a3b18a', '#dad7cd', '#3a5a40', '#344e41'], // Ghibli Forest
-            ['#f72585', '#7209b7', '#3a0ca3', '#4361ee', '#4cc9f0'], // Cyber Neon
-            ['#03071e', '#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307'], // Inferno
-            ['#f4f1de', '#e07a5f', '#3d405b', '#81b29a', '#f2cc8f'], // Muted Earth
-            ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429'], // High Contrast Red/Grey
-            ['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9'], // Pastel Surrealism
-            ['#001219', '#005f73', '#0a9396', '#94d2bd', '#e9d8a6', '#ee9b00', '#ca6702', '#bb3e03', '#ae2012', '#9b2226'], // Deep Sea Sunset
-            ['#1b1b1b', '#3d3d3d', '#717171', '#a9a9a9', '#e1e1e1', '#ffffff'], // Charcoal Sketch
-            ['#606c38', '#283618', '#fefae0', '#dda15e', '#bc6c25'], // Savannah
-            ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff'], // Cotton Candy
-            ['#22223b', '#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4'], // Dusky Lavender
-            ['#003049', '#d62828', '#f77f00', '#fcbf49', '#eae2b7'], // Classic Poster
-            ['#335c67', '#fff3b0', '#e09f3e', '#9e2a2b', '#540b0e'], // Autumnal Abstract
-            ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'], // Pop Art Chaos
-            ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#073b4c'], // Retro Brights
-            ['#111111', '#444444', '#ff0000', '#ffffff'], // Slasher / Minimalist
-            ['#d8e2dc', '#ffe5d9', '#ffcad4', '#f4acb7', '#9d8189'], // Soft Flesh / Bone
-            ['#2d6a4f', '#409167', '#52b788', '#74c69d', '#95d5b2', '#b7e4c7', '#d8f3dc'], // Emerald Flow
-            ['#3d5a80', '#98c1d9', '#e0fbfc', '#ee6c4d', '#293241'], // Cold Steel & Fire
-            ['#7400b8', '#6930c3', '#5e60ce', '#5390d9', '#48bfe3', '#4ea8de', '#56cfe1', '#64dfdf', '#72efdd', '#80ffdb'], // Electric Reef
-            ['#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#e63946'] // Naval Contrast
+            ['#0a0a0a', '#ff3e00', '#0059ff', '#ffcc00', '#b5179e', '#ffffff', '#8a00d4'], 
+            ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'], 
+            ['#588157', '#a3b18a', '#dad7cd', '#3a5a40', '#344e41'],
+            ['#f72585', '#7209b7', '#3a0ca3', '#4361ee', '#4cc9f0'],
+            ['#03071e', '#d00000', '#ffba08'],
+            ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429'],
+            ['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9'],
+            ['#001219', '#005f73', '#94d2bd', '#ee9b00', '#ae2012', '#9b2226'],
+            ['#1b1b1b', '#3d3d3d', '#ffffff'],
+            ['#606c38', '#283618', '#fefae0', '#bc6c25'],
+            ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff'],
+            ['#22223b', '#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4'],
+            ['#003049', '#d62828', '#f77f00', '#fcbf49', '#eae2b7'],
+            ['#335c67', '#fff3b0', '#e09f3e', '#9e2a2b', '#540b0e'],
+            ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'],
+            ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#073b4c'],
+            ['#111111', '#ff0000', '#ffffff'],
+            ['#d8e2dc', '#ffe5d9', '#ffcad4', '#f4acb7', '#9d8189'],
+            ['#2d6a4f', '#52b788', '#d8f3dc'],
+            ['#3d5a80', '#98c1d9', '#ee6c4d', '#293241'],
+            ['#7400b8', '#5e60ce', '#48bfe3', '#64dfdf', '#80ffdb'],
+            ['#1d3557', '#457b9d', '#a8dadc', '#e63946']
         ];
 
         function hexToRgb(hex) {
@@ -120,12 +118,11 @@
                     ox: Math.cos(angle) * dist, oy: Math.sin(angle) * dist,
                     x: 0, y: 0, vx: 0, vy: 0,
                     color: [...color], res: [...color],
-                    thickness: Math.random() * 3 + 0.4,
+                    thickness: Math.random() * 2.5 + 0.5,
                     phase: Math.random() * 1000,
-                    drift: 0.04 + Math.random() * 0.1,
+                    drift: 0.05 + Math.random() * 0.12,
                     mass: 0.1 + Math.random() * 0.4,
                     friction: 0.5 + Math.random() * 0.4,
-                    isStray: Math.random() > 0.85,
                     lastBX: null, lastBY: null
                 });
             }
@@ -150,10 +147,30 @@
             if (dist > 1.5) {
                 ctx.save();
                 ctx.globalAlpha = 0.25;
-                const smearSize = brushBaseScale * (1.2 + velocity * 0.08);
+                
+                // --- FRACTURED SMEAR LOGIC ---
+                // Randomize Width and Height independently for non-uniform shapes
+                const baseSize = brushBaseScale * (1.2 + velocity * 0.1);
+                const rw = baseSize * (0.6 + Math.random() * 1.2);
+                const rh = baseSize * (0.6 + Math.random() * 1.2);
+                
+                // Jitter the capture origin so it's not always dead-center
+                const jx = (Math.random() - 0.5) * 15;
+                const jy = (Math.random() - 0.5) * 15;
+
+                ctx.beginPath();
+                ctx.arc(x, y, baseSize, 0, Math.PI * 2);
+                ctx.clip();
+
                 ctx.translate(x, y);
                 ctx.rotate(velocity * 0.02 * (Math.random() - 0.5));
-                ctx.drawImage(canvas, -smearSize, -smearSize, smearSize*2, smearSize*2, -smearSize + (dx*0.25), -smearSize + (dy*0.25), smearSize*2, smearSize*2);
+                
+                // Draw the asymmetric fractured rectangle
+                ctx.drawImage(
+                    canvas, 
+                    -rw/2 + jx, -rh/2 + jy, rw, rh, 
+                    -rw/2 + (dx * 0.25), -rh/2 + (dy * 0.25), rw, rh
+                );
                 ctx.restore();
             }
 
@@ -166,14 +183,19 @@
 
                 bristles.forEach(b => {
                     b.phase += b.drift;
-                    const harmonic = Math.pow(Math.abs(Math.sin(b.phase)), 3) * (1 + velocity * 0.15);
-                    const currentThick = Math.min(10, b.thickness * (0.6 + harmonic * 4));
+                    
+                    // --- DYNAMIC ERRATIC WIDTH ---
+                    const pulse = Math.abs(Math.sin(b.phase * 0.5));
+                    const velocityFlare = 1 + (velocity * 0.2);
+                    // Add a non-linear chaos spike to width
+                    const jitter = Math.pow(Math.random(), 2) * 1.8;
+                    const currentThick = Math.min(26, b.thickness * (0.4 + pulse * 2.2 + jitter) * velocityFlare);
 
                     if (s % 4 === 0 && Math.random() > 0.55) {
                         const sx = Math.floor(cx + b.x), sy = Math.floor(cy + b.y);
                         if (sx > 0 && sx < canvas.width && sy > 0 && sy < canvas.height) {
                             const p = ctx.getImageData(sx, sy, 1, 1).data;
-                            if (p[3] > 50) {
+                            if (p[3] > 50 && (p[0] < 252 || p[1] < 252 || p[2] < 252)) {
                                 const pickRate = 0.18;
                                 for(let j=0; j<3; j++) b.res[j] = b.res[j] * (1 - pickRate) + p[j] * pickRate;
                             }
@@ -182,12 +204,8 @@
 
                     const targetX = b.ox * brushBaseScale * (1 + velocity * 0.1);
                     const targetY = b.oy * brushBaseScale * (1 + velocity * 0.1);
-                    
-                    const fx_force = (targetX - b.x) * b.mass;
-                    const fy_force = (targetY - b.y) * b.mass;
-                    
-                    b.vx = (b.vx + fx_force) * b.friction;
-                    b.vy = (b.vy + fy_force) * b.friction;
+                    b.vx = (b.vx + (targetX - b.x) * b.mass) * b.friction;
+                    b.vy = (b.vy + (targetY - b.y) * b.mass) * b.friction;
                     
                     if (Math.random() > 0.95) {
                         b.vx += (Math.random() - 0.5) * velocity;
@@ -198,7 +216,7 @@
                     const fx = cx + b.x, fy = cy + b.y;
 
                     if (b.lastBX !== null) {
-                        ctx.globalAlpha = Math.max(0.08, 0.9 - (velocity * 0.04));
+                        ctx.globalAlpha = Math.max(0.1, 0.9 - (velocity * 0.03));
                         ctx.strokeStyle = `rgb(${Math.round(b.res[0])}, ${Math.round(b.res[1])}, ${Math.round(b.res[2])})`;
                         ctx.lineCap = 'butt';
                         ctx.lineWidth = currentThick;
