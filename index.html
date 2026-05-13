@@ -23,7 +23,7 @@
         }
 
         .nav-links {
-            display: none; 
+            display: none; /* <--- TYPE 'flex' TO UNHIDE / 'none' TO HIDE NAV BUTTONS */
             position: fixed; top: 35px; right: 35px;
             gap: 30px; z-index: 100;
         }
@@ -63,7 +63,7 @@
         #ios-brush-selector {
             display: none; 
             position: fixed; bottom: 45px; left: 25px;
-            z-index: 150; gap: 18px; align-items: center;
+            z-index: 150; gap: 16px; align-items: center;
             pointer-events: auto;
         }
 
@@ -73,10 +73,11 @@
         }
 
         .dot.active { opacity: 1; transform: scale(1.1); }
-        .dot-s { width: 6px; height: 6px; }
-        .dot-m { width: 12px; height: 12px; }
-        .dot-l { width: 22px; height: 22px; }
-        .dot-xl { width: 34px; height: 34px; }
+        .dot-xs { width: 4px; height: 4px; }
+        .dot-s { width: 8px; height: 8px; }
+        .dot-m { width: 14px; height: 14px; }
+        .dot-l { width: 24px; height: 24px; }
+        .dot-xl { width: 36px; height: 36px; }
 
         /* --- OVERLAY PAGES --- */
         .page-overlay {
@@ -163,12 +164,13 @@
         <a href="https://shop.tyronemoreno.com" target="_blank" rel="noopener noreferrer">Shop</a>
     </div>
 
-    <!-- IOS SELECTOR WITH REFINED SCALING -->
+    <!-- 5 SIZE IOS SELECTOR -->
     <div id="ios-brush-selector">
-        <div class="dot dot-s" onclick="setSize(0.45, this)"></div>
+        <div class="dot dot-xs" onclick="setSize(0.2, this)"></div>
+        <div class="dot dot-s" onclick="setSize(0.6, this)"></div>
         <div class="dot dot-m active" onclick="setSize(1.0, this)"></div>
-        <div class="dot dot-l" onclick="setSize(1.4, this)"></div>
-        <div class="dot dot-xl" onclick="setSize(2.1, this)"></div>
+        <div class="dot dot-l" onclick="setSize(1.6, this)"></div>
+        <div class="dot dot-xl" onclick="setSize(2.5, this)"></div>
     </div>
 
     <div class="footer">
@@ -319,7 +321,7 @@
             const dist = Math.hypot(dx, dy);
             const velocity = Math.min(dist / (delta || 1), 25);
             
-            // SMEAR AREA (Original constant logic)
+            // SMEAR AREA (Locked to original logic)
             if (dist > 1.5) {
                 ctx.save();
                 ctx.globalAlpha = 0.25;
@@ -347,7 +349,7 @@
                     const pulse = Math.abs(Math.sin(b.phase * 0.5));
                     
                     // Scaled line weight
-                    const currentThick = Math.min(100, (b.thickness * currentScale) * (0.4 + pulse * 2.2 + Math.pow(Math.random(), 2) * 1.8) * (1 + velocity * 0.2));
+                    const currentThick = Math.min(120, (b.thickness * currentScale) * (0.4 + pulse * 2.2 + Math.pow(Math.random(), 2) * 1.8) * (1 + velocity * 0.2));
                     
                     if (s % 4 === 0 && Math.random() > 0.55) {
                         const sx = Math.floor(cx + b.x), sy = Math.floor(cy + b.y);
@@ -374,7 +376,6 @@
                         ctx.strokeStyle = `rgb(${Math.round(b.res[0])}, ${Math.round(b.res[1])}, ${Math.round(b.res[2])})`;
                         ctx.lineWidth = currentThick;
                         
-                        // Square caps preserved
                         ctx.beginPath(); ctx.moveTo(b.lastBX, b.lastBY); ctx.lineTo(fx, fy); ctx.stroke();
                         if (Math.random() > 0.998) b.res = [...activePalette[Math.floor(Math.random() * activePalette.length)]];
                     }
