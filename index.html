@@ -340,7 +340,7 @@
             <div class="works-container">
                 <div class="works-grid">
                     
-                    <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?')">
+                    <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition inquiries, please contact tyronedmoreno@gmail.com')">
                         <div class="work-image"><img src="artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
                         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
                     </div>
@@ -455,7 +455,7 @@
             document.getElementById('lb-title').innerText = title;
             document.getElementById('lb-year').innerText = year;
             document.getElementById('lb-specs').innerText = specs;
-            document.getElementById('lb-desc').innerText = desc;
+            document.getElementById('lb-desc').innerHTML = desc;
             document.getElementById('lightbox').classList.add('active');
         }
 
@@ -609,7 +609,6 @@
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         let lastX = 0, lastY = 0, lastTime = Date.now();
-        const isMobile = window.innerWidth < 768;
         const brushBaseScale = isMobile ? 18 : 45;
 
         const palettes = [
