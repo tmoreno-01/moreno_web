@@ -609,6 +609,7 @@
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         let lastX = 0, lastY = 0, lastTime = Date.now();
+        const isMobile = window.innerWidth < 768;
         const brushBaseScale = isMobile ? 18 : 45;
 
         const palettes = [
