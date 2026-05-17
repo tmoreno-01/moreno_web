@@ -111,9 +111,9 @@
 
         .copyright {
             position: fixed; bottom: 25px; left: 25px;
-            font-size: 0.5rem; color: var(--text-color); letter-spacing: 0.8px; 
+            font-size: 0.45rem; color: var(--text-color); letter-spacing: 0.8px; 
             opacity: 0.3; z-index: 100; pointer-events: none; 
-            white-space: nowrap; 
+            max-width: calc(100vw - 300px); line-height: 1.5;
             transition: opacity 0.4s ease, color 0.3s ease;
         }
 
@@ -262,7 +262,7 @@
             .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 8px; }
             .footer a { font-size: 0.55rem; } 
             .ig-icon { width: 14px; height: 14px; } 
-            .copyright { bottom: 12px; left: 15px; max-width: none; white-space: nowrap; font-size: 0.45rem; line-height: 1; text-align: left; }
+            .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
             #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
             .about-image { max-height: 40vh; }
             .about-image img { max-height: 40vh; }
@@ -317,7 +317,7 @@
             </div>
         </div>
     </div>
-    <div class="copyright">© 2026 Copyright | Tyrone Doyle Moreno | All Rights Reserved</div>
+    <div class="copyright">© 2026 Copyright | Tyrone Doyle Moreno | All Rights Reserved | To leave the world exactly as you found it is to deny your humanity; to create is to prove it.</div>
 
     <div id="page-about" class="page-overlay">
         <div class="overlay-content">
@@ -340,14 +340,14 @@
             <div class="works-container">
                 <div class="works-grid">
                     
-                    <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', '\'Is the Grass Greener?\'', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?')">
+                    <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?')">
                         <div class="work-image"><img src="artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
-                        <div class="work-caption"><span>'Is the Grass Greener?'</span><span>2026</span></div>
+                        <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/001.jpg', '\'Mayonnaise on the Roof\'', '2025', 'Acrylic on Canvas', 'me and my wife painted this together on a sunny afternoon a few years back')">
+                    <div class="work-item" onclick="openLightbox('artwork/001.jpg', 'Mayonnaise on the Roof', '2025', 'Acrylic on Canvas', 'me and my wife painted this together on a sunny afternoon a few years back')">
                         <div class="work-image"><img src="artwork/small/001_small.jpg" alt="Mayonnaise on the Roof"></div>
-                        <div class="work-caption"><span>'Mayonnaise on the Roof'</span><span>2025</span></div>
+                        <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2025</span></div>
                     </div>
                     
                     <div class="work-item" style="pointer-events: none;"><div class="work-image" style="background:#f0f0f0;"></div></div>
@@ -485,7 +485,6 @@
             zoomState = (zoomState + 1) % 3;
             
             if (zoomState > 0) {
-                // Adaptive Scale: Deeper zoom on mobile
                 const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
                 const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
                 const activeScale = zoomState === 1 ? scale1 : scale2;
@@ -493,7 +492,6 @@
                 this.style.cursor = zoomState === 1 ? 'zoom-in' : 'zoom-out'; 
                 this.style.transform = `scale(${activeScale})`; 
                 
-                // Only calculate new origin if zooming from 0 to 1
                 if (previousZoomState === 0) {
                     const parentRect = this.parentElement.getBoundingClientRect();
                     const x = ((e.clientX - parentRect.left) / parentRect.width) * 100;
@@ -502,7 +500,6 @@
                     currentOriginX = Math.max(0, Math.min(100, x));
                     currentOriginY = Math.max(0, Math.min(100, y));
                 }
-                // If moving from 1 to 2, keep the current origin intact so it doesn't snap
 
                 this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
                 
@@ -511,7 +508,7 @@
             }
         });
 
-        // Desktop Mouse Tracking (Absolute Magnifying Glass)
+        // Desktop Mouse Tracking
         let isTouching = false;
         
         document.addEventListener('mousemove', function(e) {
@@ -540,7 +537,7 @@
             imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
         });
 
-        // Mobile Touch Tracking (Relative Dragging)
+        // Mobile Touch Tracking
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -582,7 +579,6 @@
                 
                 const parentRect = imgEl.parentElement.getBoundingClientRect();
                 
-                // Adaptive Scale calculation for drag math
                 const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
                 const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
                 const activeScale = zoomState === 1 ? scale1 : scale2;
