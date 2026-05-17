@@ -245,7 +245,11 @@
             .about-image { max-height: 50vh; justify-content: center; height: auto; }
             .about-image img { max-height: 50vh; width: 100%; object-fit: contain; }
             .about-frace { align-self: center; } 
-            .works-grid { grid-template-columns: repeat(2, 1fr); gap: 25px; }
+            
+            .works-grid { grid-template-columns: repeat(2, 1fr); gap: 60px; } 
+            .work-image { aspect-ratio: auto; display: block; }
+            .work-image img { height: auto; display: block; }
+
             .lightbox-content { flex-direction: column; gap: 30px; margin-top: 20px; }
             .lightbox-left { justify-content: center; max-height: 60vh; }
             .lightbox-left img { max-height: 60vh; }
@@ -262,8 +266,10 @@
             #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
             .about-image { max-height: 40vh; }
             .about-image img { max-height: 40vh; }
-            .works-grid { grid-template-columns: 1fr; }
-            .overlay-content { padding-top: 90px; padding-bottom: 100px; }
+            
+            .works-grid { grid-template-columns: 1fr; gap: 80px; }
+            .overlay-content { padding-top: 90px; padding-bottom: 150px; }
+            
             .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
             .lightbox-left img { max-height: 50vh; }
         }
@@ -430,14 +436,18 @@
             }
         });
 
-        // --- LIGHTBOX LOGIC ---
+        // --- LIGHTBOX ZOOM AND PAN ENGINE ---
         let zoomState = 0; 
+        let currentOriginX = 50;
+        let currentOriginY = 50;
 
         function openLightbox(src, title, year, specs, desc) {
             const lbImg = document.getElementById('lb-img');
-            lbImg.src = src; // Loads the high-res image exactly at this moment
+            lbImg.src = src;
             
             zoomState = 0;
+            currentOriginX = 50;
+            currentOriginY = 50;
             lbImg.style.cursor = 'zoom-in';
             lbImg.style.transform = 'scale(1)';
             lbImg.style.transformOrigin = 'center center';
@@ -449,61 +459,60 @@
             document.getElementById('lightbox').classList.add('active');
         }
 
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('active');
-            
-            zoomState = 0; 
-            const lbImg = document.getElementById('lb-img');
-            
+        function resetZoom() {
+            zoomState = 0;
+            const imgEl = document.getElementById('lb-img');
+            imgEl.style.cursor = 'zoom-in';
+            imgEl.style.transform = 'scale(1)';
             setTimeout(() => {
-                lbImg.style.cursor = 'zoom-in';
-                lbImg.style.transform = 'scale(1)';
-                lbImg.style.transformOrigin = 'center center';
-            }, 300);
+                if (zoomState === 0) {
+                    imgEl.style.transformOrigin = 'center center';
+                    currentOriginX = 50;
+                    currentOriginY = 50;
+                }
+            }, 250);
         }
 
-        // --- LIGHTBOX CLICK-TO-ZOOM LOGIC ---
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            resetZoom();
+        }
+
         const lbImg = document.getElementById('lb-img');
         
         lbImg.addEventListener('click', function(e) {
             zoomState = (zoomState + 1) % 3;
             
-            if (zoomState === 1) {
-                this.style.cursor = 'zoom-in'; 
-                this.style.transform = 'scale(2)'; 
+            if (zoomState > 0) {
+                // Adaptive Scale: Deeper zoom on mobile
+                const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
+                const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
+                const activeScale = zoomState === 1 ? scale1 : scale2;
+
+                this.style.cursor = zoomState === 1 ? 'zoom-in' : 'zoom-out'; 
+                this.style.transform = `scale(${activeScale})`; 
                 
-                const rect = this.parentElement.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                this.style.transformOrigin = `${Math.max(0, Math.min(100, x))}% ${Math.max(0, Math.min(100, y))}%`;
+                const parentRect = this.parentElement.getBoundingClientRect();
+                const x = ((e.clientX - parentRect.left) / parentRect.width) * 100;
+                const y = ((e.clientY - parentRect.top) / parentRect.height) * 100;
                 
-            } else if (zoomState === 2) {
-                this.style.cursor = 'zoom-out'; 
-                this.style.transform = 'scale(3.2)'; 
-                
-                const rect = this.parentElement.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                this.style.transformOrigin = `${Math.max(0, Math.min(100, x))}% ${Math.max(0, Math.min(100, y))}%`;
+                currentOriginX = Math.max(0, Math.min(100, x));
+                currentOriginY = Math.max(0, Math.min(100, y));
+                this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
                 
             } else {
-                this.style.cursor = 'zoom-in';
-                this.style.transform = 'scale(1)';
-                
-                setTimeout(() => {
-                    if (zoomState === 0) this.style.transformOrigin = 'center center';
-                }, 250);
+                resetZoom();
             }
         });
 
-        // Track mouse globally while zoomed to allow for "invisible border" panning safety
+        // Desktop Mouse Tracking (Absolute Magnifying Glass)
+        let isTouching = false;
+        
         document.addEventListener('mousemove', function(e) {
-            if (zoomState === 0) return;
+            if (zoomState === 0 || isTouching) return;
             
             const imgEl = document.getElementById('lb-img');
             const rect = imgEl.getBoundingClientRect();
-            
-            // This grants 30px of breathing room around the scaled image before it drops back down
             const buffer = 30; 
             
             if (
@@ -512,22 +521,78 @@
                 e.clientY < rect.top - buffer || 
                 e.clientY > rect.bottom + buffer
             ) {
-                zoomState = 0;
-                imgEl.style.cursor = 'zoom-in';
-                imgEl.style.transform = 'scale(1)';
-                setTimeout(() => {
-                    if (zoomState === 0) imgEl.style.transformOrigin = 'center center';
-                }, 250);
+                resetZoom();
                 return;
             }
             
-            // If safely inside the buffer, calculate and apply smooth panning
             const parentRect = imgEl.parentElement.getBoundingClientRect();
             const x = ((e.clientX - parentRect.left) / parentRect.width) * 100;
             const y = ((e.clientY - parentRect.top) / parentRect.height) * 100;
             
-            imgEl.style.transformOrigin = `${Math.max(0, Math.min(100, x))}% ${Math.max(0, Math.min(100, y))}%`;
+            currentOriginX = Math.max(0, Math.min(100, x));
+            currentOriginY = Math.max(0, Math.min(100, y));
+            imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
         });
+
+        // Mobile Touch Tracking (Relative Dragging)
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            isTouching = true;
+            if (zoomState > 0 && e.target.id === 'lb-img') {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function() {
+            setTimeout(() => { isTouching = false; }, 100);
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            if (zoomState > 0 && e.target.closest('.lightbox-left')) {
+                e.preventDefault(); 
+                
+                const imgEl = document.getElementById('lb-img');
+                const rect = imgEl.getBoundingClientRect();
+                const buffer = 30;
+                
+                const clientX = e.touches[0].clientX;
+                const clientY = e.touches[0].clientY;
+                
+                if (
+                    clientX < rect.left - buffer || 
+                    clientX > rect.right + buffer || 
+                    clientY < rect.top - buffer || 
+                    clientY > rect.bottom + buffer
+                ) {
+                    resetZoom();
+                    return;
+                }
+
+                const dx = clientX - touchStartX;
+                const dy = clientY - touchStartY;
+                
+                const parentRect = imgEl.parentElement.getBoundingClientRect();
+                
+                // Adaptive Scale calculation for drag math
+                const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
+                const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
+                const activeScale = zoomState === 1 ? scale1 : scale2;
+                
+                currentOriginX -= (dx / parentRect.width) * 100 / activeScale;
+                currentOriginY -= (dy / parentRect.height) * 100 / activeScale;
+                
+                currentOriginX = Math.max(0, Math.min(100, currentOriginX));
+                currentOriginY = Math.max(0, Math.min(100, currentOriginY));
+                
+                imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
+                
+                touchStartX = clientX;
+                touchStartY = clientY;
+            }
+        }, { passive: false });
 
         // --- BRUSH SCALE ---
         let currentScale = 1.0;
