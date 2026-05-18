@@ -476,6 +476,14 @@
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
             resetZoom();
+            
+            // Wipe the image source after the lightbox fades out to prevent "ghost" images on the next click
+            setTimeout(() => {
+                if (!document.getElementById('lightbox').classList.contains('active')) {
+                    // Uses a transparent 1x1 pixel data URI to wipe the frame clean
+                    document.getElementById('lb-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                }
+            }, 300);
         }
 
         const lbImg = document.getElementById('lb-img');
