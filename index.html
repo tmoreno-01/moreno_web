@@ -92,7 +92,7 @@
             transition: filter 0.3s ease;
         }
 
-        .theme-toggle, .download-icon {
+        .theme-toggle {
             cursor: pointer;
             width: 18px; height: 18px;
             display: flex; align-items: center; justify-content: center;
@@ -100,18 +100,14 @@
             color: var(--text-color);
         }
 
-        .theme-toggle:hover, .download-icon:hover { opacity: 1; }
-        .theme-toggle svg, .download-icon svg { width: 100%; height: 100%; }
+        .theme-toggle:hover { opacity: 1; }
+        .theme-toggle svg { width: 100%; height: 100%; }
         
         .icon-sun { display: block; }
         .icon-moon { display: none; }
         
         body.dark-mode .icon-sun { display: none; }
         body.dark-mode .icon-moon { display: block; }
-
-        .download-icon {
-            display: none; /* Hidden on desktop */
-        }
 
         .copyright {
             position: fixed; bottom: 25px; left: 25px;
@@ -121,7 +117,10 @@
             transition: opacity 0.4s ease, color 0.3s ease;
         }
 
-        body.overlay-open .copyright { opacity: 0.15; }
+        /* Drops copyright opacity heavily when on an overlay page */
+        body.overlay-open .copyright {
+            opacity: 0.15;
+        }
 
         /* --- IOS BRUSH SELECTOR --- */
         #ios-brush-selector {
@@ -140,7 +139,6 @@
 
         .dot.active { opacity: 1; transform: scale(1.1); }
         .dot-xs { width: 4px; height: 4px; }
-        .dot-xs-mid { width: 6px; height: 6px; }
         .dot-s { width: 8px; height: 8px; }
         .dot-m { width: 14px; height: 14px; }
         .dot-l { width: 24px; height: 24px; }
@@ -242,8 +240,6 @@
 
         /* --- BREAKPOINTS --- */
         @media (max-width: 1024px) {
-            .download-icon { display: flex; } /* Shows download button on iPad/Mobile */
-            
             .about-container { flex-direction: column; align-items: center; gap: 30px; }
             .about-image, .about-text { flex: none; width: 100%; }
             .about-image { max-height: 50vh; justify-content: center; height: auto; }
@@ -266,7 +262,6 @@
             .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 8px; }
             .footer a { font-size: 0.55rem; } 
             .ig-icon { width: 14px; height: 14px; } 
-            .download-icon { width: 15px; height: 15px; }
             .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
             #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
             .about-image { max-height: 40vh; }
@@ -292,7 +287,6 @@
 
     <div id="ios-brush-selector">
         <div class="dot dot-xs" onclick="setSize(0.12, this)"></div>
-        <div class="dot dot-xs-mid" onclick="setSize(0.35, this)"></div>
         <div class="dot dot-s" onclick="setSize(0.55, this)"></div>
         <div class="dot dot-m active" onclick="setSize(1.0, this)"></div>
         <div class="dot dot-l" onclick="setSize(1.35, this)"></div>
@@ -305,13 +299,6 @@
             <a href="https://instagram.com/imtyronemoreno" target="_blank">
                 <img src="instagram.png" alt="Instagram" class="ig-icon">
             </a>
-            <div id="btn-download" class="download-icon" onclick="downloadArtwork()" title="Save Canvas">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-            </div>
             <div id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
                 <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="5"></circle>
@@ -353,7 +340,7 @@
             <div class="works-container">
                 <div class="works-grid">
                     
-                    <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition inquiries, please contact tyronedmoreno@gmail.com')">
+                    <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronedmoreno@gmail.com')">
                         <div class="work-image"><img src="artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
                         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
                     </div>
@@ -400,52 +387,6 @@
         // --- THEME TOGGLE LOGIC ---
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-        }
-
-        // --- CANVAS DOWNLOAD LOGIC ---
-        function downloadArtwork() {
-            try {
-                const isDark = document.body.classList.contains('dark-mode');
-                const mainCanvas = document.getElementById('canvas');
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = mainCanvas.width;
-                tempCanvas.height = mainCanvas.height;
-                const tCtx = tempCanvas.getContext('2d');
-                
-                if (isDark) { 
-                    tCtx.fillStyle = '#1a1a1a'; 
-                    tCtx.fillRect(0,0, tempCanvas.width, tempCanvas.height);
-                    tCtx.filter = 'invert(1) hue-rotate(180deg)'; 
-                    tCtx.drawImage(mainCanvas, 0, 0); 
-                    tCtx.filter = 'none'; 
-                } 
-                else { 
-                    tCtx.fillStyle = '#ffffff'; 
-                    tCtx.fillRect(0,0, tempCanvas.width, tempCanvas.height);
-                    tCtx.drawImage(mainCanvas, 0, 0); 
-                }
-                
-                const logo = document.getElementById('btn-home');
-                if (logo && logo.complete) {
-                    const logoWidth = 120;
-                    const logoAspect = logo.naturalHeight / (logo.naturalWidth || 1);
-                    const logoHeight = logoWidth * logoAspect;
-                    tCtx.save();
-                    if (isDark) { tCtx.filter = 'invert(1)'; }
-                    tCtx.drawImage(logo, 30, 30, logoWidth, logoHeight);
-                    tCtx.restore();
-                }
-                
-                const link = document.createElement('a');
-                link.download = 'tyrone_moreno_artwork.png';
-                link.href = tempCanvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } catch (error) {
-                console.error(error);
-                alert("Download blocked: Please ensure you are running on a live domain.");
-            }
         }
 
         // --- NAVIGATION LOGIC ---
@@ -536,8 +477,10 @@
             document.getElementById('lightbox').classList.remove('active');
             resetZoom();
             
+            // Wipe the image source after the lightbox fades out to prevent "ghost" images on the next click
             setTimeout(() => {
                 if (!document.getElementById('lightbox').classList.contains('active')) {
+                    // Uses a transparent 1x1 pixel data URI to wipe the frame clean
                     document.getElementById('lb-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
                 }
             }, 300);
