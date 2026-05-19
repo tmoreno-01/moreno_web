@@ -233,7 +233,7 @@
 
         /* --- CANVAS --- */
         #canvas { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             display: block; z-index: 1; cursor: none; touch-action: none; 
             transition: filter 0.3s ease;
         }
@@ -375,7 +375,7 @@
         <div class="lightbox-close" onclick="closeLightbox()">×</div>
         <div class="lightbox-content">
             <div class="lightbox-left">
-                <img id="lb-img" src="" alt="Artwork" decoding="async">
+                <img id="lb-img" src="" alt="Artwork">
             </div>
             <div class="lightbox-right">
                 <div class="lightbox-text">
@@ -397,23 +397,6 @@
             if (isIOS) {
                 document.getElementById('ios-brush-selector').style.display = 'flex';
             }
-        });
-
-        // --- HIGH-RES PRELOADER ---
-        // Quietly loads the big images into the cache after the main site finishes loading
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const highResImages = [
-                    'artwork/isthegrassgreener_square.jpg',
-                    'artwork/001.jpg'
-                    // Add future artwork paths here
-                ];
-                
-                highResImages.forEach(src => {
-                    const img = new Image();
-                    img.src = src;
-                });
-            }, 1000); // Waits 1 second after page load
         });
 
         // --- THEME TOGGLE LOGIC ---
@@ -439,12 +422,18 @@
                 
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    const logoWidth = 80;
+                    const logoWidth = 72; // 10% smaller
                     const logoAspect = logo.naturalHeight / (logo.naturalWidth || 1);
                     const logoHeight = logoWidth * logoAspect;
                     tCtx.save();
                     if (isDark) { tCtx.filter = 'invert(1)'; }
-                    tCtx.drawImage(logo, 15, 15, logoWidth, logoHeight);
+                    
+                    // Calculate bottom right coordinates with a 15px padding
+                    const padding = 15;
+                    const xPos = tempCanvas.width - logoWidth - padding;
+                    const yPos = tempCanvas.height - logoHeight - padding;
+                    
+                    tCtx.drawImage(logo, xPos, yPos, logoWidth, logoHeight);
                     tCtx.restore();
                 }
 
@@ -746,7 +735,57 @@
             ['#355070', '#6d597a', '#b56576', '#e56b6f', '#eaac8b'],
             ['#003049', '#d62828', '#f77f00', '#fcbf49', '#eae2b7'],
             ['#112240', '#233d4d', '#fe7f2d', '#fcca46', '#a1c181', '#619b8a'],
-            ['#0d3b66', '#faf0ca', '#f4d35e', '#ee964b', '#f95738']
+            ['#0d3b66', '#faf0ca', '#f4d35e', '#ee964b', '#f95738'],
+            ['#2d00f7', '#6a00f4', '#8900f2', '#a100f2', '#b100e8', '#bc00dd', '#d100d1', '#db00b6', '#e500a4', '#f20089'],
+            ['#ff0000', '#ff8700', '#ffd300', '#deff0a', '#a1ff0a', '#0aff99', '#0aefff', '#147df5', '#580aff', '#be0aff'],
+            ['#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd', '#6c757d', '#495057', '#343a40', '#212529'],
+            ['#004b23', '#006400', '#007200', '#008000', '#38b000', '#70e000', '#9ef01a', '#ccff33'],
+            ['#d9ed92', '#b5e48c', '#99d98c', '#76c893', '#52b69a', '#34a0a4', '#168aad', '#1a759f', '#1e6091', '#184e77'],
+            ['#0b090a', '#161a1d', '#b1a7a6', '#d3d3d3', '#f5f3f4', '#ffffff', '#e5383b', '#ba1826', '#a4161a', '#660708'],
+            ['#ff7b00', '#ff8800', '#ff9500', '#ffa200', '#ffaa00', '#ffb700', '#ffc300', '#ffd000', '#ffdd00', '#ffea00'],
+            ['#03045e', '#0077b6', '#00b4d8', '#90e0ef', '#caf0f8'],
+            ['#355070', '#6d597a', '#b56576', '#e56b6f', '#eaac8b'],
+            ['#000000', '#14213d', '#fca311', '#e5e5e5', '#ffffff'],
+            ['#5f0f40', '#9a031e', '#fb8b24', '#e36414', '#0f4c5c'],
+            ['#22223b', '#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4'],
+            ['#463f3a', '#8a817c', '#bcb8b1', '#f4f3ee', '#e0afa0'],
+            ['#d8f3dc', '#b7e4c7', '#95d5b2', '#74c69d', '#52b788', '#40916c', '#2d6a4f', '#1b4332', '#081c15'],
+            ['#fec5bb', '#fcd5ce', '#fae1dd', '#f8edeb', '#e8e8e4', '#d8e2dc', '#ece4db', '#ffe5d9', '#ffd7ba', '#fec89a'],
+            ['#7400b8', '#6930c3', '#5e60ce', '#5390d9', '#4ea8de', '#48bfe3', '#56cfe1', '#64dfdf', '#72efdd', '#80ffdb'],
+            ['#03071e', '#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08'],
+            ['#ccd5ae', '#e9edc9', '#fefae0', '#faedcb', '#d4a373'],
+            ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff'],
+            ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500'],
+            ['#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#e63946'],
+            ['#001219', '#005f73', '#0a9396', '#94d2bd', '#e9d8a6', '#ee9b00', '#ca6702', '#bb3e03', '#ae2012', '#9b2226'],
+            ['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9'],
+            ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429'],
+            ['#fbf8cc', '#fde4cf', '#ffcfd2', '#f1c0e8', '#cfbaf0', '#a3c4f3', '#90dbf4', '#8eecf5', '#98f5e1', '#b9fbc0'],
+            ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'],
+            ['#3d5a80', '#98c1d9', '#e0fbfc', '#ee6c4d', '#293241'],
+            ['#112240', '#233d4d', '#fe7f2d', '#fcca46', '#a1c181', '#619b8a'],
+            ['#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff', '#ff0000'],
+            ['#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd', '#f9bec7'],
+            ['#006466', '#065a60', '#0b525b', '#144552', '#1b3a4b', '#212f45', '#272640', '#312244', '#3e1f47', '#4d194d'],
+            ['#cb997e', '#ddbea9', '#ffe8d6', '#b7b7a4', '#a5a58d', '#6b705c'],
+            ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167'],
+            ['#540d6e', '#ee4266', '#ffd23f', '#3bceac', '#0ead69'],
+            ['#0b132b', '#1c2541', '#3a506b', '#5bc0be', '#ffffff'],
+            ['#e0fbfc', '#c2dfe3', '#9db4c0', '#5c6b73', '#253237'],
+            ['#b7094c', '#a01a58', '#892b64', '#723c70', '#5c4d7d', '#455e89', '#2e6f95', '#1780a1', '#0091ad'],
+            ['#582f0e', '#7f4f24', '#936639', '#a68a64', '#b6ad90', '#c2c5aa', '#a4ac86', '#656d4a', '#414833', '#333d29'],
+            ['#f94144', '#f3722c', '#f8961e', '#f9844a', '#f9c74f', '#90be6d', '#43aa8b', '#4d908e', '#577590', '#277da1'],
+            ['#335c67', '#fff3b0', '#e09f3e', '#9e2a2b', '#540b0e'],
+            ['#007f5f', '#2b9348', '#55a630', '#80b918', '#aacc00', '#bfd200', '#d4d700', '#dddf00', '#eeef20', '#ffff3f'],
+            ['#0d1b2a', '#1b263b', '#415a77', '#778da9', '#e0e1dd'],
+            ['#ffcdb2', '#ffb4a2', '#e5989b', '#b5838d', '#6d6875'],
+            ['#202c39', '#283845', '#b8b08d', '#f2d492', '#f29559'],
+            ['#386641', '#6a994e', '#a7c957', '#f2e8cf', '#bc4749'],
+            ['#ff9f1c', '#ffbf69', '#ffffff', '#cbf3f0', '#2ec4b6'],
+            ['#011627', '#fdfffc', '#2ec4b6', '#e71d36', '#ff9f1c'],
+            ['#3d348b', '#7678ed', '#f7b801', '#f18701', '#f35b04'],
+            ['#114b5f', '#1a936f', '#88d498', '#c6dabf', '#f3e9d2'],
+            ['#eae4e9', '#fff1e6', '#fde2e4', '#fad2e1', '#e2ece9', '#bee1e6', '#f0efeb', '#dfe7fd', '#cddafd']
         ];
 
         function hexToRgb(hex) {
@@ -863,8 +902,8 @@
         function getTouchPos(e) {
             const rect = canvas.getBoundingClientRect();
             return {
-                x: e.touches[0].clientX - rect.left,
-                y: e.touches[0].clientY - rect.top
+                x: (e.touches[0].clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.touches[0].clientY - rect.top) * (canvas.height / rect.height)
             };
         }
 
