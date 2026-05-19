@@ -422,7 +422,7 @@
                 
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    const logoWidth = 76; 
+                    const logoWidth = 91; // Increased by 20% for crisp fidelity
                     const logoAspect = logo.naturalHeight / (logo.naturalWidth || 1);
                     const logoHeight = logoWidth * logoAspect;
                     tCtx.save();
@@ -904,7 +904,6 @@
             if (pointerX !== null && brushX !== null) {
                 const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
                 if (distToTarget > 0.5) {
-                    // Increased from 0.3 to 0.75 to remove the delay but keep the smoothing
                     brushX += (pointerX - brushX) * 0.75;
                     brushY += (pointerY - brushY) * 0.75;
                     draw(brushX, brushY);
