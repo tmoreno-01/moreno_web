@@ -110,7 +110,7 @@
         body.dark-mode .icon-moon { display: block; }
 
         .download-icon {
-            display: none; /* Hidden on desktop */
+            display: none;
         }
 
         .copyright {
@@ -121,7 +121,6 @@
             transition: opacity 0.4s ease, color 0.3s ease;
         }
 
-        /* Drops copyright opacity heavily when on an overlay page */
         body.overlay-open .copyright {
             opacity: 0.15;
         }
@@ -245,7 +244,7 @@
 
         /* --- BREAKPOINTS --- */
         @media (max-width: 1024px) {
-            .download-icon { display: flex; } /* Shows download button on iPad/Mobile */
+            .download-icon { display: flex; }
 
             .about-container { flex-direction: column; align-items: center; gap: 30px; }
             .about-image, .about-text { flex: none; width: 100%; }
@@ -376,7 +375,7 @@
         <div class="lightbox-close" onclick="closeLightbox()">×</div>
         <div class="lightbox-content">
             <div class="lightbox-left">
-                <img id="lb-img" src="" alt="Artwork">
+                <img id="lb-img" src="" alt="Artwork" decoding="async">
             </div>
             <div class="lightbox-right">
                 <div class="lightbox-text">
@@ -398,6 +397,23 @@
             if (isIOS) {
                 document.getElementById('ios-brush-selector').style.display = 'flex';
             }
+        });
+
+        // --- HIGH-RES PRELOADER ---
+        // Quietly loads the big images into the cache after the main site finishes loading
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const highResImages = [
+                    'artwork/isthegrassgreener_square.jpg',
+                    'artwork/001.jpg'
+                    // Add future artwork paths here
+                ];
+                
+                highResImages.forEach(src => {
+                    const img = new Image();
+                    img.src = src;
+                });
+            }, 1000); // Waits 1 second after page load
         });
 
         // --- THEME TOGGLE LOGIC ---
@@ -423,12 +439,12 @@
                 
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    const logoWidth = 120;
+                    const logoWidth = 80;
                     const logoAspect = logo.naturalHeight / (logo.naturalWidth || 1);
                     const logoHeight = logoWidth * logoAspect;
                     tCtx.save();
                     if (isDark) { tCtx.filter = 'invert(1)'; }
-                    tCtx.drawImage(logo, 30, 30, logoWidth, logoHeight);
+                    tCtx.drawImage(logo, 15, 15, logoWidth, logoHeight);
                     tCtx.restore();
                 }
 
@@ -529,10 +545,8 @@
             document.getElementById('lightbox').classList.remove('active');
             resetZoom();
             
-            // Wipe the image source after the lightbox fades out to prevent "ghost" images on the next click
             setTimeout(() => {
                 if (!document.getElementById('lightbox').classList.contains('active')) {
-                    // Uses a transparent 1x1 pixel data URI to wipe the frame clean
                     document.getElementById('lb-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
                 }
             }, 300);
