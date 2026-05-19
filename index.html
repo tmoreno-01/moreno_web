@@ -422,14 +422,13 @@
                 
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    const logoWidth = 72; // 10% smaller
+                    const logoWidth = 76; 
                     const logoAspect = logo.naturalHeight / (logo.naturalWidth || 1);
                     const logoHeight = logoWidth * logoAspect;
                     tCtx.save();
                     if (isDark) { tCtx.filter = 'invert(1)'; }
                     
-                    // Calculate bottom right coordinates with a 15px padding
-                    const padding = 15;
+                    const padding = 8;
                     const xPos = tempCanvas.width - logoWidth - padding;
                     const yPos = tempCanvas.height - logoHeight - padding;
                     
@@ -897,7 +896,38 @@
             lastX = x; lastY = y; lastTime = now;
         }
 
-        window.addEventListener('mousemove', e => draw(e.clientX, e.clientY));
+        // --- SMOOTH DRAWING ENGINE ---
+        let pointerX = null, pointerY = null;
+        let brushX = null, brushY = null;
+
+        function renderLoop() {
+            if (pointerX !== null && brushX !== null) {
+                const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
+                if (distToTarget > 0.5) {
+                    // Increased from 0.3 to 0.75 to remove the delay but keep the smoothing
+                    brushX += (pointerX - brushX) * 0.75;
+                    brushY += (pointerY - brushY) * 0.75;
+                    draw(brushX, brushY);
+                }
+            }
+            requestAnimationFrame(renderLoop);
+        }
+        requestAnimationFrame(renderLoop);
+
+        window.addEventListener('mousemove', e => {
+            pointerX = e.clientX;
+            pointerY = e.clientY;
+            if (brushX === null) {
+                brushX = pointerX;
+                brushY = pointerY;
+                draw(brushX, brushY, true);
+            }
+        });
+
+        document.addEventListener('mouseleave', () => {
+            brushX = null;
+            pointerX = null;
+        });
         
         function getTouchPos(e) {
             const rect = canvas.getBoundingClientRect();
@@ -911,16 +941,26 @@
             if(!e.target.closest('.nav-links') && !e.target.closest('.footer') && !e.target.closest('#ios-brush-selector') && !e.target.closest('.work-item') && !document.getElementById('lightbox').classList.contains('active')) {
                 e.preventDefault(); 
                 const p = getTouchPos(e);
-                draw(p.x, p.y, true);
+                pointerX = p.x; 
+                pointerY = p.y;
+                brushX = pointerX; 
+                brushY = pointerY;
+                draw(brushX, brushY, true);
             }
         }, { passive: false });
         
         canvas.addEventListener('touchmove', e => {
             if(!document.getElementById('lightbox').classList.contains('active')) {
                 const p = getTouchPos(e);
-                draw(p.x, p.y);
+                pointerX = p.x; 
+                pointerY = p.y;
             }
         }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+            brushX = null;
+            pointerX = null;
+        });
     </script>
 </body>
 </html>
