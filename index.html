@@ -194,9 +194,9 @@
         }
 
         /* --- ABOUT --- */
-        .about-container { display: flex; max-width: 1200px; width: 100%; gap: 15px; }
-        .about-image { flex: 1.5; background: transparent; max-height: 75vh; display: flex; align-items: flex-start; min-width: 0; }
-        .about-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .about-container { display: flex; max-width: 1200px; width: 100%; gap: 30px; }
+        .about-image { flex: 2; background: transparent; max-height: 85vh; display: flex; align-items: flex-start; min-width: 0; margin-top: -20px; }
+        .about-image img { width: 100%; height: 100%; object-fit: contain; object-position: top; display: block; }
         .about-text { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 10px; min-width: 0; }
         .about-text p { line-height: 1.8; color: var(--text-color); margin-bottom: 15px; font-size: 1.1rem; transition: color 0.3s ease; }
         
@@ -318,8 +318,8 @@
 
             .about-container { flex-direction: column; align-items: center; gap: 30px; }
             .about-image, .about-text { flex: none; width: 100%; }
-            .about-image { max-height: 50vh; justify-content: center; height: auto; }
-            .about-image img { max-height: 50vh; width: 100%; object-fit: contain; }
+            .about-image { max-height: 65vh; justify-content: center; height: auto; margin-top: 0; }
+            .about-image img { max-height: 65vh; width: 100%; object-fit: contain; object-position: top; }
             .about-frace { align-self: center; } 
             
             .works-grid { grid-template-columns: repeat(2, 1fr); gap: 60px; } 
@@ -340,8 +340,9 @@
             .ig-icon, .download-icon, .theme-toggle { width: 22px; height: 22px; }
             .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
             #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
-            .about-image { max-height: 40vh; }
-            .about-image img { max-height: 40vh; }
+            
+            .about-image { max-height: 60vh; margin-top: -10px; }
+            .about-image img { max-height: 60vh; object-position: top; }
             
             .works-grid { grid-template-columns: 1fr; gap: 80px; }
             .overlay-content { padding-top: 90px; padding-bottom: 150px; }
@@ -409,16 +410,16 @@
             </div>
         </div>
     </div>
-    <div class="copyright">© 2026 Copyright | Tyrone Doyle Moreno | All Rights Reserved | To leave the world exactly as you found it is to deny your humanity; to create is to prove it.</div>
+    <div class="copyright">© 2026 Copyright | Tyrone Moreno | All Rights Reserved | To leave the world exactly as you found it is to deny your humanity; to create is to prove it.</div>
 
     <div id="page-about" class="page-overlay">
         <div class="overlay-content">
             <div class="about-container">
                 <div class="about-image">
-                    <img src="aboutme.png" alt="Tyrone Doyle Moreno">
+                    <img src="me/aboutme_01.png" alt="Tyrone Moreno">
                 </div>
                 <div class="about-text">
-                    <p>Hey there, I'm Tyrone Doyle Moreno, a half-Spanish, half-English artist who delves into creating uninhibited art in an attempt to deal with my extreme ADHD.</p>
+                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English artist who delves into creating uninhibited art in an attempt to deal with my extreme ADHD.</p>
                     <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel human; the flow state of creating is the closest we get to dreaming whilst awake.</p>
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
                     <img src="frace.png" alt="Frace" class="about-frace">
@@ -619,7 +620,7 @@
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
                     // Target visual width (90px) multiplied by our export scale so it stays sharp
-                    const targetWidth = 90;
+                    const targetWidth = 80;
                     const logoWidth = targetWidth * exportScale; 
                     const aspect = logo.naturalHeight / (logo.naturalWidth || 1);
                     const logoHeight = logoWidth * aspect;
@@ -629,7 +630,7 @@
                     const needsInvert = isCustomBg ? (document.body.style.getPropertyValue('--logo-filter') === 'invert(1)') : isDarkMode;
                     if (needsInvert) { tCtx.filter = 'invert(1)'; }
                     
-                    const padding = 15 * exportScale; // Scale the padding too
+                    const padding = 8 * exportScale; // Scale the padding too
                     const xPos = tempCanvas.width - logoWidth - padding;
                     const yPos = tempCanvas.height - logoHeight - padding;
                     
@@ -936,47 +937,6 @@
             ['#22333b', '#e9ecef', '#c6ac8f', '#a68a64', '#5e503f'],
             ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'],
             ['#ccd5ae', '#e9edc9', '#fefae0', '#faedcb', '#d4a373'],
-            ['#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#e63946'],
-            ['#03045e', '#023e8a', '#0077b6', '#0096c7', '#00b4d8', '#48cae4', '#90e0ef', '#ade8f4', '#caf0f8'],
-            ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#3a0ca3', '#3f37c9', '#4361ee', '#4895ef', '#4cc9f0'],
-            ['#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08'],
-            ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429'],
-            ['#001219', '#005f73', '#0a9396', '#94d2bd', '#e9d8a6', '#ee9b00', '#ca6702', '#bb3e03', '#ae2012', '#9b2226'],
-            ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500'],
-            ['#000000', '#14213d', '#fca311', '#e5e5e5', '#ffffff'],
-            ['#fec5bb', '#fcd5ce', '#fae1dd', '#f8edeb', '#e8e8e4', '#d8e2dc', '#ece4db', '#ffe5d9', '#ffd7ba', '#fec89a'],
-            ['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9'],
-            ['#03071e', '#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08'],
-            ['#582f0e', '#7f4f24', '#936639', '#a68a64', '#b6ad90', '#c2c5aa', '#a4ac86', '#656d4a', '#414833', '#333d29'],
-            ['#ff595e', '#ffca3a', '#8ac926', '#1982c4', '#6a4c93'],
-            ['#b7094c', '#a01a58', '#892b64', '#723c70', '#5c4d7d', '#455e89', '#2e6f95', '#1780a1', '#0091ad'],
-            ['#d9ed92', '#b5e48c', '#99d98c', '#76c893', '#52b69a', '#34a0a4', '#168aad', '#1a759f', '#1e6091', '#184e77'],
-            ['#22223b', '#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4'],
-            ['#7400b8', '#6930c3', '#5e60ce', '#5390d9', '#4ea8de', '#48bfe3', '#56cfe1', '#64dfdf', '#72efdd', '#80ffdb'],
-            ['#355070', '#6d597a', '#b56576', '#e56b6f', '#eaac8b'],
-            ['#003049', '#d62828', '#f77f00', '#fcbf49', '#eae2b7'],
-            ['#112240', '#233d4d', '#fe7f2d', '#fcca46', '#a1c181', '#619b8a'],
-            ['#0d3b66', '#faf0ca', '#f4d35e', '#ee964b', '#f95738'],
-            ['#2d00f7', '#6a00f4', '#8900f2', '#a100f2', '#b100e8', '#bc00dd', '#d100d1', '#db00b6', '#e500a4', '#f20089'],
-            ['#ff0000', '#ff8700', '#ffd300', '#deff0a', '#a1ff0a', '#0aff99', '#0aefff', '#147df5', '#580aff', '#be0aff'],
-            ['#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd', '#6c757d', '#495057', '#343a40', '#212529'],
-            ['#004b23', '#006400', '#007200', '#008000', '#38b000', '#70e000', '#9ef01a', '#ccff33'],
-            ['#d9ed92', '#b5e48c', '#99d98c', '#76c893', '#52b69a', '#34a0a4', '#168aad', '#1a759f', '#1e6091', '#184e77'],
-            ['#0b090a', '#161a1d', '#b1a7a6', '#d3d3d3', '#f5f3f4', '#ffffff', '#e5383b', '#ba1826', '#a4161a', '#660708'],
-            ['#ff7b00', '#ff8800', '#ff9500', '#ffa200', '#ffaa00', '#ffb700', '#ffc300', '#ffd000', '#ffdd00', '#ffea00'],
-            ['#03045e', '#0077b6', '#00b4d8', '#90e0ef', '#caf0f8'],
-            ['#355070', '#6d597a', '#b56576', '#e56b6f', '#eaac8b'],
-            ['#000000', '#14213d', '#fca311', '#e5e5e5', '#ffffff'],
-            ['#5f0f40', '#9a031e', '#fb8b24', '#e36414', '#0f4c5c'],
-            ['#22223b', '#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4'],
-            ['#463f3a', '#8a817c', '#bcb8b1', '#f4f3ee', '#e0afa0'],
-            ['#d8f3dc', '#b7e4c7', '#95d5b2', '#74c69d', '#52b788', '#40916c', '#2d6a4f', '#1b4332', '#081c15'],
-            ['#fec5bb', '#fcd5ce', '#fae1dd', '#f8edeb', '#e8e8e4', '#d8e2dc', '#ece4db', '#ffe5d9', '#ffd7ba', '#fec89a'],
-            ['#7400b8', '#6930c3', '#5e60ce', '#5390d9', '#4ea8de', '#48bfe3', '#56cfe1', '#64dfdf', '#72efdd', '#80ffdb'],
-            ['#03071e', '#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08'],
-            ['#ccd5ae', '#e9edc9', '#fefae0', '#faedcb', '#d4a373'],
-            ['#cdb4db', '#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff'],
-            ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500'],
             ['#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#e63946'],
             ['#001219', '#005f73', '#0a9396', '#94d2bd', '#e9d8a6', '#ee9b00', '#ca6702', '#bb3e03', '#ae2012', '#9b2226'],
             ['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9'],
