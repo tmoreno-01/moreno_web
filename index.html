@@ -593,43 +593,47 @@
         });
 
 
-        // --- DOWNLOAD CANVAS LOGIC ---
+       // --- DOWNLOAD CANVAS LOGIC ---
         function downloadArtwork() {
             try {
                 const mainCanvas = document.getElementById('canvas');
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = mainCanvas.width;
-                tempCanvas.height = mainCanvas.height;
+                
+                // MULTIPLIER FOR HIGH-RES EXPORT (3x is standard for crisp mobile/print)
+                const exportScale = 3; 
+                tempCanvas.width = mainCanvas.width * exportScale;
+                tempCanvas.height = mainCanvas.height * exportScale;
                 const tCtx = tempCanvas.getContext('2d');
                 
+                // We draw the main canvas scaled up to fit the new high-res temp canvas
                 if (isCustomBg) {
-                    // Custom BG is already baked into the canvas via resize()
-                    tCtx.drawImage(mainCanvas, 0, 0);
+                    tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
                 } else {
                     tCtx.fillStyle = isDarkMode ? '#1a1a1a' : '#ffffff';
                     tCtx.fillRect(0,0, tempCanvas.width, tempCanvas.height);
                     if (isDarkMode) { tCtx.filter = 'invert(1) hue-rotate(180deg)'; }
-                    tCtx.drawImage(mainCanvas, 0, 0);
+                    tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
                     tCtx.filter = 'none';
                 }
                 
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    // Use the image's natural size so it doesn't get blurry, 
-                    // but force a smaller maximum width (e.g., 90px).
-                    const maxWidth = 90; 
-                    const scale = Math.min(1, maxWidth / logo.naturalWidth);
-                    const logoWidth = logo.naturalWidth * scale;
-                    const logoHeight = logo.naturalHeight * scale;
+                    // Target visual width (90px) multiplied by our export scale so it stays sharp
+                    const targetWidth = 90;
+                    const logoWidth = targetWidth * exportScale; 
+                    const aspect = logo.naturalHeight / (logo.naturalWidth || 1);
+                    const logoHeight = logoWidth * aspect;
+                    
                     tCtx.save();
                     
                     const needsInvert = isCustomBg ? (document.body.style.getPropertyValue('--logo-filter') === 'invert(1)') : isDarkMode;
                     if (needsInvert) { tCtx.filter = 'invert(1)'; }
                     
-                    const padding = 8;
+                    const padding = 15 * exportScale; // Scale the padding too
                     const xPos = tempCanvas.width - logoWidth - padding;
                     const yPos = tempCanvas.height - logoHeight - padding;
                     
+                    // Draw the high-res logo onto the high-res canvas
                     tCtx.drawImage(logo, xPos, yPos, logoWidth, logoHeight);
                     tCtx.restore();
                 }
