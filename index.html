@@ -609,13 +609,14 @@
                     tCtx.filter = 'none';
                 }
                 
-               const logo = document.getElementById('btn-home');
+             const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    // Dynamically scales the logo to 8% of the canvas width, 
-                    // but ensures it never drops below 160 pixels wide.
-                    const logoWidth = Math.max(160, tempCanvas.width * 0.08); 
-                    const logoAspect = logo.naturalHeight / (logo.naturalWidth || 1);
-                    const logoHeight = logoWidth * logoAspect;
+                    // Use the image's natural size so it doesn't get blurry, 
+                    // but force a smaller maximum width (e.g., 90px).
+                    const maxWidth = 90; 
+                    const scale = Math.min(1, maxWidth / logo.naturalWidth);
+                    const logoWidth = logo.naturalWidth * scale;
+                    const logoHeight = logo.naturalHeight * scale;
                     tCtx.save();
                     
                     const needsInvert = isCustomBg ? (document.body.style.getPropertyValue('--logo-filter') === 'invert(1)') : isDarkMode;
