@@ -423,10 +423,11 @@
             <div class="form-container">
                 <h2 class="form-title">ENQUIRY FORM</h2>
                 
-             <form action="https://api.web3forms.com/submit" method="POST">
+<form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
     <input type="hidden" name="access_key" value="b05857c6-21f6-487a-a50f-c3ed2a02c639">
     <input type="hidden" name="subject" value="New Website Enquiry | tyronemoreno.com">
     <input type="hidden" name="from_name" value="tyronemoreno.com Contact Form">
+    <input type="hidden" name="redirect" value="false">
 
     <div class="form-group">
         <label for="name">Name *</label>
@@ -444,7 +445,8 @@
         <label for="message">Message *</label>
         <textarea id="message" name="message" rows="6" required minlength="5"></textarea>
     </div>
-    <button type="submit" class="submit-btn">SEND ENQUIRY</button>
+    <button type="submit" class="submit-btn" id="submitButton">SEND ENQUIRY</button>
+    <div id="responseMessage" style="margin-left: 150px; margin-top: 15px; font-weight: bold;"></div>
 </form>
 
                 <div class="form-footer">
@@ -1063,5 +1065,36 @@
             pointerX = null;
         });
     </script>
+<script>
+    const form = document.getElementById('contactForm');
+    const responseMessage = document.getElementById('responseMessage');
+    const submitButton = document.getElementById('submitButton');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitButton.innerText = "SENDING...";
+        const formData = new FormData(form);
+        
+        fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: formData
+        })
+        .then(async (response) => {
+            let json = await response.json();
+            if (response.status == 200) {
+                responseMessage.innerText = "Enquiry sent successfully!";
+                form.reset();
+            } else {
+                responseMessage.innerText = "Something went wrong, please try again.";
+            }
+        })
+        .catch(error => {
+            responseMessage.innerText = "Something went wrong!";
+        })
+        .finally(() => {
+            submitButton.innerText = "SEND ENQUIRY";
+        });
+    });
+</script>
 </body>
 </html>
