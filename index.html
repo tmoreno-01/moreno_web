@@ -100,6 +100,7 @@
             color: var(--text-color);
             user-select: none;
             -webkit-user-select: none;
+            touch-action: manipulation; /* Prevents iOS double-tap zoom */
         }
 
         .theme-toggle:hover, .download-icon:hover { opacity: 1; }
@@ -137,10 +138,10 @@
 
         .palette-toggle {
             position: absolute;
-            bottom: 55px; /* Moved higher above the dot */
-            left: -7px;  /* Keeps it perfectly centered now that it's wider */
-            width: 42px; /* 50% bigger */
-            height: 42px; /* 50% bigger */
+            bottom: 50px; 
+            left: -2px;  
+            width: 33px; 
+            height: 33px; 
             opacity: 0.5;
             cursor: pointer;
             transition: opacity 0.3s ease, transform 0.2s ease;
@@ -518,65 +519,73 @@
         let isCustomBg = false;
         let currentCanvasBg = '#ffffff';
         let themeClickTimer = null;
+        let lastThemeClickTime = 0;
 
-        // --- THEME TOGGLE LOGIC ---
+        // --- THEME TOGGLE LOGIC (MOBILE FRIENDLY DOUBLE TAP) ---
         const themeToggleBtn = document.getElementById('theme-toggle');
 
         themeToggleBtn.addEventListener('click', (e) => {
-            if (themeClickTimer) clearTimeout(themeClickTimer);
-            themeClickTimer = setTimeout(() => {
-                if (isCustomBg) {
-                    // Reset from custom color back to standard modes
-                    isCustomBg = false;
-                    document.body.removeAttribute('style');
-                    document.body.classList.toggle('dark-mode', isDarkMode);
-                    currentCanvasBg = '#ffffff';
-                    resize();
-                } else {
-                    // Standard light/dark toggle
-                    isDarkMode = !isDarkMode;
-                    document.body.classList.toggle('dark-mode', isDarkMode);
-                }
-            }, 250); 
-        });
-
-        themeToggleBtn.addEventListener('dblclick', (e) => {
             e.preventDefault();
-            if (themeClickTimer) clearTimeout(themeClickTimer);
-            isCustomBg = true;
-            
-            // Generate Random Color
-            const r = Math.floor(Math.random() * 256);
-            const g = Math.floor(Math.random() * 256);
-            const b = Math.floor(Math.random() * 256);
-            const randomColor = `rgb(${r}, ${g}, ${b})`;
-            
-            // Calculate Luminance to ensure readable text
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            const isDark = luminance < 0.5;
+            const currentTime = new Date().getTime();
+            const timeDiff = currentTime - lastThemeClickTime;
 
-            const textCol = isDark ? '#ffffff' : '#1a1a1a';
-            const textMuted = isDark ? '#aaaaaa' : '#666666';
-            const logoFil = isDark ? 'invert(1)' : 'none';
-            const overlayBg = `rgba(${r}, ${g}, ${b}, 0.97)`;
-            const lightboxBg = `rgba(${r}, ${g}, ${b}, 0.98)`;
+            if (timeDiff < 350) {
+                // DOUBLE CLICK / TAP DETECTED
+                clearTimeout(themeClickTimer);
+                isCustomBg = true;
+                
+                // Generate Random Color
+                const r = Math.floor(Math.random() * 256);
+                const g = Math.floor(Math.random() * 256);
+                const b = Math.floor(Math.random() * 256);
+                const randomColor = `rgb(${r}, ${g}, ${b})`;
+                
+                // Calculate Luminance to ensure readable text
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                const isDark = luminance < 0.5;
 
-            // Override CSS Variables Inline
-            document.body.style.setProperty('--bg-color', randomColor);
-            document.body.style.setProperty('--text-color', textCol);
-            document.body.style.setProperty('--text-muted', textMuted);
-            document.body.style.setProperty('--overlay-bg', overlayBg);
-            document.body.style.setProperty('--lightbox-bg', lightboxBg);
-            document.body.style.setProperty('--logo-filter', logoFil);
-            document.body.style.setProperty('--dot-color', textCol);
-            document.body.style.setProperty('--frace-blend', isDark ? 'screen' : 'multiply');
-            
-            // Disable dark mode filter so it doesn't invert our new random color
-            document.body.classList.remove('dark-mode');
-            
-            // Wipe and fill canvas with new random color
-            currentCanvasBg = randomColor;
-            resize();
+                const textCol = isDark ? '#ffffff' : '#1a1a1a';
+                const textMuted = isDark ? '#aaaaaa' : '#666666';
+                const logoFil = isDark ? 'invert(1)' : 'none';
+                const overlayBg = `rgba(${r}, ${g}, ${b}, 0.97)`;
+                const lightboxBg = `rgba(${r}, ${g}, ${b}, 0.98)`;
+
+                // Override CSS Variables Inline
+                document.body.style.setProperty('--bg-color', randomColor);
+                document.body.style.setProperty('--text-color', textCol);
+                document.body.style.setProperty('--text-muted', textMuted);
+                document.body.style.setProperty('--overlay-bg', overlayBg);
+                document.body.style.setProperty('--lightbox-bg', lightboxBg);
+                document.body.style.setProperty('--logo-filter', logoFil);
+                document.body.style.setProperty('--dot-color', textCol);
+                document.body.style.setProperty('--frace-blend', isDark ? 'screen' : 'multiply');
+                
+                // Disable dark mode filter so it doesn't invert our new random color
+                document.body.classList.remove('dark-mode');
+                
+                // Wipe and fill canvas with new random color
+                currentCanvasBg = randomColor;
+                resize();
+
+                lastThemeClickTime = 0; // Reset for next tap
+            } else {
+                // SINGLE CLICK / TAP DETECTED
+                lastThemeClickTime = currentTime;
+                themeClickTimer = setTimeout(() => {
+                    if (isCustomBg) {
+                        // Reset from custom color back to standard modes
+                        isCustomBg = false;
+                        document.body.removeAttribute('style');
+                        document.body.classList.toggle('dark-mode', isDarkMode);
+                        currentCanvasBg = '#ffffff';
+                        resize();
+                    } else {
+                        // Standard light/dark toggle
+                        isDarkMode = !isDarkMode;
+                        document.body.classList.toggle('dark-mode', isDarkMode);
+                    }
+                }, 350); 
+            }
         });
 
 
@@ -1318,7 +1327,7 @@
         e.preventDefault();
         submitButton.innerText = "SENDING...";
         const formData = new FormData(form);
-         
+        
         fetch('https://api.web3forms.com/submit', {
             method: 'POST',
             body: formData
