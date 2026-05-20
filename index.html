@@ -100,7 +100,7 @@
             color: var(--text-color);
             user-select: none;
             -webkit-user-select: none;
-            touch-action: manipulation; /* Prevents iOS double-tap zoom */
+            touch-action: manipulation; 
         }
 
         .theme-toggle:hover, .download-icon:hover { opacity: 1; }
@@ -432,6 +432,11 @@
             <div class="works-container">
                 <div class="works-grid">
                     
+                    <div class="work-item" onclick="openLightbox('artwork/testpedestrian.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="artwork/small/testpedestrian_small.jpg" alt="Pedestrian Crossing"></div>
+                        <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
+                    </div>
+
                     <div class="work-item" onclick="openLightbox('artwork/isthegrassgreener_square.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
                         <div class="work-image"><img src="artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
                         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
@@ -441,8 +446,7 @@
                         <div class="work-image"><img src="artwork/small/001_small.jpg" alt="Mayonnaise on the Roof"></div>
                         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2025</span></div>
                     </div>
-                    
-                    <div class="work-item" style="pointer-events: none;"><div class="work-image" style="background:#f0f0f0;"></div></div>
+
                 </div>
             </div>
         </div>
@@ -609,7 +613,7 @@
                     tCtx.filter = 'none';
                 }
                 
-             const logo = document.getElementById('btn-home');
+                const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
                     // Use the image's natural size so it doesn't get blurry, 
                     // but force a smaller maximum width (e.g., 90px).
