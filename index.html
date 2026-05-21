@@ -496,9 +496,10 @@
             #page-about { overflow-y: auto; }
             #page-about .overlay-content { padding: 120px 40px 60px 40px; align-items: flex-start; }
             .about-container { flex-direction: column; align-items: center; gap: 30px; width: 100%; height: auto; max-width: 1200px; }
-            .about-image, .about-text { flex: none; width: 100%; height: auto; padding: 0; overflow: visible; }
-            .about-image { max-height: 65vh; justify-content: center; }
-            .about-image img { max-height: 65vh; width: 100%; object-fit: contain; object-position: center; }
+     /* Separate the text and image so the image gets a strict height */
+.about-text { flex: none; width: 100%; height: auto; padding: 0; overflow: visible; }
+    .about-image { flex: none; width: 100%; height: 46vh; padding: 0; overflow: hidden; justify-content: center; }
+    .about-image img { max-height: 65vh; width: 100%; object-fit: contain; object-position: center; }
             
             /* Repositioning closer to text */
             .sym-1 { top: 5%; right: -2%; width: 100px; opacity: 0.3; }
