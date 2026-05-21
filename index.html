@@ -54,17 +54,60 @@
             display: flex; 
             position: fixed; top: 35px; right: 35px;
             gap: 30px; z-index: 100;
+            align-items: flex-start;
         }
 
-        .nav-links a {
+        .nav-links a, .dropbtn {
             text-decoration: none; color: var(--text-color);
             font-size: 0.85rem; letter-spacing: 1px;
             text-transform: uppercase; font-weight: bold;
             opacity: 0.4; transition: opacity 0.3s ease, color 0.3s ease;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
         }
 
-        .nav-links a:hover, .nav-links a.active { opacity: 1; }
+        .nav-links a:hover, .nav-links a.active, .dropbtn.active { opacity: 1; }
+
+        /* --- DROPDOWN NAVIGATION --- */
+        .dropdown {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .dropdown-content {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding-top: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            min-width: 120px;
+            white-space: nowrap;
+        }
+
+        .dropdown-content a {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .dropdown:hover .dropdown-content {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dropdown:hover .dropbtn {
+            opacity: 1;
+        }
 
         /* --- FOOTER, COPYRIGHT & THEME TOGGLE --- */
         .footer {
@@ -112,9 +155,7 @@
         body.dark-mode .icon-sun { display: none; }
         body.dark-mode .icon-moon { display: block; }
 
-        .download-icon {
-            display: none;
-        }
+        .download-icon { display: none; }
 
         .copyright {
             position: fixed; bottom: 25px; left: 25px;
@@ -124,9 +165,7 @@
             transition: opacity 0.4s ease, color 0.3s ease;
         }
 
-        body.overlay-open .copyright {
-            opacity: 0.15;
-        }
+        body.overlay-open .copyright { opacity: 0.15; }
 
         /* --- IOS BRUSH SELECTOR --- */
         #ios-brush-selector {
@@ -137,28 +176,17 @@
         }
 
         .palette-toggle {
-            position: absolute;
-            bottom: 50px; 
-            left: -8px;  
-            width: 40px; 
-            height: 40px; 
-            opacity: 0.5;
-            cursor: pointer;
-            transition: opacity 0.3s ease, transform 0.2s ease;
+            position: absolute; bottom: 50px; left: -8px;  
+            width: 40px; height: 40px; opacity: 0.5;
+            cursor: pointer; transition: opacity 0.3s ease, transform 0.2s ease;
         }
         
         .palette-toggle img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            filter: var(--logo-filter);
-            transition: filter 0.3s ease;
+            width: 100%; height: 100%; object-fit: contain;
+            filter: var(--logo-filter); transition: filter 0.3s ease;
         }
         
-        .palette-toggle:hover, .palette-toggle:active {
-            opacity: 1;
-            transform: scale(1.15);
-        }
+        .palette-toggle:hover, .palette-toggle:active { opacity: 1; transform: scale(1.15); }
 
         .dot {
             background-color: var(--dot-color); border-radius: 50%; cursor: pointer;
@@ -193,65 +221,168 @@
             position: relative; z-index: 2;
         }
 
-        /* --- ABOUT (DESKTOP ARCHITECTURE CHANGE) --- */
-        #page-about {
-            overflow: hidden; /* Prevent scrollbars on the new edge-to-edge layout */
+        /* --- DRAWN SYMBOLS & INLINE ARTWORK --- */
+        .art-symbol {
+            position: absolute;
+            mix-blend-mode: var(--frace-blend);
+            filter: var(--logo-filter);
+            opacity: 0.85;
+            pointer-events: none;
+            z-index: -1;
+            transition: filter 0.3s ease;
         }
         
-        #page-about .overlay-content {
-            padding: 0; /* Strip all generic padding for edge-to-edge layout */
-            align-items: stretch; /* Stretch content to full height */
+        /* About Page Scattered Symbols */
+        .sym-1 { top: 19%; right: -19%; width: 250px; transform: rotate(-4deg); }
+        .sym-2 { top: 40%; left: -77px; width: 220px; transform: rotate(4deg); }
+        .sym-3 { bottom: 18%; right: 12%; width: 90px; transform: rotate(5deg); }
+        .sym-5 { bottom: 25%; right: 22%; top: auto; left: auto; width: 290px; transform: rotate(-6deg); }
+        .sym-6 { top: -28px; left: -25px; width: 220px; transform: rotate(-7deg); }
+        
+        /* Contact Page Scattered Symbols */
+      /* Update this in your existing CSS */
+.sym-4 {
+    display: block !important; 
+    position: absolute !important; /* Changed from static */
+    right: 20px;                 /* Position it to the right of the form */
+    bottom: 5px;                  /* Align it vertically near the button */
+    width: 250px !important;       /* Slightly smaller to fit better */
+    pointer-events: none;          /* Ensure it doesn't block clicks */
+    z-index: 1;                    /* Keeps it behind the form */
+}
+        .inline-human {
+            height: 2.8em; 
+            width: auto; 
+            vertical-align: middle; 
+            mix-blend-mode: var(--frace-blend);
+            filter: var(--logo-filter);
+            margin: 0; 
+            position: relative;
+            top: -4px; 
+            transition: filter 0.3s ease;
         }
-        
-        .about-container { 
-            display: flex; 
-            width: 100vw; /* full viewport width */
-            height: 100vh; /* full viewport height */
-            max-width: none; /* remove constraint */
-            gap: 0; /* no gap between image and text columns */
+
+        .enquiry-title-img {
+            max-width: 350px; 
+            margin-bottom: 40px; 
+            display: block;
+            mix-blend-mode: var(--frace-blend);
+            filter: var(--logo-filter);
+            transition: filter 0.3s ease;
         }
-        
-        .about-image { 
-            flex: none; /* disable flex growth */
-            width: 60%; /* exact width specification */
-            height: 100%; /* full height */
-            background: transparent; 
-            margin-top: 0; /* remove negative margin */
-            overflow: hidden; /* ensure clipping */
+
+        .frace-cabbage-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 40px;
+            margin-top: 20px;
         }
-        
-        .about-image img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; /* Fill the 60% area completely */
-            object-position: top left; /* Anchor to the far left corner */
-            display: block; 
-        }
-        
-        .about-text { 
-            flex: none; /* disable flex growth */
-            width: 40%; /* exact width specification */
-            height: 100%; /* full height */
-            display: flex; 
-            flex-direction: column; 
-            justify-content: flex-start; 
-            box-sizing: border-box;
-            /* Internal padding to frame text within its 40% column */
-            padding: 120px 80px 100px 60px; 
-            overflow-y: auto; /* allow text to scroll if too long */
-        }
-        
-        .about-text p { line-height: 1.8; color: var(--text-color); margin-bottom: 25px; font-size: 1.1rem; transition: color 0.3s ease; }
-        
+
         .about-frace {
             width: 120px;
-            margin-top: 40px;
+            margin-top: 0;
             opacity: 0.9;
             mix-blend-mode: var(--frace-blend);
             filter: var(--logo-filter);
-            align-self: flex-start;
             transition: filter 0.3s ease;
         }
+
+        .boy-cabbage {
+            width: 200px;
+            display: block;
+            mix-blend-mode: var(--frace-blend);
+            filter: var(--logo-filter);
+            transition: filter 0.3s ease;
+            z-index: 5;
+        }
+
+        /* Glitch Animation Keyframes */
+        @keyframes glitch-shake {
+            0% { transform: translate(-50%, -50%) rotate(0deg) translate(0, 0); }
+            25% { transform: translate(-50%, -50%) rotate(4deg) translate(2px, -2px); }
+            50% { transform: translate(-50%, -50%) rotate(-4deg) translate(-2px, 2px); }
+            75% { transform: translate(-50%, -50%) rotate(4deg) translate(2px, 2px); }
+            100% { transform: translate(-50%, -50%) rotate(0deg) translate(0, 0); }
+        }
+
+        .is-glitching {
+            animation: glitch-shake 0.3s infinite;
+        }
+
+        .dropbtn {
+            position: relative;
+        }
+
+        .gallery-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gallery-glitch-img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 2.8em;
+            width: auto;
+            filter: var(--logo-filter);
+            pointer-events: none;
+            display: none;
+        }
+
+        /* --- ABOUT PAGE (SLIDER ADDED) --- */
+        #page-about { overflow: hidden; }
+        #page-about .overlay-content { padding: 0; align-items: stretch; }
+        
+        .about-container { display: flex; width: 100vw; height: 100vh; max-width: none; gap: 0; }
+        
+   /* About Page Image Slider - New Structure */
+.about-image { 
+    position: relative; 
+    flex: none; 
+    width: 60%; 
+    height: 100%; 
+    background: transparent; 
+    overflow: hidden; 
+}
+
+.about-image img { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    object-position: top left; 
+    display: block; 
+    transition: opacity 0.6s ease-in-out; /* Smooth 1.2s cross-fade */
+    opacity: 0;
+}
+
+.about-image img.active {
+    opacity: 1;
+}
+
+        .slider-arrow {
+            position: absolute; top: 50%;
+            width: 20px; height: 20px; cursor: pointer; z-index: 10;
+            border-top: 3px solid var(--text-color); border-right: 3px solid var(--text-color);
+            opacity: 0.5; transition: opacity 0.2s ease, filter 0.3s ease;
+            filter: var(--logo-filter);
+        }
+        .slider-arrow:hover { opacity: 1; }
+        .left-arrow { left: 40px; transform: translateY(-50%) rotate(-135deg); }
+        .right-arrow { right: 40px; transform: translateY(-50%) rotate(45deg); }
+
+        .about-text { 
+            position: relative;
+            flex: none; width: 40%; height: 100%; display: flex; flex-direction: column; 
+            justify-content: flex-start; box-sizing: border-box; padding: 120px 80px 100px 60px; overflow-y: auto; 
+        }
+        .about-text p { line-height: 1.8; color: var(--text-color); margin-bottom: 25px; font-size: 1.1rem; transition: color 0.3s ease; position: relative; z-index: 2; }
 
         /* --- WORKS GRID --- */
         .works-container { max-width: 1200px; width: 100%; }
@@ -262,146 +393,180 @@
         .work-image img { width: 100%; height: 100%; object-fit: contain; }
         .work-caption { font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; pointer-events: none; transition: color 0.3s ease; }
 
-        /* --- CONTACT FORM --- */
-        .form-container {
-            max-width: 800px; width: 100%;
-            text-align: left; margin: 0 auto;
-        }
-        .form-title {
-            font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
-            margin-bottom: 40px; font-size: 1.5rem;
-            color: var(--text-color); transition: color 0.3s ease;
-        }
-        .form-group {
-            display: flex; margin-bottom: 25px; align-items: flex-start;
-        }
-        .form-group label {
-            width: 150px; font-weight: bold; letter-spacing: 0.5px;
-            font-size: 1rem; padding-top: 10px; color: var(--text-color);
-            transition: color 0.3s ease; text-transform: uppercase;
-        }
-        .form-group input, .form-group textarea {
-            flex: 1; width: 100%; padding: 12px;
-            border: 1px solid var(--text-muted); background: transparent;
-            color: var(--text-color); font-family: 'Helvetica', 'Arial', sans-serif;
-            box-sizing: border-box; opacity: 0.5; transition: opacity 0.3s ease, border-color 0.3s ease;
-            font-size: 1rem; resize: vertical;
-        }
-        .form-group input:focus, .form-group textarea:focus {
-            outline: none; opacity: 1; border-color: var(--text-color);
-        }
-        .submit-btn {
-            background: var(--text-color); color: var(--bg-color);
-            border: none; padding: 15px 30px; letter-spacing: 2px; font-weight: bold;
-            font-size: 0.8rem; cursor: pointer; margin-left: 150px; 
-            margin-top: 10px; transition: opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-            text-transform: uppercase;
-        }
-        .submit-btn:hover { opacity: 0.8; }
-        .form-footer {
-            margin-top: 40px; margin-left: 150px; font-size: 0.8rem;
-            color: var(--text-muted); border-top: 1px solid rgba(150,150,150,0.2);
-            padding-top: 20px; line-height: 1.6; transition: color 0.3s ease;
-        }
+/* --- NONE PAGES (EXHIBITIONS / PRESS) REDUCED BLEED --- */
+  /* --- NONE PAGES (EXHIBITIONS / PRESS) --- */
+.none-page { 
+    padding: 0 !important; 
+    overflow-y: auto !important; /* Enables scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scroll for iOS */
+}
 
+.none-page .overlay-content { 
+    padding: 0; 
+    width: 100vw; 
+    min-height: 100vh; /* Changed from height to min-height */
+    position: relative; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Desktop & iPad */
+.none-desktop { 
+    display: block !important;
+    width: 103vw !important; 
+    height: auto !important;
+    margin: 50px auto; /* Adds space for scrolling */
+    filter: var(--logo-filter);
+    transition: filter 0.3s ease;
+    pointer-events: none;
+}
+
+/* Mobile Only */
+.none-mobile { 
+    display: none !important; 
+    width: 120vw !important;
+    height: auto !important;
+    margin: 50px auto; /* Adds space so you can scroll down */
+    filter: var(--logo-filter);
+    transition: filter 0.3s ease;
+    pointer-events: none;
+}
+
+/* Update breakpoint to 1024px to cover iPads */
+@media (max-width: 1024px) {
+    .none-desktop { display: none !important; }
+    .none-mobile { display: block !important; }
+}
+
+        /* --- CONTACT FORM --- */
+        .form-container { position: relative; max-width: 800px; width: 100%; text-align: left; margin: 0 auto; }
+        .form-group { display: flex; margin-bottom: 25px; align-items: flex-start; }
+        .form-group label { width: 150px; font-weight: bold; letter-spacing: 0.5px; font-size: 1.3rem; padding-top: 10px; color: var(--text-color); transition: color 0.3s ease; text-transform: uppercase; }
+        .form-group input, .form-group textarea { flex: 1; width: 100%; padding: 12px; border: 1px solid var(--text-muted); background: transparent; color: var(--text-color); font-family: 'Helvetica', 'Arial', sans-serif; box-sizing: border-box; opacity: 0.5; transition: opacity 0.3s ease, border-color 0.3s ease; font-size: 1.3rem; resize: vertical; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; opacity: 1; border-color: var(--text-color); }
+        .button-row {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-left: 150px;
+        position: relative;
+    }
+    .submit-btn { 
+        background: var(--text-color); color: var(--bg-color); border: none; padding: 15px 30px; 
+        font-weight: bold; cursor: pointer; text-transform: uppercase; 
+    }
+    .sym-4 {
+        position: static !important;
+        width: 250px !important;
+        pointer-events: none;
+        display: block !important;
+        margin: 0 !important;
+    }
+
+    @media (max-width: 768px) {
+        .button-row { margin-left: 0 !important; gap: 10px; }
+        .button-row .sym-4 { width: 250px !important; }
+        .form-group { flex-direction: column; }
+        .form-group label { width: 100%; margin-bottom: 8px; }
+        .submit-btn { margin-left: 0 !important; }
+        #responseMessage { margin-left: 0 !important; }
+    }
         /* --- LIGHTBOX --- */
-        .lightbox {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--lightbox-bg); z-index: 300; 
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease;
-            overflow-y: auto; padding: 40px; box-sizing: border-box;
-        }
-        
+        .lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--lightbox-bg); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease; overflow-y: auto; padding: 40px; box-sizing: border-box; }
         .lightbox.active { opacity: 1; pointer-events: auto; }
-        .lightbox-close {
-            position: fixed; top: 30px; right: 40px; font-size: 3rem; font-weight: 300; 
-            cursor: pointer; color: var(--text-color); opacity: 0.3; transition: opacity 0.2s, color 0.3s ease; z-index: 301; line-height: 1;
-        }
+        .lightbox-close { position: fixed; top: 30px; right: 40px; font-size: 3rem; font-weight: 300; cursor: pointer; color: var(--text-color); opacity: 0.3; transition: opacity 0.2s, color 0.3s ease; z-index: 301; line-height: 1; }
         .lightbox-close:hover { opacity: 1; }
         .lightbox-content { display: flex; max-width: 1200px; width: 100%; gap: 60px; align-items: center; margin: auto; }
-        
-        .lightbox-left { 
-            flex: 1.5; display: flex; justify-content: flex-end; 
-            max-height: 85vh; align-items: center; 
-            position: relative; z-index: 10;
-        }
-        
-        .lightbox-left img { 
-            max-width: 100%; max-height: 85vh; object-fit: contain; 
-            cursor: zoom-in; 
-            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-            transform-origin: center center;
-        }
-        
-        .lightbox-right { 
-            flex: 1; display: flex; flex-direction: column; text-align: left; 
-            position: relative; z-index: 5;
-        }
-        
+        .lightbox-left { flex: 1.5; display: flex; justify-content: flex-end; max-height: 85vh; align-items: center; position: relative; z-index: 10; }
+        .lightbox-left img { max-width: 100%; max-height: 85vh; object-fit: contain; cursor: zoom-in; transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: center center; }
+        .lightbox-right { flex: 1; display: flex; flex-direction: column; text-align: left; position: relative; z-index: 5; }
         .lightbox-text strong { font-size: 1.4rem; display: block; margin-bottom: 5px; color: var(--text-color); transition: color 0.3s ease; }
         .lightbox-specs { font-size: 1rem; color: var(--text-muted); margin-bottom: 15px; font-style: italic; transition: color 0.3s ease; }
         .lightbox-text p { font-size: 1rem; line-height: 1.6; color: var(--text-color); margin: 0; transition: color 0.3s ease; }
 
         /* --- CANVAS --- */
-        #canvas { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            display: block; z-index: 1; cursor: none; touch-action: none; 
-            transition: filter 0.3s ease;
-        }
-
-        body.dark-mode #canvas {
-            filter: invert(1) hue-rotate(180deg);
-        }
+        #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; z-index: 1; cursor: none; touch-action: none; transition: filter 0.3s ease; }
+        body.dark-mode #canvas { filter: invert(1) hue-rotate(180deg); }
 
         /* --- BREAKPOINTS --- */
         @media (max-width: 1024px) {
             .download-icon { display: flex; }
             .ig-icon, .download-icon, .theme-toggle { width: 22px; height: 22px; }
-
-            /* Revert About layout to stacked for tablets */
             #page-about { overflow-y: auto; }
             #page-about .overlay-content { padding: 120px 40px 60px 40px; align-items: flex-start; }
             .about-container { flex-direction: column; align-items: center; gap: 30px; width: 100%; height: auto; max-width: 1200px; }
             .about-image, .about-text { flex: none; width: 100%; height: auto; padding: 0; overflow: visible; }
             .about-image { max-height: 65vh; justify-content: center; }
             .about-image img { max-height: 65vh; width: 100%; object-fit: contain; object-position: center; }
-            .about-frace { align-self: center; margin-top: 30px; } 
+            
+            /* Repositioning closer to text */
+            .sym-1 { top: 5%; right: -2%; width: 100px; opacity: 0.3; }
+            .sym-2 { top: 15%; left: -10px; width: 90px; opacity: 0.3; }
+            .sym-3 { top: 40%; right: 5%; width: 70px; opacity: 0.3; }
+            .sym-5 { top: 60%; left: 10%; width: 90px; opacity: 0.3; }
+            .sym-6 { top: 25%; right: 10%; left: auto; width: 80px; opacity: 0.3; }
+            
+            .frace-cabbage-wrapper { justify-content: center; } 
             
             .works-grid { grid-template-columns: repeat(2, 1fr); gap: 60px; } 
             .work-image { aspect-ratio: auto; display: block; }
             .work-image img { height: auto; display: block; }
-
             .lightbox-content { flex-direction: column; gap: 30px; margin-top: 20px; }
             .lightbox-left { justify-content: center; max-height: 60vh; }
             .lightbox-left img { max-height: 60vh; }
         }
 
-        @media (max-width: 768px) {
-            .top-left-logo { width: 170px; top: 20px; left: 15px; }
-            .nav-links { top: 28px; right: 15px; gap: 10px; max-width: calc(100vw - 200px); justify-content: flex-end; align-items: center; flex-wrap: wrap; }
-            .nav-links a { font-size: 0.55rem; letter-spacing: 0; white-space: nowrap; text-align: center; }
-            .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 12px; }
-            .footer a { font-size: 0.55rem; } 
-            .ig-icon, .download-icon, .theme-toggle { width: 22px; height: 22px; }
-            .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
-            #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
-            
-            /* Revert About layout to stacked for mobile */
-            #page-about .overlay-content { padding-top: 90px; padding-bottom: 150px; }
-            .about-image { max-height: 60vh; }
-            .about-image img { max-height: 60vh; object-position: center; }
-            
-            .works-grid { grid-template-columns: 1fr; gap: 80px; }
-            .overlay-content { padding-top: 90px; padding-bottom: 150px; }
-            
-            .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
-            .lightbox-left img { max-height: 50vh; }
+ @media (max-width: 768px) {
+    .top-left-logo { width: 170px; top: 20px; left: 15px; }
+    .nav-links { top: 28px; right: 15px; gap: 10px; max-width: calc(100vw - 200px); justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .nav-links a, .dropbtn { font-size: 0.55rem; letter-spacing: 0; white-space: nowrap; text-align: center; }
+    .dropdown-content { padding-top: 15px; gap: 12px; }
+    .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 12px; }
+    .footer a { font-size: 0.55rem; } 
+    .ig-icon, .download-icon, .theme-toggle { width: 22px; height: 22px; }
+    .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
+    #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
+    #page-about .overlay-content { padding-top: 90px; padding-bottom: 150px; }
+    .about-image { max-height: 60vh; }
+    .about-image img { max-height: 60vh; object-position: center; }
+    
+    .sym-3 { top: 45%; right: 2%; }
+    .sym-5 { top: 65%; left: 2%; }
+    .frace-cabbage-wrapper { gap: 20px; margin-top: 30px; }
+    .about-frace { width: 100px; }
+    .boy-cabbage { width: 140px; }
+    
+    .slider-arrow { width: 15px; height: 15px; }
+    .left-arrow { left: 15px; } .right-arrow { right: 15px; }
+    
+    .enquiry-title-img { max-width: 250px; }
 
-            .form-group { flex-direction: column; }
-            .form-group label { width: 100%; margin-bottom: 8px; padding-top: 0; }
-            .submit-btn, .form-footer { margin-left: 0; }
-        }
+    .works-grid { grid-template-columns: 1fr; gap: 80px; }
+    .overlay-content { padding-top: 90px; padding-bottom: 150px; }
+    .none-desktop { display: none !important; }
+    .none-mobile { display: block !important; }
+    .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
+    .lightbox-left img { max-height: 50vh; }
+    
+    /* CONTACT FORM UPDATES */
+    .form-group { flex-direction: column; }
+    .form-group label { width: 100%; margin-bottom: 8px; padding-top: 0; }
+    .submit-btn, .form-footer { margin-left: 0; }
+    
+    /* Response Message & Symbol Fixes */
+    #responseMessage {
+        margin-left: 0 !important;
+        text-align: left;
+    }
+    
+    .sym-4 {
+        right: 40px !important; /* Move slightly right to center better */
+        bottom: -50px !important;
+        width: 220px !important;
+        opacity: 0.9;
+    }
+}
     </style>
 </head>
 <body>
@@ -410,7 +575,20 @@
     
     <div class="nav-links">
         <a id="btn-about">About</a>
-        <a id="btn-works">Gallery</a>
+        
+        <div class="dropdown">
+            <a class="dropbtn" id="btn-gallery" style="cursor:pointer">
+                <div class="gallery-wrapper">
+                    <span id="btn-gallery-text">Gallery</span>
+                    <img src="random/galleryglitch.png" id="btn-gallery-img" class="gallery-glitch-img">
+                </div>
+            </a>
+            <div class="dropdown-content">
+                <a id="btn-exhibitions">Exhibitions</a>
+                <a id="btn-press">Press</a>
+            </div>
+        </div>
+
         <a href="https://shop.tyronemoreno.com" target="_blank" rel="noopener noreferrer">Shop</a>
         <a id="btn-contact">Contact</a>
     </div>
@@ -463,16 +641,44 @@
     <div id="page-about" class="page-overlay">
         <div class="overlay-content">
             <div class="about-container">
-                <div class="about-image">
-                    <img src="me/aboutme_01.png" alt="Tyrone Moreno">
-                </div>
+               <div class="about-image">
+    <div class="slider-arrow left-arrow" onclick="prevAboutImage()"></div>
+    <img id="about-img-1" class="active" src="me/aboutme_001.jpg" alt="Tyrone Moreno">
+    <img id="about-img-2" src="me/aboutme_002.jpg" alt="Tyrone Moreno">
+    <div class="slider-arrow right-arrow" onclick="nextAboutImage()"></div>
+</div>
                 <div class="about-text">
+                    
+                    <img src="random/symbols_01.png" class="art-symbol sym-1" alt="Symbol 1">
+                    <img src="random/symbols_02.png" class="art-symbol sym-2" alt="Symbol 2">
+                    <img src="random/symbols_03.png" class="art-symbol sym-3" alt="Symbol 3">
+                    <img src="random/symbols_05.png" class="art-symbol sym-5" alt="Symbol 5">
+                    <img src="random/symbols_06.png" class="art-symbol sym-6" alt="Symbol 6">
+                    
                     <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English artist who delves into creating uninhibited art in an attempt to deal with my extreme ADHD.</p>
-                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel human; the flow state of creating is the closest we get to dreaming whilst awake.</p>
+                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img src="random/human_01.png" alt="human" class="inline-human">; the flow state of creating is the closest we get to dreaming whilst awake.</p>
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
-                    <img src="frace.png" alt="Frace" class="about-frace">
+                    
+                    <div class="frace-cabbage-wrapper">
+                        <img src="frace.png" alt="Frace" class="about-frace">
+                        <img src="random/boycabbage_01.png" alt="Boy Cabbage" class="boy-cabbage">
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="page-exhibitions" class="page-overlay none-page">
+        <div class="overlay-content">
+            <img src="random/none_horizontal.png" class="none-desktop" alt="None">
+            <img src="random/none_vertical.png" class="none-mobile" alt="None">
+        </div>
+    </div>
+
+    <div id="page-press" class="page-overlay none-page">
+        <div class="overlay-content">
+            <img src="random/none_horizontal.png" class="none-desktop" alt="None">
+            <img src="random/none_vertical.png" class="none-mobile" alt="None">
         </div>
     </div>
 
@@ -496,48 +702,59 @@
                         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
                     </div>
 
+                    <div class="work-item" onclick="openLightbox('artwork/notitle.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '')">
+                        <div class="work-image"><img src="artwork/small/notitle_small.jpg" alt="Notitle"></div>
+                        <div class="work-caption"><span>Notitle</span><span>2023</span></div>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="page-contact" class="page-overlay">
-        <div class="overlay-content">
-            <div class="form-container">
-                <h2 class="form-title">ENQUIRY FORM</h2>
-                
-                <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
-                    <input type="hidden" name="access_key" value="b05857c6-21f6-487a-a50f-c3ed2a02c639">
-                    <input type="hidden" name="subject" value="New Website Enquiry | tyronemoreno.com">
-                    <input type="hidden" name="from_name" value="tyronemoreno.com Contact Form">
-                    <input type="hidden" name="redirect" value="false">
+<div id="page-contact" class="page-overlay">
+    <div class="overlay-content">
+        <div class="form-container">
+            
+            <img src="random/enquiryform.png" alt="Enquiry Form" class="enquiry-title-img">
+            
+            <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
+                <input type="hidden" name="access_key" value="b05857c6-21f6-487a-a50f-c3ed2a02c639">
+                <input type="hidden" name="subject" value="New Website Enquiry | tyronemoreno.com">
+                <input type="hidden" name="from_name" value="tyronemoreno.com Contact Form">
+                <input type="hidden" name="redirect" value="false">
 
-                    <div class="form-group">
-                        <label for="name">Name *</label>
-                        <input type="text" id="name" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email *</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone</label>
-                        <input type="tel" id="phone" name="phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="message">Message *</label>
-                        <textarea id="message" name="message" rows="6" required minlength="5"></textarea>
-                    </div>
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message *</label>
+                    <textarea id="message" name="message" rows="6" required minlength="5"></textarea>
+                </div>
+
+                <div class="button-row">
                     <button type="submit" class="submit-btn" id="submitButton">SEND ENQUIRY</button>
-                    <div id="responseMessage" style="margin-left: 150px; margin-top: 15px; font-weight: bold;"></div>
-                </form>
-
-                <div class="form-footer">
-                    <p>* Required fields</p>
+                    <img src="random/symbols_04.png" class="art-symbol sym-4" alt="Symbol 4">
                 </div>
+            </form>
+
+            <div id="responseMessage" style="margin-left: 150px; margin-top: 15px; font-weight: bold; height: 1.5em;"></div>
+            
+            <div class="form-footer">
+                <p>* Required fields</p>
             </div>
         </div>
     </div>
+</div>
 
     <div id="lightbox" class="lightbox">
         <div class="lightbox-close" onclick="closeLightbox()">×</div>
@@ -583,27 +800,20 @@
             const timeDiff = currentTime - lastThemeClickTime;
 
             if (timeDiff < 350) {
-                // DOUBLE CLICK / TAP DETECTED
                 clearTimeout(themeClickTimer);
                 isCustomBg = true;
-                
-                // Generate Random Color
                 const r = Math.floor(Math.random() * 256);
                 const g = Math.floor(Math.random() * 256);
                 const b = Math.floor(Math.random() * 256);
                 const randomColor = `rgb(${r}, ${g}, ${b})`;
-                
-                // Calculate Luminance to ensure readable text
                 const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
                 const isDark = luminance < 0.5;
-
                 const textCol = isDark ? '#ffffff' : '#1a1a1a';
                 const textMuted = isDark ? '#aaaaaa' : '#666666';
                 const logoFil = isDark ? 'invert(1)' : 'none';
                 const overlayBg = `rgba(${r}, ${g}, ${b}, 0.97)`;
                 const lightboxBg = `rgba(${r}, ${g}, ${b}, 0.98)`;
 
-                // Override CSS Variables Inline
                 document.body.style.setProperty('--bg-color', randomColor);
                 document.body.style.setProperty('--text-color', textCol);
                 document.body.style.setProperty('--text-muted', textMuted);
@@ -612,28 +822,20 @@
                 document.body.style.setProperty('--logo-filter', logoFil);
                 document.body.style.setProperty('--dot-color', textCol);
                 document.body.style.setProperty('--frace-blend', isDark ? 'screen' : 'multiply');
-                
-                // Disable dark mode filter so it doesn't invert our new random color
                 document.body.classList.remove('dark-mode');
-                
-                // Wipe and fill canvas with new random color
                 currentCanvasBg = randomColor;
                 resize();
-
-                lastThemeClickTime = 0; // Reset for next tap
+                lastThemeClickTime = 0;
             } else {
-                // SINGLE CLICK / TAP DETECTED
                 lastThemeClickTime = currentTime;
                 themeClickTimer = setTimeout(() => {
                     if (isCustomBg) {
-                        // Reset from custom color back to standard modes
                         isCustomBg = false;
                         document.body.removeAttribute('style');
                         document.body.classList.toggle('dark-mode', isDarkMode);
                         currentCanvasBg = '#ffffff';
                         resize();
                     } else {
-                        // Standard light/dark toggle
                         isDarkMode = !isDarkMode;
                         document.body.classList.toggle('dark-mode', isDarkMode);
                     }
@@ -641,20 +843,16 @@
             }
         });
 
-
        // --- DOWNLOAD CANVAS LOGIC ---
         function downloadArtwork() {
             try {
                 const mainCanvas = document.getElementById('canvas');
                 const tempCanvas = document.createElement('canvas');
-                
-                // MULTIPLIER FOR HIGH-RES EXPORT (3x is standard for crisp mobile/print)
                 const exportScale = 3; 
                 tempCanvas.width = mainCanvas.width * exportScale;
                 tempCanvas.height = mainCanvas.height * exportScale;
                 const tCtx = tempCanvas.getContext('2d');
                 
-                // We draw the main canvas scaled up to fit the new high-res temp canvas
                 if (isCustomBg) {
                     tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
                 } else {
@@ -667,22 +865,16 @@
                 
                 const logo = document.getElementById('btn-home');
                 if (logo && logo.complete) {
-                    // Target visual width (90px) multiplied by our export scale so it stays sharp
                     const targetWidth = 80;
                     const logoWidth = targetWidth * exportScale; 
                     const aspect = logo.naturalHeight / (logo.naturalWidth || 1);
                     const logoHeight = logoWidth * aspect;
-                    
                     tCtx.save();
-                    
                     const needsInvert = isCustomBg ? (document.body.style.getPropertyValue('--logo-filter') === 'invert(1)') : isDarkMode;
                     if (needsInvert) { tCtx.filter = 'invert(1)'; }
-                    
-                    const padding = 8 * exportScale; // Scale the padding too
+                    const padding = 8 * exportScale;
                     const xPos = tempCanvas.width - logoWidth - padding;
                     const yPos = tempCanvas.height - logoHeight - padding;
-                    
-                    // Draw the high-res logo onto the high-res canvas
                     tCtx.drawImage(logo, xPos, yPos, logoWidth, logoHeight);
                     tCtx.restore();
                 }
@@ -696,58 +888,110 @@
             }
         }
 
-        // --- NAVIGATION LOGIC ---
+        // --- GALLERY GLITCH EFFECT ---
+        function glitchGallery() {
+            const textEl = document.getElementById('btn-gallery-text');
+            const imgEl = document.getElementById('btn-gallery-img');
+            
+            if(textEl && imgEl) {
+                // Keep the exact box space of the text so the image doesn't shift
+                textEl.style.visibility = 'hidden';
+                imgEl.style.display = 'block';
+                imgEl.classList.add('is-glitching');
+                
+                setTimeout(() => {
+                    textEl.style.visibility = 'visible';
+                    imgEl.style.display = 'none';
+                    imgEl.classList.remove('is-glitching');
+                }, Math.random() * 500 + 350);
+            }
+            
+            setTimeout(glitchGallery, Math.random() * 4000 + 2000);
+        }
+        setTimeout(glitchGallery, Math.random() * 4000 + 2000);
+
+
+        // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
         const btnAbout = document.getElementById('btn-about');
-        const btnWorks = document.getElementById('btn-works');
+        const btnGallery = document.getElementById('btn-gallery');
+        const btnExhibitions = document.getElementById('btn-exhibitions');
+        const btnPress = document.getElementById('btn-press');
         const btnContact = document.getElementById('btn-contact');
         
         const pageAbout = document.getElementById('page-about');
         const pageWorks = document.getElementById('page-works');
+        const pageExhibitions = document.getElementById('page-exhibitions');
+        const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
 
         function clearNavigation() {
             pageAbout.classList.remove('visible');
             pageWorks.classList.remove('visible');
+            pageExhibitions.classList.remove('visible');
+            pagePress.classList.remove('visible');
             pageContact.classList.remove('visible');
             
             btnAbout.classList.remove('active');
-            btnWorks.classList.remove('active');
+            btnGallery.classList.remove('active');
+            btnExhibitions.classList.remove('active');
+            btnPress.classList.remove('active');
             btnContact.classList.remove('active');
             
             document.body.classList.remove('overlay-open');
             closeLightbox();
             document.body.style.cursor = 'none';
             
-            if (isIOS) {
-                document.getElementById('ios-brush-selector').style.display = 'flex';
-            }
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
         }
 
-        btnHome.addEventListener('click', clearNavigation);
-        
-        btnAbout.addEventListener('click', () => {
+        function openAbout() {
+            if (pageAbout.classList.contains('visible')) return;
             clearNavigation();
             pageAbout.classList.add('visible');
             btnAbout.classList.add('active');
             document.body.classList.add('overlay-open');
             document.body.style.cursor = 'default';
-            
-            if (isIOS) {
-                document.getElementById('ios-brush-selector').style.display = 'none';
-            }
-        });
-        
-        btnWorks.addEventListener('click', () => {
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+        }
+
+        function openWorks() {
+            if (pageWorks.classList.contains('visible')) return;
             clearNavigation();
             pageWorks.classList.add('visible');
-            btnWorks.classList.add('active');
+            btnGallery.classList.add('active');
             document.body.classList.add('overlay-open');
             document.body.style.cursor = 'default';
-            
-            if (isIOS) {
-                document.getElementById('ios-brush-selector').style.display = 'none';
-            }
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+        }
+
+        btnHome.addEventListener('click', clearNavigation);
+        
+        // Desktop Hover triggers & Mobile Clicks
+        btnAbout.addEventListener('click', openAbout);
+        btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openAbout(); });
+
+        btnGallery.addEventListener('click', openWorks);
+        btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openWorks(); });
+
+        btnExhibitions.addEventListener('click', () => {
+            clearNavigation();
+            pageExhibitions.classList.add('visible');
+            btnExhibitions.classList.add('active');
+            btnGallery.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+        });
+
+        btnPress.addEventListener('click', () => {
+            clearNavigation();
+            pagePress.classList.add('visible');
+            btnPress.classList.add('active');
+            btnGallery.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
         });
 
         btnContact.addEventListener('click', () => {
@@ -756,11 +1000,55 @@
             btnContact.classList.add('active');
             document.body.classList.add('overlay-open');
             document.body.style.cursor = 'default';
-            
-            if (isIOS) {
-                document.getElementById('ios-brush-selector').style.display = 'none';
-            }
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
         });
+
+        // --- ABOUT PAGE IMAGE SLIDER ---
+       const aboutImages = ['me/aboutme_001.jpg', 'me/aboutme_002.jpg', 'me/aboutme_003.jpg', 'me/aboutme_004.jpg', 'me/aboutme_005.jpg']; 
+let currentAboutIdx = 0;
+let aboutSlideInterval;
+
+function updateAboutImage(newIdx) {
+    const img1 = document.getElementById('about-img-1');
+    const img2 = document.getElementById('about-img-2');
+
+    // Find the currently visible image and the next one
+    const activeImg = img1.classList.contains('active') ? img1 : img2;
+    const nextImg = activeImg === img1 ? img2 : img1;
+
+    // Set the source of the hidden image, then swap the 'active' class
+    nextImg.src = aboutImages[newIdx];
+    nextImg.classList.add('active');
+    activeImg.classList.remove('active');
+}
+
+function nextAboutImage() {
+    currentAboutIdx = (currentAboutIdx + 1) % aboutImages.length;
+    updateAboutImage(currentAboutIdx);
+    resetAboutInterval();
+}
+
+function prevAboutImage() {
+    currentAboutIdx = (currentAboutIdx - 1 + aboutImages.length) % aboutImages.length;
+    updateAboutImage(currentAboutIdx);
+    resetAboutInterval();
+}
+
+// Keep your existing startAboutInterval and resetAboutInterval functions as they are
+
+        function startAboutInterval() {
+            // Slower transition set to 4000ms (4 seconds)
+            aboutSlideInterval = setInterval(nextAboutImage, 4000);
+        }
+
+        function resetAboutInterval() {
+            clearInterval(aboutSlideInterval);
+            startAboutInterval();
+        }
+        
+        // Start slider loop automatically
+        startAboutInterval();
+
 
         // --- LIGHTBOX ZOOM AND PAN ENGINE ---
         let zoomState = 0; 
@@ -770,14 +1058,12 @@
         function openLightbox(src, title, year, specs, desc) {
             const lbImg = document.getElementById('lb-img');
             lbImg.src = src;
-            
             zoomState = 0;
             currentOriginX = 50;
             currentOriginY = 50;
             lbImg.style.cursor = 'zoom-in';
             lbImg.style.transform = 'scale(1)';
             lbImg.style.transformOrigin = 'center center';
-            
             document.getElementById('lb-title').innerText = title;
             document.getElementById('lb-year').innerText = year;
             document.getElementById('lb-specs').innerText = specs;
@@ -802,7 +1088,6 @@
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
             resetZoom();
-            
             setTimeout(() => {
                 if (!document.getElementById('lightbox').classList.contains('active')) {
                     document.getElementById('lb-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -811,30 +1096,23 @@
         }
 
         const lbImg = document.getElementById('lb-img');
-        
         lbImg.addEventListener('click', function(e) {
             const previousZoomState = zoomState;
             zoomState = (zoomState + 1) % 3;
-            
             if (zoomState > 0) {
                 const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
                 const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
                 const activeScale = zoomState === 1 ? scale1 : scale2;
-
                 this.style.cursor = zoomState === 1 ? 'zoom-in' : 'zoom-out'; 
                 this.style.transform = `scale(${activeScale})`; 
-                
                 if (previousZoomState === 0) {
                     const parentRect = this.parentElement.getBoundingClientRect();
                     const x = ((e.clientX - parentRect.left) / parentRect.width) * 100;
                     const y = ((e.clientY - parentRect.top) / parentRect.height) * 100;
-                    
                     currentOriginX = Math.max(0, Math.min(100, x));
                     currentOriginY = Math.max(0, Math.min(100, y));
                 }
-
                 this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                
             } else {
                 resetZoom();
             }
@@ -842,28 +1120,18 @@
 
         // Desktop Mouse Tracking
         let isTouching = false;
-        
         document.addEventListener('mousemove', function(e) {
             if (zoomState === 0 || isTouching) return;
-            
             const imgEl = document.getElementById('lb-img');
             const rect = imgEl.getBoundingClientRect();
             const buffer = 30; 
-            
-            if (
-                e.clientX < rect.left - buffer || 
-                e.clientX > rect.right + buffer || 
-                e.clientY < rect.top - buffer || 
-                e.clientY > rect.bottom + buffer
-            ) {
+            if (e.clientX < rect.left - buffer || e.clientX > rect.right + buffer || e.clientY < rect.top - buffer || e.clientY > rect.bottom + buffer) {
                 resetZoom();
                 return;
             }
-            
             const parentRect = imgEl.parentElement.getBoundingClientRect();
             const x = ((e.clientX - parentRect.left) / parentRect.width) * 100;
             const y = ((e.clientY - parentRect.top) / parentRect.height) * 100;
-            
             currentOriginX = Math.max(0, Math.min(100, x));
             currentOriginY = Math.max(0, Math.min(100, y));
             imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
@@ -872,7 +1140,6 @@
         // Mobile Touch Tracking
         let touchStartX = 0;
         let touchStartY = 0;
-
         document.addEventListener('touchstart', function(e) {
             isTouching = true;
             if (zoomState > 0 && e.target.id === 'lb-img') {
@@ -880,49 +1147,32 @@
                 touchStartY = e.touches[0].clientY;
             }
         }, { passive: false });
-
         document.addEventListener('touchend', function() {
             setTimeout(() => { isTouching = false; }, 100);
         });
-
         document.addEventListener('touchmove', function(e) {
             if (zoomState > 0 && e.target.closest('.lightbox-left')) {
                 e.preventDefault(); 
-                
                 const imgEl = document.getElementById('lb-img');
                 const rect = imgEl.getBoundingClientRect();
                 const buffer = 30;
-                
                 const clientX = e.touches[0].clientX;
                 const clientY = e.touches[0].clientY;
-                
-                if (
-                    clientX < rect.left - buffer || 
-                    clientX > rect.right + buffer || 
-                    clientY < rect.top - buffer || 
-                    clientY > rect.bottom + buffer
-                ) {
+                if (clientX < rect.left - buffer || clientX > rect.right + buffer || clientY < rect.top - buffer || clientY > rect.bottom + buffer) {
                     resetZoom();
                     return;
                 }
-
                 const dx = clientX - touchStartX;
                 const dy = clientY - touchStartY;
-                
                 const parentRect = imgEl.parentElement.getBoundingClientRect();
-                
                 const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
                 const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
                 const activeScale = zoomState === 1 ? scale1 : scale2;
-                
                 currentOriginX -= (dx / parentRect.width) * 100 / activeScale;
                 currentOriginY -= (dy / parentRect.height) * 100 / activeScale;
-                
                 currentOriginX = Math.max(0, Math.min(100, currentOriginX));
                 currentOriginY = Math.max(0, Math.min(100, currentOriginY));
-                
                 imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                
                 touchStartX = clientX;
                 touchStartY = clientY;
             }
@@ -939,12 +1189,10 @@
         // --- PAINT ENGINE ---
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
         let lastX = 0, lastY = 0, lastTime = Date.now();
         const isMobile = window.innerWidth < 768;
         const brushBaseScale = isMobile ? 18 : 45;
 
-        // Expanded Palette Selection 
         const palettes = [
             ['#0a0a0a', '#ff3e00', '#0059ff', '#ffcc00', '#b5179e', '#ffffff', '#8a00d4'], 
             ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'], 
@@ -1192,7 +1440,14 @@
         resize(); dipBrush();
 
         function draw(x, y, forceDip = false) {
-            if(pageAbout.classList.contains('visible') || pageWorks.classList.contains('visible') || pageContact.classList.contains('visible') || document.getElementById('lightbox').classList.contains('active')) return;
+            if(
+                pageAbout.classList.contains('visible') || 
+                pageWorks.classList.contains('visible') || 
+                pageExhibitions.classList.contains('visible') ||
+                pagePress.classList.contains('visible') ||
+                pageContact.classList.contains('visible') || 
+                document.getElementById('lightbox').classList.contains('active')
+            ) return;
 
             const now = Date.now(), delta = now - lastTime;
             if (delta > 200 || forceDip) { dipBrush(); lastX = x; lastY = y; }
@@ -1297,7 +1552,14 @@
         
         // --- CLICK TO SHUFFLE PALETTE (DESKTOP) ---
         canvas.addEventListener('click', (e) => {
-            if(!pageAbout.classList.contains('visible') && !pageWorks.classList.contains('visible') && !pageContact.classList.contains('visible') && !document.getElementById('lightbox').classList.contains('active')) {
+            if(
+                !pageAbout.classList.contains('visible') && 
+                !pageWorks.classList.contains('visible') && 
+                !pageExhibitions.classList.contains('visible') &&
+                !pagePress.classList.contains('visible') &&
+                !pageContact.classList.contains('visible') && 
+                !document.getElementById('lightbox').classList.contains('active')
+            ) {
                 shufflePalette();
             }
         });
@@ -1350,7 +1612,6 @@
             body: formData
         })
         .then(async (response) => {
-            let json = await response.json();
             if (response.status == 200) {
                 responseMessage.innerText = "Enquiry sent successfully!";
                 form.reset();
