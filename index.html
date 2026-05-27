@@ -860,7 +860,7 @@
             }
         });
 
- // --- DOWNLOAD CANVAS LOGIC ---
+// --- DOWNLOAD CANVAS LOGIC ---
 function downloadArtwork() {
     try {
         const mainCanvas = document.getElementById('canvas');
@@ -870,22 +870,21 @@ function downloadArtwork() {
         tempCanvas.height = mainCanvas.height * exportScale;
         const tCtx = tempCanvas.getContext('2d');
         
-        // Hard-code a solid dark black background for the download image
-        tCtx.fillStyle = '#1a1a1a';
+        // 1. Get the current background color as it is rendered
+        const computedBg = getComputedStyle(document.body).getPropertyValue('--bg-color').trim();
+        
+        // 2. Fill the download canvas with the exact background color from the page
+        tCtx.fillStyle = computedBg;
         tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         
-        // If the current site state is NOT dark mode, 
-        // we invert the artwork so it looks correct against the black background.
-        // If the site IS already in dark mode, we don't need to invert it again.
-        const isDark = document.body.classList.contains('dark-mode') || isCustomBg;
+        // 3. Apply the same filter that is on the live canvas
+        // This ensures the brush strokes match the visual output
+        tCtx.filter = getComputedStyle(mainCanvas).filter;
         
-        if (!isDark) { 
-            tCtx.filter = 'invert(1) hue-rotate(180deg)'; 
-        }
-        
+        // 4. Draw the artwork content
         tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-        tCtx.filter = 'none';
-
+        
+        // 5. Open for download
         const w = window.open('about:blank', '_blank');
         w.document.write('<img src="' + tempCanvas.toDataURL('image/png') + '" style="width:100%;"/>');
         w.document.write('<p style="text-align:center; font-family:sans-serif;">Long press image to save to Photos</p>');
