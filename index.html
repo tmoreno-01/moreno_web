@@ -880,21 +880,6 @@
                     tCtx.filter = 'none';
                 }
                 
-                const logo = document.getElementById('btn-home');
-                if (logo && logo.complete) {
-                    const targetWidth = 80;
-                    const logoWidth = targetWidth * exportScale; 
-                    const aspect = logo.naturalHeight / (logo.naturalWidth || 1);
-                    const logoHeight = logoWidth * aspect;
-                    tCtx.save();
-                    const needsInvert = isCustomBg ? (document.body.style.getPropertyValue('--logo-filter') === 'invert(1)') : isDarkMode;
-                    if (needsInvert) { tCtx.filter = 'invert(1)'; }
-                    const padding = 8 * exportScale;
-                    const xPos = tempCanvas.width - logoWidth - padding;
-                    const yPos = tempCanvas.height - logoHeight - padding;
-                    tCtx.drawImage(logo, xPos, yPos, logoWidth, logoHeight);
-                    tCtx.restore();
-                }
 
                 const w = window.open('about:blank', '_blank');
                 w.document.write('<img src="' + tempCanvas.toDataURL('image/png') + '" style="width:100%;"/>');
