@@ -860,7 +860,7 @@
             }
         });
 
-   // --- DOWNLOAD CANVAS LOGIC ---
+ // --- DOWNLOAD CANVAS LOGIC ---
 function downloadArtwork() {
     try {
         const mainCanvas = document.getElementById('canvas');
@@ -870,32 +870,28 @@ function downloadArtwork() {
         tempCanvas.height = mainCanvas.height * exportScale;
         const tCtx = tempCanvas.getContext('2d');
         
-        // Get the current background color directly from the body style
-        const computedBg = getComputedStyle(document.body).getPropertyValue('--bg-color').trim();
+        // Hard-code a solid dark black background for the download image
+        tCtx.fillStyle = '#1a1a1a';
+        tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
         
-        // If it's a custom random color, use that, otherwise use the standard logic
-        if (isCustomBg) {
-            tCtx.fillStyle = computedBg;
-            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-        } else {
-            const isDark = document.body.classList.contains('dark-mode');
-            tCtx.fillStyle = isDark ? '#1a1a1a' : '#ffffff';
-            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            
-            if (isDark) { 
-                tCtx.filter = 'invert(1) hue-rotate(180deg)'; 
-            }
-            tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-            tCtx.filter = 'none';
+        // If the current site state is NOT dark mode, 
+        // we invert the artwork so it looks correct against the black background.
+        // If the site IS already in dark mode, we don't need to invert it again.
+        const isDark = document.body.classList.contains('dark-mode') || isCustomBg;
+        
+        if (!isDark) { 
+            tCtx.filter = 'invert(1) hue-rotate(180deg)'; 
         }
+        
+        tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+        tCtx.filter = 'none';
 
         const w = window.open('about:blank', '_blank');
         w.document.write('<img src="' + tempCanvas.toDataURL('image/png') + '" style="width:100%;"/>');
         w.document.write('<p style="text-align:center; font-family:sans-serif;">Long press image to save to Photos</p>');
     } catch (error) {
         console.error(error);
-        alert("Download blocked: Please ensure you are running on a live domain.");
+        alert("Download failed.");
     }
 }
 
