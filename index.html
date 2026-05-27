@@ -860,35 +860,39 @@
             }
         });
 
-       // --- DOWNLOAD CANVAS LOGIC ---
-        function downloadArtwork() {
-            try {
-                const mainCanvas = document.getElementById('canvas');
-                const tempCanvas = document.createElement('canvas');
-                const exportScale = 3; 
-                tempCanvas.width = mainCanvas.width * exportScale;
-                tempCanvas.height = mainCanvas.height * exportScale;
-                const tCtx = tempCanvas.getContext('2d');
-                
-                if (isCustomBg) {
-                    tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-                } else {
-                    tCtx.fillStyle = isDarkMode ? '#1a1a1a' : '#ffffff';
-                    tCtx.fillRect(0,0, tempCanvas.width, tempCanvas.height);
-                    if (isDarkMode) { tCtx.filter = 'invert(1) hue-rotate(180deg)'; }
-                    tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-                    tCtx.filter = 'none';
-                }
-                
-
-                const w = window.open('about:blank', '_blank');
-                w.document.write('<img src="' + tempCanvas.toDataURL('image/png') + '" style="width:100%;"/>');
-                w.document.write('<p style="text-align:center; font-family:sans-serif;">Long press image to save to Photos</p>');
-            } catch (error) {
-                console.error(error);
-                alert("Download blocked: Please ensure you are running on a live domain.");
+      // --- DOWNLOAD CANVAS LOGIC ---
+function downloadArtwork() {
+    try {
+        const mainCanvas = document.getElementById('canvas');
+        const tempCanvas = document.createElement('canvas');
+        const exportScale = 3; 
+        tempCanvas.width = mainCanvas.width * exportScale;
+        tempCanvas.height = mainCanvas.height * exportScale;
+        const tCtx = tempCanvas.getContext('2d');
+        
+        if (isCustomBg) {
+            tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+        } else {
+            // FIX: Check for dark-mode class to set the correct background
+            const isDark = document.body.classList.contains('dark-mode');
+            tCtx.fillStyle = isDark ? '#1a1a1a' : '#ffffff';
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            if (isDark) { 
+                tCtx.filter = 'invert(1) hue-rotate(180deg)'; 
             }
+            tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.filter = 'none';
         }
+
+        const w = window.open('about:blank', '_blank');
+        w.document.write('<img src="' + tempCanvas.toDataURL('image/png') + '" style="width:100%;"/>');
+        w.document.write('<p style="text-align:center; font-family:sans-serif;">Long press image to save to Photos</p>');
+    } catch (error) {
+        console.error(error);
+        alert("Download blocked: Please ensure you are running on a live domain.");
+    }
+}
 
         // --- GALLERY GLITCH EFFECT ---
         function glitchGallery() {
