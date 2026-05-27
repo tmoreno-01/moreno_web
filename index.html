@@ -912,11 +912,11 @@ function downloadArtwork() {
                 // Invert the lightness
                 l = 1.0 - l;
 
-                // Lock pure white (which inverted to black) perfectly to #1a1a1a
+                // Lock pure white (which inverted to black) to TRUE FULL BLACK (#000000)
                 if (l === 0) {
-                    data[i] = 26;
-                    data[i+1] = 26;
-                    data[i+2] = 26;
+                    data[i] = 0;
+                    data[i+1] = 0;
+                    data[i+2] = 0;
                     continue;
                 }
 
@@ -940,8 +940,8 @@ function downloadArtwork() {
 
         const w = window.open('about:blank', '_blank');
         
-        // Style the download page to match your active theme
-        const bgColor = (isDarkMode && !isCustomBg) ? '#1a1a1a' : '#ffffff';
+        // Style the download page to match (True Black for Dark Mode)
+        const bgColor = (isDarkMode && !isCustomBg) ? '#000000' : '#ffffff';
         const textColor = (isDarkMode && !isCustomBg) ? '#ffffff' : '#1a1a1a';
         
         w.document.write(`<body style="background-color: ${bgColor}; color: ${textColor}; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;">`);
