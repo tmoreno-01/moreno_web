@@ -860,7 +860,7 @@
             }
         });
 
-      // --- DOWNLOAD CANVAS LOGIC ---
+   // --- DOWNLOAD CANVAS LOGIC ---
 function downloadArtwork() {
     try {
         const mainCanvas = document.getElementById('canvas');
@@ -870,10 +870,15 @@ function downloadArtwork() {
         tempCanvas.height = mainCanvas.height * exportScale;
         const tCtx = tempCanvas.getContext('2d');
         
+        // Get the current background color directly from the body style
+        const computedBg = getComputedStyle(document.body).getPropertyValue('--bg-color').trim();
+        
+        // If it's a custom random color, use that, otherwise use the standard logic
         if (isCustomBg) {
+            tCtx.fillStyle = computedBg;
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.drawImage(mainCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
         } else {
-            // FIX: Check for dark-mode class to set the correct background
             const isDark = document.body.classList.contains('dark-mode');
             tCtx.fillStyle = isDark ? '#1a1a1a' : '#ffffff';
             tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
