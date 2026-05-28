@@ -494,10 +494,18 @@
             max-width: 940px; /* Clamps massive images on desktop */
         }
 
-        .works-grid.mode-collage .work-image { 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
-            min-width: 500px; 
-        }
+      .works-grid.mode-collage .work-image { 
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
+    min-width: 540px; /* Prevents "tiny" status */
+    width: 100%;      /* Forces it to fill the cell */
+    overflow: hidden; /* Ensures if it hits the limit, it doesn't spill out */
+}
+.works-grid.mode-collage .work-image img {
+    width: 100%;      /* Image fills the container */
+    height: auto;     /* Maintains aspect ratio */
+    display: block;
+    max-width: 100%;  /* Prevents the image from forcing a width larger than its container */
+}
         
         @media (max-width: 1024px) {
             .works-grid.mode-collage .work-image,
