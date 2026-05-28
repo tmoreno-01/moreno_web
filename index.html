@@ -545,7 +545,7 @@
             
             .enquiry-title-img { max-width: 250px; }
 
-            .works-grid { grid-template-columns: 1fr; gap: 80px; }
+            .works-grid { grid-template-columns: 1fr; gap: 50px; }
             .overlay-content { padding-top: 90px; padding-bottom: 150px; }
             .none-desktop { display: none !important; }
             .none-mobile { display: block !important; }
@@ -1037,12 +1037,20 @@ function downloadArtwork() {
 
         btnHome.addEventListener('click', clearNavigation);
         
-        // Desktop Hover triggers & Mobile Clicks
+   // Desktop Hover triggers & Mobile Clicks
         btnAbout.addEventListener('click', openAbout);
         btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openAbout(); });
 
         btnGallery.addEventListener('click', openWorks);
         btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openWorks(); });
+        
+        // Mobile Fix: Bypass the double-tap requirement caused by the CSS :hover dropdown
+        btnGallery.addEventListener('touchend', (e) => {
+            if (window.innerWidth <= 1024) {
+                e.preventDefault(); // Stops the browser from simulating the hover state first
+                openWorks();
+            }
+        });
 
         btnExhibitions.addEventListener('click', () => {
             clearNavigation();
