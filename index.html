@@ -135,7 +135,7 @@
             transition: filter 0.3s ease;
         }
 
-        .theme-toggle, .download-icon {
+        .theme-toggle, .download-icon, .layout-toggle {
             cursor: pointer;
             width: 18px; height: 18px;
             display: flex; align-items: center; justify-content: center;
@@ -146,8 +146,8 @@
             touch-action: manipulation; 
         }
 
-        .theme-toggle:hover, .download-icon:hover { opacity: 1; }
-        .theme-toggle svg, .download-icon svg { width: 100%; height: 100%; }
+        .theme-toggle:hover, .download-icon:hover, .layout-toggle:hover { opacity: 1; }
+        .theme-toggle svg, .download-icon svg, .layout-toggle svg { width: 100%; height: 100%; }
         
         .icon-sun { display: block; }
         .icon-moon { display: none; }
@@ -332,18 +332,25 @@
             display: none;
         }
 
-        /* --- ABOUT PAGE (SLIDER ADDED) --- */
-        #page-about { overflow: hidden; }
-        #page-about .overlay-content { padding: 0; align-items: stretch; }
+ /* --- ABOUT PAGE (SLIDER ADDED) --- */
+        #page-about { overflow-y: auto; overflow-x: hidden; } /* Allow scrolling when zoomed */
+        #page-about .overlay-content { padding: 0; align-items: stretch; min-height: 100vh; }
         
-        .about-container { display: flex; width: 100vw; height: 100vh; max-width: none; gap: 0; }
+        .about-container { 
+            display: flex; 
+            width: 100vw; 
+            min-height: 100vh; /* Changed from fixed 100vh to support zooming */
+            height: auto; 
+            max-width: none; 
+            gap: 0; 
+        }
         
         /* About Page Image Slider - New Structure */
         .about-image { 
             position: relative; 
             flex: none; 
             width: 60%; 
-            height: 100%; 
+            min-height: 100%; /* Ensures the image container stretches to match text */
             background: transparent; 
             overflow: hidden; 
         }
@@ -383,14 +390,162 @@
         }
         .about-text p { line-height: 1.8; color: var(--text-color); margin-bottom: 25px; font-size: 1.1rem; transition: color 0.3s ease; position: relative; z-index: 2; }
 
-        /* --- WORKS GRID --- */
-        .works-container { max-width: 1800px; width: 100%; }
-        .works-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 38px; }
-        .work-item { display: flex; flex-direction: column; gap: 15px; cursor: pointer; transition: opacity 0.2s ease; }
-        .work-item:hover { opacity: 0.7; }
-        .work-image { background: transparent; aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .work-image img { width: 100%; height: 100%; object-fit: contain; }
-        .work-caption { font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; pointer-events: none; transition: color 0.3s ease; }
+        /* --- DYNAMIC WORKS GRID --- */
+        .works-container { 
+            max-width: 1800px; 
+            width: 100%; 
+            margin: 0 auto; 
+            padding: 20px 4vw 80px 4vw; /* Added side padding to prevent clipping */
+            box-sizing: border-box; 
+        } 
+        
+        .works-grid { 
+            display: grid; 
+            align-items: start; 
+            transition: gap 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        } 
+
+        /* Collage Mode Setup */
+        .works-grid.mode-collage {
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            grid-auto-flow: dense;
+        }
+        @media (min-width: 768px) { .works-grid.mode-collage { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+        @media (min-width: 1025px) { .works-grid.mode-collage { grid-template-columns: repeat(6, 1fr); gap: 25px; } }
+
+     /* Rows Mode Setup (Your original structured layout) */
+        .works-grid.mode-rows {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 34px; /* Tighter gap makes images naturally larger */
+            margin-top: -35px; /* Pulls the gallery a tiny bit further up */
+            width: calc(100% + 4vw); /* Makes it slightly wider than the container */
+            margin-left: -2vw; /* Re-centers the widened gallery */
+        }
+        @media (max-width: 1024px) {
+            .works-grid.mode-rows { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 25px; 
+                width: 100%; 
+                margin-left: 0; 
+                margin-top: -20px; 
+            }
+        }
+        @media (max-width: 768px) {
+            .works-grid.mode-rows { 
+                grid-template-columns: 1fr; 
+                gap: 40px; 
+                margin-top: -10px; 
+            }
+        }
+        
+        .work-item { 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            cursor: pointer; 
+            width: 100%; 
+            contain: layout style;
+            transform-origin: center center;
+
+            /* Organic, slow transition for layout mode changes */
+            transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), 
+                        margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+                        opacity 0.2s ease;
+            
+            /* Using a CSS variable allows the hover scale to compound dynamically */
+            transform: var(--base-transform, rotate(0deg) translateX(0%) scale(1));
+        }
+
+        .work-item:hover {
+            opacity: 0.7;
+            transform: var(--base-transform, rotate(0deg) translateX(0%) scale(1)) scale(1.04) !important;
+            z-index: 100 !important;
+        }
+
+        .work-image { 
+            background: transparent; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: box-shadow 0.8s ease;
+        }
+
+/* Specific styles for modes */
+        .works-grid.mode-collage {
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            grid-auto-flow: dense;
+            width: 100%; /* Explicitly resets width from row mode */
+            margin-left: 0; /* Explicitly resets margin from row mode */
+        }
+
+        .works-grid.mode-collage .work-item {
+            align-items: center; /* Ensures items stay centered within their grid cell */
+            overflow: visible; 
+        }
+        
+        /* Bind both image and caption to the same widths to restore text alignment */
+        .works-grid.mode-collage .work-image,
+        .works-grid.mode-collage .work-caption {
+            width: 100%;
+            max-width: 740px; /* Clamps massive images on desktop */
+        }
+
+        .works-grid.mode-collage .work-image { 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
+            min-width: 420px; 
+        }
+        
+        @media (max-width: 1024px) {
+            .works-grid.mode-collage .work-image,
+            .works-grid.mode-collage .work-caption {
+                max-width: 55vw; /* Clamps massive images on iPad */
+            }
+            .works-grid.mode-collage .work-image { 
+                min-width: 300px; /* Scales down safely for tablet */
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .works-grid.mode-collage .work-image,
+            .works-grid.mode-collage .work-caption {
+                max-width: 85vw; /* Strictly prevents the edge cutoff on iPhones */
+            }
+            .works-grid.mode-collage .work-image { 
+                min-width: 160px; /* CRITICAL FIX: Was 200px, which blew out the screen width */
+            }
+        }
+
+        body.dark-mode .works-grid.mode-collage .work-image { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
+        .works-grid.mode-rows .work-image { aspect-ratio: 4/5; box-shadow: none; overflow: hidden; }
+        
+        .work-image img { width: 100%; height: auto; object-fit: contain; display: block; }
+        .works-grid.mode-rows .work-image img { height: 100%; object-fit: contain; } /* Ensuring strict match to original rows */
+        
+        .work-caption { 
+            font-size: 0.85rem; 
+            color: var(--text-muted); 
+            display: flex; 
+            justify-content: space-between; 
+            pointer-events: none; 
+            
+            opacity: 0;
+            transform: translateY(5px); 
+            transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease; 
+        }
+
+        .work-item:hover .work-caption {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Ensure captions display permanently in rows mode, just like the original */
+        .works-grid.mode-rows .work-caption {
+            opacity: 1;
+            transform: none;
+        }
 
         /* --- NONE PAGES (EXHIBITIONS / PRESS) --- */
         .none-page { 
@@ -431,7 +586,6 @@
             pointer-events: none;
         }
 
-        /* Update breakpoint to 1024px to cover iPads */
         @media (max-width: 1024px) {
             .none-desktop { display: none !important; }
             .none-mobile { display: block !important; }
@@ -439,9 +593,9 @@
 
         /* --- CONTACT FORM --- */
         .form-container { position: relative; max-width: 800px; width: 100%; text-align: left; margin: 0 auto; }
-@media (min-width: 1025px) {
-    .form-container { margin-top: -40px; }
-}
+        @media (min-width: 1025px) {
+            .form-container { margin-top: -40px; }
+        }
         .form-group { display: flex; margin-bottom: 25px; align-items: flex-start; }
         .form-group label { width: 150px; font-weight: bold; letter-spacing: 0.5px; font-size: 1.3rem; padding-top: 10px; color: var(--text-color); transition: color 0.3s ease; text-transform: uppercase; }
         .form-group input, .form-group textarea { flex: 1; width: 100%; padding: 12px; border: 1px solid var(--text-muted); background: transparent; color: var(--text-color); font-family: 'Helvetica', 'Arial', sans-serif; box-sizing: border-box; opacity: 0.5; transition: opacity 0.3s ease, border-color 0.3s ease; font-size: 1.3rem; resize: vertical; }
@@ -473,14 +627,48 @@
             .submit-btn { margin-left: 0 !important; }
             #responseMessage { margin-left: 0 !important; }
         }
+        
         /* --- LIGHTBOX --- */
-        .lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--lightbox-bg); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease; overflow-y: auto; padding: 40px; box-sizing: border-box; }
+        .lightbox { 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: var(--lightbox-bg); z-index: 300; display: flex; 
+            align-items: center; justify-content: center; opacity: 0; 
+            pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease; 
+            overflow-y: auto; padding: 20px;
+            box-sizing: border-box; 
+        }
         .lightbox.active { opacity: 1; pointer-events: auto; }
         .lightbox-close { position: fixed; top: 30px; right: 40px; font-size: 3rem; font-weight: 300; cursor: pointer; color: var(--text-color); opacity: 0.3; transition: opacity 0.2s, color 0.3s ease; z-index: 301; line-height: 1; }
         .lightbox-close:hover { opacity: 1; }
-        .lightbox-content { display: flex; max-width: 1200px; width: 100%; gap: 60px; align-items: center; margin: auto; }
-        .lightbox-left { flex: 1.5; display: flex; justify-content: flex-end; max-height: 85vh; align-items: center; position: relative; z-index: 10; }
-        .lightbox-left img { max-width: 100%; max-height: 85vh; object-fit: contain; cursor: zoom-in; transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: center center; }
+        .lightbox-content { 
+            display: flex; max-width: 1400px; 
+            width: 100%; gap: 40px; align-items: center; margin: auto; 
+        }
+
+        .lightbox-left { 
+            flex: 2; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative; 
+            z-index: 10;
+            height: 90vh; 
+            width: 100%;
+        }
+
+        .lightbox-left img { 
+            max-width: 100%; 
+            max-height: 90vh; 
+            width: auto;
+            height: auto;
+            object-fit: contain; 
+            cursor: zoom-in; 
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); 
+            transform-origin: center center;
+            min-width: 400px; 
+            min-height: 400px;
+        }
+
         .lightbox-right { flex: 1; display: flex; flex-direction: column; text-align: left; position: relative; z-index: 5; }
         .lightbox-text strong { font-size: 1.4rem; display: block; margin-bottom: 5px; color: var(--text-color); transition: color 0.3s ease; }
         .lightbox-specs { font-size: 1rem; color: var(--text-muted); margin-bottom: 15px; font-style: italic; transition: color 0.3s ease; }
@@ -493,17 +681,15 @@
         /* --- BREAKPOINTS --- */
         @media (max-width: 1024px) {
             .download-icon { display: flex; }
-            .ig-icon, .download-icon, .theme-toggle { width: 22px; height: 22px; }
+            .ig-icon, .download-icon, .theme-toggle, .layout-toggle { width: 22px; height: 22px; }
             #page-about { overflow-y: auto; }
             #page-about .overlay-content { padding: 120px 40px 60px 40px; align-items: flex-start; }
             .about-container { flex-direction: column; align-items: center; gap: 30px; width: 100%; height: auto; max-width: 1200px; }
             
-            /* Separate the text and image so the image gets a strict height */
             .about-text { flex: none; width: 100%; height: auto; padding: 0; overflow: visible; }
             .about-image { flex: none; width: 100%; height: 70vh; padding: 0; overflow: hidden; justify-content: center; }
             .about-image img { height: 100%; width: 100%; max-height: none; object-fit: cover; object-position: top center; }
             
-            /* Repositioning closer to text */
             .sym-1 { top: 5%; right: -2%; width: 100px; opacity: 0.3; }
             .sym-2 { top: 15%; left: -10px; width: 90px; opacity: 0.3; }
             .sym-3 { top: 40%; right: 5%; width: 70px; opacity: 0.3; }
@@ -512,9 +698,6 @@
             
             .frace-cabbage-wrapper { justify-content: center; } 
             
-            .works-grid { grid-template-columns: repeat(2, 1fr); gap: 30px; } 
-            .work-image { aspect-ratio: auto; display: block; }
-            .work-image img { height: auto; display: block; }
             .lightbox-content { flex-direction: column; gap: 30px; margin-top: 20px; }
             .lightbox-left { justify-content: center; max-height: 60vh; }
             .lightbox-left img { max-height: 60vh; }
@@ -527,7 +710,7 @@
             .dropdown-content { padding-top: 15px; gap: 12px; }
             .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 12px; }
             .footer a { font-size: 0.55rem; } 
-            .ig-icon, .download-icon, .theme-toggle { width: 22px; height: 22px; }
+            .ig-icon, .download-icon, .theme-toggle, .layout-toggle { width: 22px; height: 22px; }
             .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
             #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
             #page-about .overlay-content { padding-top: 90px; padding-bottom: 150px; }
@@ -545,19 +728,16 @@
             
             .enquiry-title-img { max-width: 250px; }
 
-            .works-grid { grid-template-columns: 1fr; gap: 50px; }
             .overlay-content { padding-top: 90px; padding-bottom: 150px; }
             .none-desktop { display: none !important; }
             .none-mobile { display: block !important; }
             .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
             .lightbox-left img { max-height: 50vh; }
             
-            /* CONTACT FORM UPDATES */
             .form-group { flex-direction: column; }
             .form-group label { width: 100%; margin-bottom: 8px; padding-top: 0; }
             .submit-btn, .form-footer { margin-left: 0; }
             
-            /* Response Message & Symbol Fixes */
             #responseMessage {
                 margin-left: 0 !important;
                 text-align: left;
@@ -620,6 +800,22 @@
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
             </div>
+            
+            <div id="layout-toggle" class="layout-toggle" title="Toggle Layout Mode" onclick="toggleLayoutMode()">
+                <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <svg class="icon-collage" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                    <rect x="3" y="3" width="7" height="7" transform="rotate(15 6.5 6.5)"></rect>
+                    <rect x="14" y="3" width="7" height="7" transform="rotate(-10 17.5 6.5)"></rect>
+                    <rect x="14" y="14" width="7" height="7" transform="rotate(25 17.5 17.5)"></rect>
+                    <rect x="3" y="14" width="7" height="7" transform="rotate(-5 6.5 17.5)"></rect>
+                </svg>
+            </div>
+
             <div id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode (Double Click for Magic)">
                 <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="5"></circle>
@@ -687,7 +883,7 @@
     <div id="page-works" class="page-overlay">
         <div class="overlay-content">
             <div class="works-container">
-                <div class="works-grid">
+                <div class="works-grid mode-collage">
                     
 <div class="work-item" onclick="openLightbox('artwork/nicedayoff.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
                         <div class="work-image"><img src="artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
@@ -1111,8 +1307,6 @@ function prevAboutImage() {
     updateAboutImage(currentAboutIdx);
     resetAboutInterval();
 }
-
-// Keep your existing startAboutInterval and resetAboutInterval functions as they are
 
         function startAboutInterval() {
             // Slower transition set to 4000ms (4 seconds)
@@ -1674,6 +1868,135 @@ function prevAboutImage() {
             brushX = null;
             pointerX = null;
         });
+
+        // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
+        let isCollageMode = true; 
+        let resizeTimer;
+        let collageDataInitialized = false;
+
+        function toggleLayoutMode() {
+            isCollageMode = !isCollageMode;
+            const iconGrid = document.querySelector('.icon-grid');
+            const iconCollage = document.querySelector('.icon-collage');
+            
+            if(isCollageMode) {
+                iconGrid.style.display = 'block';
+                iconCollage.style.display = 'none';
+            } else {
+                iconGrid.style.display = 'none';
+                iconCollage.style.display = 'block';
+            }
+            
+            updateGalleryLayout();
+        }
+
+      function initCollageData() {
+            const items = document.querySelectorAll('.work-item');
+            
+            items.forEach((item, index) => {
+                // Generate a randomized size tier for each image
+                const rand = Math.random();
+                let sizeTier = 'normal';
+                
+                if (rand > 0.85) sizeTier = 'super-hero';      // ~15% chance for a massive image
+                else if (rand > 0.65) sizeTier = 'hero';       // ~20% chance for a large image
+                else if (rand > 0.40) sizeTier = 'medium';     // ~25% chance for a medium image
+
+                item.dataset.sizeTier = sizeTier;
+                
+                // Tamed the extreme overlaps and rotations to stop edge cutoffs
+                const isExtremeOverlap = Math.random() > 0.85; // Reduced from 50% to 15% chance
+                
+                // Clamped margins to prevent heavy top/bottom cutoff
+                let pullUpDesk = isExtremeOverlap ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 3) + 1;
+                if (index < 4) pullUpDesk = 0; 
+                
+                // Clamped rotations (max 2 degrees) and translations (max 1.5%)
+                const rotateDesk = (Math.random() * 4) - 2; 
+                const translateXDesk = (Math.random() * 3) - 1.5; 
+
+                item.dataset.pullUp = pullUpDesk;
+                item.dataset.rotate = rotateDesk;
+                item.dataset.translateX = translateXDesk;
+                item.dataset.zIndex = Math.floor(Math.random() * 20) + 1;
+            });
+            collageDataInitialized = true;
+        }
+
+        function updateGalleryLayout() {
+            if (!collageDataInitialized) initCollageData();
+            
+            const grid = document.querySelector('.works-grid');
+            const items = document.querySelectorAll('.work-item');
+            const w = window.innerWidth;
+            const isMobile = w <= 768;
+            const isTablet = w > 768 && w <= 1024;
+
+            if (isCollageMode) {
+                grid.classList.remove('mode-rows');
+                grid.classList.add('mode-collage');
+
+                items.forEach((item, index) => {
+                    // Apply dynamic spans based on the randomized tier
+                    let deskSpan, tabSpan, mobSpan;
+                    switch(item.dataset.sizeTier) {
+                        case 'super-hero': deskSpan = 4; tabSpan = 3; mobSpan = 2; break; // Massive
+                        case 'hero':       deskSpan = 3; tabSpan = 2; mobSpan = 2; break; // Large
+                        case 'medium':     deskSpan = 2; tabSpan = 2; mobSpan = 1; break; // Medium
+                        default:           deskSpan = 1; tabSpan = 1; mobSpan = 1; break; // Small
+                    }
+
+                    let span = isMobile ? mobSpan : (isTablet ? tabSpan : deskSpan);
+
+                    let pullUp = parseFloat(item.dataset.pullUp);
+                    if (isTablet) pullUp *= 0.5;
+                    if (isMobile) pullUp *= 0.10; // Heavily tamed mobile overlap to prevent layout breaking
+                    if (index < (isMobile ? 2 : (isTablet ? 3 : 4))) pullUp = 0;
+
+                    let rotate = parseFloat(item.dataset.rotate);
+                    if (isMobile) rotate *= 0.5;
+
+                    let translateX = parseFloat(item.dataset.translateX);
+                    const marginTop = -pullUp;
+                    const zIndex = item.dataset.zIndex;
+
+                    item.style.gridColumn = `span ${span}`;
+                    item.style.marginTop = `${marginTop}%`;
+                    item.style.zIndex = zIndex;
+                    item.dataset.baseZIndex = zIndex;
+
+                    const baseTransform = `rotate(${rotate}deg) translateX(${translateX}%) scale(1)`;
+                    item.style.setProperty('--base-transform', baseTransform);
+                });
+
+            } else {
+                // Strict Row structure
+                grid.classList.remove('mode-collage');
+                grid.classList.add('mode-rows');
+
+                items.forEach(item => {
+                    item.style.gridColumn = '';
+                    item.style.marginTop = '0%';
+                    item.style.zIndex = 1;
+                    item.dataset.baseZIndex = 1;
+                    item.style.setProperty('--base-transform', 'rotate(0deg) translateX(0%) scale(1)');
+                });
+            }
+        }
+
+        // Initialize layout on load
+        document.addEventListener("DOMContentLoaded", () => {
+            updateGalleryLayout();
+        });
+
+        // Dynamic resize listener to morph layout (alive feeling)
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if(isCollageMode) updateGalleryLayout(); 
+            }, 250);
+        });
+        
     </script>
 <script>
     const form = document.getElementById('contactForm');
