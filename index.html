@@ -1798,28 +1798,30 @@
                     item.setPointerCapture(e.pointerId);
                 });
 
-                item.addEventListener('pointermove', (e) => {
-                    if (draggedItem !== item) return;
-                    
-                    const dx = e.clientX - startPointerX;
-                    const dy = e.clientY - startPointerY;
+       item.addEventListener('pointermove', (e) => {
+    if (draggedItem !== item) return;
+    
+    const dx = e.clientX - startPointerX;
+    const dy = e.clientY - startPointerY;
 
-                    // Only count as a drag if moved more than 3 pixels
-                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                        window.isDraggingGalleryItem = true;
-                    }
+    // INCREASE THRESHOLD: Change from 3 to 15 (pixels)
+    const DRAG_THRESHOLD = 15; 
 
-                    item.dataset.dragX = itemStartX + dx;
-                    item.dataset.dragY = itemStartY + dy;
+    // Only apply transformations if the movement exceeds the threshold
+    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        window.isDraggingGalleryItem = true;
+        
+        item.dataset.dragX = itemStartX + dx;
+        item.dataset.dragY = itemStartY + dy;
 
-                    // Apply layout manually on the fly without triggering full updates
-                    let rotate = parseFloat(item.dataset.rotate) || 0;
-                    let percentX = parseFloat(item.dataset.translateX) || 0;
-                    let dxpx = item.dataset.dragX;
-                    let dypx = item.dataset.dragY;
+        let rotate = parseFloat(item.dataset.rotate) || 0;
+        let percentX = parseFloat(item.dataset.translateX) || 0;
+        let dxpx = item.dataset.dragX;
+        let dypx = item.dataset.dragY;
 
-                    item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
-                });
+        item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+    }
+});
 
                 item.addEventListener('pointerup', (e) => {
                     if (draggedItem !== item) return;
@@ -1848,7 +1850,7 @@
         function updateDragCapabilities() {
             document.querySelectorAll('.work-item').forEach(item => {
                 // Prevent mobile scroll on the items themselves so they can be dragged freely
-                item.style.touchAction = isCollageMode ? 'none' : 'auto';
+                item.style.touchAction = isCollageMode ? 'Pan-y' : 'auto';
             });
         }
 
