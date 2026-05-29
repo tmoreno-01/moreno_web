@@ -428,7 +428,7 @@ Margin-top: -60px;
         /* --- IPAD CENTERING FIX (Max-Width: 1024px) --- */
         @media (max-width: 1024px) {
             .works-container {
-                padding: 20px 5vw 80px 5vw; /* Fixed: Generous gutters for iPad */
+                padding: 20px 1vw 80px 1vw; /* Fixed: Generous gutters for iPad */
             }
             .works-grid.mode-rows, .works-grid.mode-collage {
                 width: 100%; 
@@ -1057,11 +1057,6 @@ Margin-top: -60px;
         // --- IOS DETECTION ---
         const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        window.addEventListener('load', () => {
-            if (isIOS) {
-                document.getElementById('ios-brush-selector').style.display = 'flex';
-            }
-        });
 
         // --- GLOBAL STATE ---
         let isDarkMode = false;
