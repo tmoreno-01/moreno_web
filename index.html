@@ -453,7 +453,7 @@
             .works-grid.mode-rows {
                 grid-template-columns: 1fr; 
                 gap: 40px; 
-                margin-top: -45px; /* Brought up slightly for mobile */
+                margin-top: -20px; /* Brought up slightly for mobile */
             }
             .works-grid.mode-collage {
                 grid-template-columns: 1fr; /* Fixes right-shift by forcing a single absolute centered column on mobile */
@@ -559,7 +559,8 @@
         }
 
         body.dark-mode .works-grid.mode-collage .work-image { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
-        .works-grid.mode-rows .work-image { aspect-ratio: 4/5; box-shadow: none; overflow: hidden; }
+        .works-grid.mode-rows .work-image { aspect-ratio: auto !important; 
+        margin-bottom: 8px; box-shadow: none; overflow: hidden; }
         
         .work-image img { width: 100%; height: auto; object-fit: contain; display: block; }
         .works-grid.mode-rows .work-image img { height: 100%; object-fit: contain; }
