@@ -452,6 +452,7 @@ Margin-top: -60px;
                 margin: 0 auto; 
                 justify-items: center; /* Fixed: Forces mobile grids to center */
             }
+
             .works-grid.mode-rows {
                 grid-template-columns: 1fr; 
                 gap: 40px; 
@@ -1783,86 +1784,83 @@ openWorks();
             pointerX = null;
         });
 
-        // --- GALLERY DRAGGING ENGINE ---
-        function initDragSystem() {
-            let draggedItem = null;
-            let startPointerX, startPointerY;
-            let itemStartX, itemStartY;
+   // --- GALLERY DRAGGING ENGINE (DESKTOP ONLY) ---
+function initDragSystem() {
+    let draggedItem = null;
+    let startPointerX, startPointerY;
+    let itemStartX, itemStartY;
 
-            document.querySelectorAll('.work-item').forEach(item => {
-                // Initialize drag coordinates if they don't exist
-                if (!item.dataset.dragX) item.dataset.dragX = 0;
-                if (!item.dataset.dragY) item.dataset.dragY = 0;
+    document.querySelectorAll('.work-item').forEach(item => {
+        // Initialize drag coordinates if they don't exist
+        if (!item.dataset.dragX) item.dataset.dragX = 0;
+        if (!item.dataset.dragY) item.dataset.dragY = 0;
 
-                item.addEventListener('pointerdown', (e) => {
-                    if (!isCollageMode) return;
-                    draggedItem = item;
-                    startPointerX = e.clientX;
-                    startPointerY = e.clientY;
-                    itemStartX = parseFloat(item.dataset.dragX) || 0;
-                    itemStartY = parseFloat(item.dataset.dragY) || 0;
-                    
-                    item.style.zIndex = 200; // Bring to front while dragging
-                    item.style.transition = 'none'; // Disable CSS transition for instant snappiness
-                    window.isDraggingGalleryItem = false;
-                    item.setPointerCapture(e.pointerId);
-                });
+        item.addEventListener('pointerdown', (e) => {
+            // FIX: Only trigger drag if it's a mouse (not a touch)
+            if (!isCollageMode || e.pointerType !== 'mouse') return;
 
-       item.addEventListener('pointermove', (e) => {
-    if (draggedItem !== item) return;
-    
-    const dx = e.clientX - startPointerX;
-    const dy = e.clientY - startPointerY;
+            draggedItem = item;
+            startPointerX = e.clientX;
+            startPointerY = e.clientY;
+            itemStartX = parseFloat(item.dataset.dragX) || 0;
+            itemStartY = parseFloat(item.dataset.dragY) || 0;
+            
+            item.style.zIndex = 200; 
+            item.style.transition = 'none'; 
+            window.isDraggingGalleryItem = false;
+            item.setPointerCapture(e.pointerId);
+        });
 
-    // INCREASE THRESHOLD: Change from 3 to 15 (pixels)
-    const DRAG_THRESHOLD = 15; 
+        item.addEventListener('pointermove', (e) => {
+            if (draggedItem !== item) return;
+            
+            const dx = e.clientX - startPointerX;
+            const dy = e.clientY - startPointerY;
+            const DRAG_THRESHOLD = 15; 
 
-    // Only apply transformations if the movement exceeds the threshold
-    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
-        window.isDraggingGalleryItem = true;
-        
-        item.dataset.dragX = itemStartX + dx;
-        item.dataset.dragY = itemStartY + dy;
+            if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+                window.isDraggingGalleryItem = true;
+                
+                item.dataset.dragX = itemStartX + dx;
+                item.dataset.dragY = itemStartY + dy;
 
-        let rotate = parseFloat(item.dataset.rotate) || 0;
-        let percentX = parseFloat(item.dataset.translateX) || 0;
-        let dxpx = item.dataset.dragX;
-        let dypx = item.dataset.dragY;
+                let rotate = parseFloat(item.dataset.rotate) || 0;
+                let percentX = parseFloat(item.dataset.translateX) || 0;
+                let dxpx = item.dataset.dragX;
+                let dypx = item.dataset.dragY;
 
-        item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
-    }
-});
+                item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+            }
+        });
 
-                item.addEventListener('pointerup', (e) => {
-                    if (draggedItem !== item) return;
-                    draggedItem = null;
-                    item.releasePointerCapture(e.pointerId);
-                    
-                    // Re-enable smooth transition (clearing inline style falls back to CSS transition)
-                    item.style.transition = ''; 
-                    item.style.zIndex = item.dataset.baseZIndex;
-                    
-                    // Slight delay before resetting drag flag to prevent lightbox opening
-                    setTimeout(() => window.isDraggingGalleryItem = false, 100);
-                });
+        item.addEventListener('pointerup', (e) => {
+            if (draggedItem !== item) return;
+            draggedItem = null;
+            item.releasePointerCapture(e.pointerId);
+            
+            item.style.transition = ''; 
+            item.style.zIndex = item.dataset.baseZIndex;
+            
+            setTimeout(() => window.isDraggingGalleryItem = false, 100);
+        });
 
-                item.addEventListener('pointercancel', (e) => {
-                    if (draggedItem === item) {
-                        draggedItem = null;
-                        item.style.transition = '';
-                        item.style.zIndex = item.dataset.baseZIndex;
-                        setTimeout(() => window.isDraggingGalleryItem = false, 100);
-                    }
-                });
-            });
-        }
+        item.addEventListener('pointercancel', (e) => {
+            if (draggedItem === item) {
+                draggedItem = null;
+                item.style.transition = '';
+                item.style.zIndex = item.dataset.baseZIndex;
+                setTimeout(() => window.isDraggingGalleryItem = false, 100);
+            }
+        });
+    });
+}
 
-        function updateDragCapabilities() {
-            document.querySelectorAll('.work-item').forEach(item => {
-                // Prevent mobile scroll on the items themselves so they can be dragged freely
-                item.style.touchAction = isCollageMode ? 'Pan-y' : 'auto';
-            });
-        }
+function updateDragCapabilities() {
+    document.querySelectorAll('.work-item').forEach(item => {
+        // Set to 'auto' to ensure mobile devices handle scrolling natively
+        item.style.touchAction = 'auto';
+    });
+}
 
         // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
         function toggleLayoutMode() {
