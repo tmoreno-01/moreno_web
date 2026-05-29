@@ -798,7 +798,18 @@
                 opacity: 0.9;
             }
         }
+/* --- Fix for larger images in Rows Mode --- */
+@media (max-width: 1024px) {
+    .works-container:has(.mode-rows) {
+        padding-left: 0.05vw !important;
+        padding-right: 0.05vw !important;
+    }
 
+    .works-grid.mode-rows {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
     </style>
 </head>
 <body>
