@@ -810,6 +810,40 @@
         margin-left: 0 !important;
     }
 }
+/* --- Updated Desktop Rows Mode Alignment Fix --- */
+@media (min-width: 1025px) {
+    /* 1. Reset the grid layout and expand to fill available space */
+    .works-grid.mode-rows {
+        grid-template-columns: repeat(3, 1fr) !important;
+        width: 100% !important; 
+        margin-left: 0 !important;
+        margin-top: -25px !important;
+        justify-items: center;
+        gap: 50px !important; /* Increased gap for better spacing with larger images */
+    }
+
+    /* 2. Removed max-width restriction to allow images to scale up */
+    .works-grid.mode-rows .work-item {
+        width: 100% !important;
+        max-width: none !important; 
+    }
+
+    /* 3. Force the image container to a consistent square size */
+    .works-grid.mode-rows .work-image {
+        aspect-ratio: 1 / 1 !important; 
+        width: 100% !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    /* 4. Ensure caption aligns with the now-larger images */
+    .works-grid.mode-rows .work-caption {
+        width: 100% !important;
+        justify-content: space-between;
+    }
+}
     </style>
 </head>
 <body>
