@@ -61,7 +61,7 @@
             text-decoration: none; color: var(--text-color);
             font-size: 0.85rem; letter-spacing: 1px;
             text-transform: uppercase; font-weight: bold;
-            opacity: 0.4; transition: opacity 0.3s ease, color 0.3s ease;
+            opacity: 0.65; transition: opacity 0.3s ease, color 0.3s ease;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -405,22 +405,24 @@
             transition: gap 1.2s cubic-bezier(0.22, 1, 0.36, 1);
         } 
 
-        /* Collage Mode Setup */
+        /* Collage Mode Setup - Single Column Everywhere */
         .works-grid.mode-collage {
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-            grid-auto-flow: dense;
+            grid-template-columns: 1fr; 
+            gap: 40px; 
+            grid-auto-flow: row;
+            justify-items: center;
+            width: 100%;
+Margin-top: -70px;
         }
-        @media (min-width: 768px) { .works-grid.mode-collage { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
-        @media (min-width: 1025px) { .works-grid.mode-collage { grid-template-columns: repeat(6, 1fr); gap: 25px; } }
 
-     /* Rows Mode Setup */
+        /* Rows Mode Setup - Fixed vertical alignment */
         .works-grid.mode-rows {
             grid-template-columns: repeat(3, 1fr);
             gap: 34px;
             margin-top: -35px;
             width: calc(100% + 4vw);
             margin-left: -2vw;
+            align-items: stretch; /* Ensure all items stretch to match row height */
         }
 
         /* --- IPAD CENTERING FIX (Max-Width: 1024px) --- */
@@ -443,7 +445,7 @@
 
         @media (max-width: 768px) {
             .works-container {
-                padding: 20px 5vw 80px 5vw; /* Fixed: Even and generous gutters for mobile */
+                padding: 20px 0 80px 0; /* Fixed: Even and generous gutters for mobile */
             }
             .works-grid.mode-rows, .works-grid.mode-collage { 
                 width: 100%; 
@@ -454,9 +456,6 @@
                 grid-template-columns: 1fr; 
                 gap: 40px; 
                 margin-top: -20px; /* Brought up slightly for mobile */
-            }
-            .works-grid.mode-collage {
-                grid-template-columns: 1fr; /* Fixes right-shift by forcing a single absolute centered column on mobile */
             }
         }
         
@@ -485,17 +484,23 @@
             transform: var(--base-transform, rotate(0deg) translate(0px, 0px) scale(1));
         }
 
+        /* Rows mode specific item setup for vertical alignment */
+        .works-grid.mode-rows .work-item {
+            justify-content: flex-end; /* Push caption to the bottom */
+            height: 100%; /* Stretch to grid row height */
+        }
+
         /* Prevent native ghost dragging */
         .work-item img {
             pointer-events: none;
             -webkit-user-drag: none;
         }
 
-   .work-item:has(.work-image:hover) {
-    opacity: 0.7;
-    transform: var(--base-transform, rotate(0deg) translate(0px, 0px) scale(1)) scale(1.04) !important;
-    z-index: 100 !important;
-}
+        .work-item:has(.work-image:hover) {
+            opacity: 0.7;
+            transform: var(--base-transform, rotate(0deg) translate(0px, 0px) scale(1)) scale(1.04) !important;
+            z-index: 100 !important;
+        }
 
         .work-image { 
             background: transparent; 
@@ -505,14 +510,7 @@
             transition: box-shadow 0.8s ease;
         }
 
-/* Specific styles for modes */
-        .works-grid.mode-collage {
-            gap: 15px; 
-            grid-auto-flow: dense;
-            width: 100%; 
-            margin-left: 0; 
-        }
-
+        /* Specific styles for modes */
         .works-grid.mode-collage .work-item {
             align-items: center; /* Ensures items stay centered within their grid cell */
             overflow: visible; 
@@ -522,48 +520,51 @@
         .works-grid.mode-collage .work-image,
         .works-grid.mode-collage .work-caption {
             width: 100%;
-            max-width: 950px; 
+            max-width: 95vw; /* Keeps the massive column comfortably bounded */
         }
 
-      .works-grid.mode-collage .work-image { 
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
-    min-width: 640px;
-    width: 100%;     
-    overflow: hidden;
-}
-.works-grid.mode-collage .work-image img {
-    width: 100%;     
-    height: auto;     
-    display: block;
-    max-width: 100%; 
-}
-        
-        @media (max-width: 1024px) {
+        @media (min-width: 1025px) {
             .works-grid.mode-collage .work-image,
             .works-grid.mode-collage .work-caption {
-                max-width: 85vw; 
-            }
-            .works-grid.mode-collage .work-image { 
-                min-width: 420px; 
+                max-width: 90vw; /* Slightly narrower bounds on huge desktop monitors */
             }
         }
-        
-        @media (max-width: 768px) {
-            .works-grid.mode-collage .work-image,
-            .works-grid.mode-collage .work-caption {
-                max-width: 95vw; 
-            }
-            .works-grid.mode-collage .work-image { 
-                min-width: 200px; 
-            }
+
+        .works-grid.mode-collage .work-image { 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
+            min-width: 200px; /* Allow it to scale down gracefully */
+            width: 100%;     
+            overflow: hidden;
+        }
+
+        .works-grid.mode-collage .work-image img {
+            width: 100%;     
+            height: auto;     
+            display: block;
+            max-width: 100%; 
         }
 
         body.dark-mode .works-grid.mode-collage .work-image { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
-        .works-grid.mode-rows .work-image { aspect-ratio: auto !important; 
-        margin-bottom: 8px; box-shadow: none; overflow: hidden; }
+        
+        /* Rows mode specific image styling */
+        .works-grid.mode-rows .work-image { 
+            flex: 1; /* Allow image container to absorb the remaining vertical space above caption */
+            display: flex;
+            align-items: center; /* Centrally align the image inside the flex container */
+            justify-content: center;
+            aspect-ratio: auto !important; 
+            margin-bottom: 0; /* Let flex gap handle spacing */
+            box-shadow: none; 
+            overflow: hidden; 
+        }
         
         .work-image img { width: 100%; height: auto; object-fit: contain; display: block; }
-        .works-grid.mode-rows .work-image img { height: 100%; object-fit: contain; }
+        
+        .works-grid.mode-rows .work-image img { 
+            height: auto; 
+            max-height: 450px; /* Keep standard aspect ratio constraint for rows */
+            object-fit: contain; 
+        }
         
         .work-caption { 
             font-size: 0.85rem; 
@@ -577,10 +578,10 @@
             transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease; 
         }
 
-    .work-item:has(.work-image:hover) .work-caption {
-    opacity: 1;
-    transform: translateY(0);
-}
+        .work-item:has(.work-image:hover) .work-caption {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
         /* Ensure captions display permanently in rows mode */
         .works-grid.mode-rows .work-caption {
@@ -810,40 +811,7 @@
         margin-left: 0 !important;
     }
 }
-/* --- Updated Desktop Rows Mode Alignment Fix --- */
-@media (min-width: 1025px) {
-    /* 1. Reset the grid layout and expand to fill available space */
-    .works-grid.mode-rows {
-        grid-template-columns: repeat(3, 1fr) !important;
-        width: 100% !important; 
-        margin-left: 0 !important;
-        margin-top: -25px !important;
-        justify-items: center;
-        gap: 50px !important; /* Increased gap for better spacing with larger images */
-    }
 
-    /* 2. Removed max-width restriction to allow images to scale up */
-    .works-grid.mode-rows .work-item {
-        width: 100% !important;
-        max-width: none !important; 
-    }
-
-    /* 3. Force the image container to a consistent square size */
-    .works-grid.mode-rows .work-image {
-        aspect-ratio: 1 / 1 !important; 
-        width: 100% !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-
-    /* 4. Ensure caption aligns with the now-larger images */
-    .works-grid.mode-rows .work-caption {
-        width: 100% !important;
-        justify-content: space-between;
-    }
-}
     </style>
 </head>
 <body>
@@ -1161,6 +1129,7 @@
             updateGalleryLayout();
             initDragSystem();
             updateDragCapabilities();
+openWorks();
         });
 
         // --- THEME TOGGLE LOGIC ---
@@ -1954,9 +1923,6 @@
             
             const grid = document.querySelector('.works-grid');
             const items = document.querySelectorAll('.work-item');
-            const w = window.innerWidth;
-            const isMobile = w <= 768;
-            const isTablet = w > 768 && w <= 1024;
 
             if (isCollageMode) {
                 grid.classList.remove('mode-rows');
@@ -1967,24 +1933,12 @@
                     item.dataset.dragX = 0;
                     item.dataset.dragY = 0;
 
-                    let deskSpan, tabSpan;
-                    switch(item.dataset.sizeTier) {
-                        case 'super-hero': deskSpan = 4; tabSpan = 3; break; // Massive
-                        case 'hero':       deskSpan = 3; tabSpan = 2; break; // Large
-                        case 'medium':     deskSpan = 2; tabSpan = 2; break; // Medium
-                        default:           deskSpan = 1; tabSpan = 1; break; // Small
-                    }
+                    let span = 1;
 
-                    // Strict single-column lock on mobile resolves the iPhone right-shift centering issue 
-                    let span = isMobile ? 1 : (isTablet ? tabSpan : deskSpan);
+                    let pullUp = parseFloat(item.dataset.pullUp) * 0.20; 
+                    if (index < 2) pullUp = 0;
 
-                    let pullUp = parseFloat(item.dataset.pullUp);
-                    if (isTablet) pullUp *= 0.5;
-                    if (isMobile) pullUp *= 0.20; 
-                    if (index < (isMobile ? 2 : (isTablet ? 3 : 4))) pullUp = 0;
-
-                    let rotate = parseFloat(item.dataset.rotate);
-                    if (isMobile) rotate *= 0.5;
+                    let rotate = parseFloat(item.dataset.rotate) * 0.5;
 
                     let translateX = parseFloat(item.dataset.translateX);
                     const marginTop = -pullUp;
