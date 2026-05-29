@@ -395,7 +395,7 @@
             max-width: 1800px; 
             width: 100%; 
             margin: 0 auto; 
-            padding: 20px 2vw 80px 2vw; /* Added side padding to prevent clipping */
+            padding: 20px 2vw 80px 2vw; 
             box-sizing: border-box; 
         } 
         
@@ -414,28 +414,49 @@
         @media (min-width: 768px) { .works-grid.mode-collage { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
         @media (min-width: 1025px) { .works-grid.mode-collage { grid-template-columns: repeat(6, 1fr); gap: 25px; } }
 
-     /* Rows Mode Setup (Your original structured layout) */
+     /* Rows Mode Setup */
         .works-grid.mode-rows {
             grid-template-columns: repeat(3, 1fr);
-            gap: 34px; /* Tighter gap makes images naturally larger */
-            margin-top: -35px; /* Pulls the gallery a tiny bit further up */
-            width: calc(100% + 4vw); /* Makes it slightly wider than the container */
-            margin-left: -2vw; /* Re-centers the widened gallery */
+            gap: 34px;
+            margin-top: -35px;
+            width: calc(100% + 4vw);
+            margin-left: -2vw;
         }
+
+        /* --- IPAD CENTERING FIX (Max-Width: 1024px) --- */
         @media (max-width: 1024px) {
+            .works-container {
+                padding: 20px 5vw 80px 5vw; /* Fixed: Generous gutters for iPad */
+            }
+            .works-grid.mode-rows, .works-grid.mode-collage {
+                width: 100%; 
+                margin: 0 auto; 
+                justify-items: center; /* Fixed: Forces iPad grids to center */
+            }
             .works-grid.mode-rows { 
                 grid-template-columns: repeat(2, 1fr); 
                 gap: 25px; 
-                width: 100%; 
                 margin-left: 0; 
-                margin-top: -20px; 
+                margin-top: -60px; /* Brought up slightly for iPad */
             }
         }
+
         @media (max-width: 768px) {
-            .works-grid.mode-rows { 
+            .works-container {
+                padding: 20px 5vw 80px 5vw; /* Fixed: Even and generous gutters for mobile */
+            }
+            .works-grid.mode-rows, .works-grid.mode-collage { 
+                width: 100%; 
+                margin: 0 auto; 
+                justify-items: center; /* Fixed: Forces mobile grids to center */
+            }
+            .works-grid.mode-rows {
                 grid-template-columns: 1fr; 
                 gap: 40px; 
-                margin-top: -10px; 
+                margin-top: -45px; /* Brought up slightly for mobile */
+            }
+            .works-grid.mode-collage {
+                grid-template-columns: 1fr; /* Fixes right-shift by forcing a single absolute centered column on mobile */
             }
         }
         
@@ -449,19 +470,30 @@
             contain: layout style;
             transform-origin: center center;
 
+            /* Set up for Dragging */
+            touch-action: auto; 
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+
             /* Organic, slow transition for layout mode changes */
             transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), 
                         margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1),
                         opacity 0.2s ease;
             
-            /* Using a CSS variable allows the hover scale to compound dynamically */
-            transform: var(--base-transform, rotate(0deg) translateX(0%) scale(1));
+            /* Using a CSS variable allows the hover scale to compound dynamically with drags */
+            transform: var(--base-transform, rotate(0deg) translate(0px, 0px) scale(1));
         }
 
+        /* Prevent native ghost dragging */
+        .work-item img {
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
 
    .work-item:has(.work-image:hover) {
     opacity: 0.7;
-    transform: var(--base-transform, rotate(0deg) translateX(0%) scale(1)) scale(1.04) !important;
+    transform: var(--base-transform, rotate(0deg) translate(0px, 0px) scale(1)) scale(1.04) !important;
     z-index: 100 !important;
 }
 
@@ -475,11 +507,10 @@
 
 /* Specific styles for modes */
         .works-grid.mode-collage {
-            grid-template-columns: repeat(2, 1fr); 
             gap: 15px; 
             grid-auto-flow: dense;
-            width: 100%; /* Explicitly resets width from row mode */
-            margin-left: 0; /* Explicitly resets margin from row mode */
+            width: 100%; 
+            margin-left: 0; 
         }
 
         .works-grid.mode-collage .work-item {
@@ -491,39 +522,39 @@
         .works-grid.mode-collage .work-image,
         .works-grid.mode-collage .work-caption {
             width: 100%;
-            max-width: 940px; /* Clamps massive images on desktop */
+            max-width: 940px; 
         }
 
       .works-grid.mode-collage .work-image { 
     box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
-    min-width: 540px; /* Prevents "tiny" status */
-    width: 100%;      /* Forces it to fill the cell */
-    overflow: hidden; /* Ensures if it hits the limit, it doesn't spill out */
+    min-width: 540px;
+    width: 100%;     
+    overflow: hidden;
 }
 .works-grid.mode-collage .work-image img {
-    width: 100%;      /* Image fills the container */
-    height: auto;     /* Maintains aspect ratio */
+    width: 100%;     
+    height: auto;     
     display: block;
-    max-width: 100%;  /* Prevents the image from forcing a width larger than its container */
+    max-width: 100%; 
 }
         
         @media (max-width: 1024px) {
             .works-grid.mode-collage .work-image,
             .works-grid.mode-collage .work-caption {
-                max-width: 70vw; /* Clamps massive images on iPad */
+                max-width: 70vw; 
             }
             .works-grid.mode-collage .work-image { 
-                min-width: 380px; /* Scales down safely for tablet */
+                min-width: 380px; 
             }
         }
         
         @media (max-width: 768px) {
             .works-grid.mode-collage .work-image,
             .works-grid.mode-collage .work-caption {
-                max-width: 85vw; /* Strictly prevents the edge cutoff on iPhones */
+                max-width: 85vw; 
             }
             .works-grid.mode-collage .work-image { 
-                min-width: 150px; /* CRITICAL FIX: Was 200px, which blew out the screen width */
+                min-width: 150px; 
             }
         }
 
@@ -531,7 +562,7 @@
         .works-grid.mode-rows .work-image { aspect-ratio: 4/5; box-shadow: none; overflow: hidden; }
         
         .work-image img { width: 100%; height: auto; object-fit: contain; display: block; }
-        .works-grid.mode-rows .work-image img { height: 100%; object-fit: contain; } /* Ensuring strict match to original rows */
+        .works-grid.mode-rows .work-image img { height: 100%; object-fit: contain; }
         
         .work-caption { 
             font-size: 0.85rem; 
@@ -550,7 +581,7 @@
     transform: translateY(0);
 }
 
-        /* Ensure captions display permanently in rows mode, just like the original */
+        /* Ensure captions display permanently in rows mode */
         .works-grid.mode-rows .work-caption {
             opacity: 1;
             transform: none;
@@ -744,8 +775,12 @@
             .none-desktop { display: none !important; }
             .none-mobile { display: block !important; }
             .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
-            .lightbox-left img { max-height: 50vh; }
-            
+            .lightbox-left img { 
+                max-height: 50vh; 
+                min-width: 0;       /* Kills the 400px desktop minimum */
+                min-height: 0;      
+                max-width: 90vw;    /* Guarantees at least a 5% border on the left and right */
+            }
             .form-group { flex-direction: column; }
             .form-group label { width: 100%; margin-bottom: 8px; padding-top: 0; }
             .submit-btn, .form-footer { margin-left: 0; }
@@ -1014,12 +1049,19 @@
             }
         });
 
-        // --- GLOBAL THEME STATE ---
+        // --- GLOBAL STATE ---
         let isDarkMode = false;
         let isCustomBg = false;
         let currentCanvasBg = '#ffffff';
         let themeClickTimer = null;
         let lastThemeClickTime = 0;
+        
+        let isCollageMode = true; 
+        let resizeTimer;
+        let collageDataInitialized = false;
+
+        // Global flag to prevent Lightbox click when dragging
+        window.isDraggingGalleryItem = false;
 
         // --- APPLY CUSTOM BACKGROUND HELPERS ---
         function applyCustomBackground(colorString) {
@@ -1053,6 +1095,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const savedCustomBg = localStorage.getItem('customBg');
             const savedTheme = localStorage.getItem('theme');
+            const savedLayoutMode = localStorage.getItem('layoutMode');
 
             if (savedCustomBg) {
                 applyCustomBackground(savedCustomBg);
@@ -1060,7 +1103,18 @@
                 isDarkMode = true;
                 document.body.classList.add('dark-mode');
             }
+
+            if (savedLayoutMode === 'rows') {
+                isCollageMode = false;
+                const iconGrid = document.querySelector('.icon-grid');
+                const iconCollage = document.querySelector('.icon-collage');
+                iconGrid.style.display = 'none';
+                iconCollage.style.display = 'block';
+            }
+
             updateGalleryLayout();
+            initDragSystem();
+            updateDragCapabilities();
         });
 
         // --- THEME TOGGLE LOGIC ---
@@ -1355,6 +1409,8 @@
         let currentOriginY = 50;
 
         function openLightbox(src, title, year, specs, desc) {
+            if (window.isDraggingGalleryItem) return; // Ignore click if user was dragging an item
+            
             const lbImg = document.getElementById('lb-img');
             lbImg.src = src;
             zoomState = 0;
@@ -1507,164 +1563,7 @@
             ['#000000', '#14213d', '#fca311', '#e5e5e5', '#ffffff'],
             ['#8ecae6', '#219ebc', '#023047', '#ffb703', '#fb8500'],
             ['#22223b', '#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4'],
-            ['#355070', '#6d597a', '#b56576', '#e56b6f', '#eaac8b'],
-            ['#0d3b66', '#faf0ca', '#f4d35e', '#ee964b', '#f95738'],
-            ['#8cb369', '#f4e285', '#f4a259', '#5b8e7d', '#bc4b51'],
-            ['#003049', '#d62828', '#f77f00', '#fcbf49', '#eae2b7'],
-            ['#d9ed92', '#b5e48c', '#99d98c', '#76c893', '#52b69a', '#34a0a4', '#168aad', '#1a759f', '#1e6091', '#184e77'],
-            ['#ff595e', '#ffca3a', '#8ac926', '#1982c4', '#6a4c93'],
-            ['#f94144', '#f3722c', '#f8961e', '#f9844a', '#f9c74f', '#90be6d', '#43aa8b', '#4d908e', '#577590', '#277da1'],
-            ['#540d6e', '#ee4266', '#ffd23f', '#3bceac', '#0ead69'],
-            ['#0b132b', '#1c2541', '#3a506b', '#5bc0be', '#ffffff'],
-            ['#e0fbfc', '#c2dfe3', '#9db4c0', '#5c6b73', '#253237'],
-            ['#d8f3dc', '#b7e4c7', '#95d5b2', '#74c69d', '#52b788', '#40916c', '#2d6a4f', '#1b4332', '#081c15'],
-            ['#7400b8', '#6930c3', '#5e60ce', '#5390d9', '#4ea8de', '#48bfe3', '#56cfe1', '#64dfdf', '#72efdd', '#80ffdb'],
-            ['#fbf8cc', '#fde4cf', '#ffcfd2', '#f1c0e8', '#cfbaf0', '#a3c4f3', '#90dbf4', '#8eecf5', '#98f5e1', '#b9fbc0'],
-            ['#3d5a80', '#98c1d9', '#e0fbfc', '#ee6c4d', '#293241'],
-            ['#112240', '#233d4d', '#fe7f2d', '#fcca46', '#a1c181', '#619b8a'],
-            ['#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff', '#ff0000'],
-            ['#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd', '#f9bec7'],
-            ['#006466', '#065a60', '#0b525b', '#144552', '#1b3a4b', '#212f45', '#272640', '#312244', '#3e1f47', '#4d194d'],
-            ['#cb997e', '#ddbea9', '#ffe8d6', '#b7b7a4', '#a5a58d', '#6b705c'],
-            ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167'],
-            ['#5f0f40', '#9a031e', '#fb8b24', '#e36414', '#0f4c5c'],
-            ['#463f3a', '#8a817c', '#bcb8b1', '#f4f3ee', '#e0afa0'],
-            ['#22333b', '#e9ecef', '#c6ac8f', '#a68a64', '#5e503f'],
-            ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'],
-            ['#ccd5ae', '#e9edc9', '#fefae0', '#faedcb', '#d4a373'],
-            ['#1d3557', '#457b9d', '#a8dadc', '#f1faee', '#e63946'],
-            ['#001219', '#005f73', '#0a9396', '#94d2bd', '#e9d8a6', '#ee9b00', '#ca6702', '#bb3e03', '#ae2012', '#9b2226'],
-            ['#ff99c8', '#fcf6bd', '#d0f4de', '#a9def9', '#e4c1f9'],
-            ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429'],
-            ['#fbf8cc', '#fde4cf', '#ffcfd2', '#f1c0e8', '#cfbaf0', '#a3c4f3', '#90dbf4', '#8eecf5', '#98f5e1', '#b9fbc0'],
-            ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'],
-            ['#3d5a80', '#98c1d9', '#e0fbfc', '#ee6c4d', '#293241'],
-            ['#112240', '#233d4d', '#fe7f2d', '#fcca46', '#a1c181', '#619b8a'],
-            ['#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff', '#ff0000'],
-            ['#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd', '#f9bec7'],
-            ['#006466', '#065a60', '#0b525b', '#144552', '#1b3a4b', '#212f45', '#272640', '#312244', '#3e1f47', '#4d194d'],
-            ['#cb997e', '#ddbea9', '#ffe8d6', '#b7b7a4', '#a5a58d', '#6b705c'],
-            ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167'],
-            ['#5f0f40', '#9a031e', '#fb8b24', '#e36414', '#0f4c5c'],
-            ['#0b132b', '#1c2541', '#3a506b', '#5bc0be', '#ffffff'],
-            ['#e0fbfc', '#c2dfe3', '#9db4c0', '#5c6b73', '#253237'],
-            ['#b7094c', '#a01a58', '#892b64', '#723c70', '#5c4d7d', '#455e89', '#2e6f95', '#1780a1', '#0091ad'],
-            ['#582f0e', '#7f4f24', '#936639', '#a68a64', '#b6ad90', '#c2c5aa', '#a4ac86', '#656d4a', '#414833', '#333d29'],
-            ['#f94144', '#f3722c', '#f8961e', '#f9844a', '#f9c74f', '#90be6d', '#43aa8b', '#4d908e', '#577590', '#277da1'],
-            ['#335c67', '#fff3b0', '#e09f3e', '#9e2a2b', '#540b0e'],
-            ['#007f5f', '#2b9348', '#55a630', '#80b918', '#aacc00', '#bfd200', '#d4d700', '#dddf00', '#eeef20', '#ffff3f'],
-            ['#0d1b2a', '#1b263b', '#415a77', '#778da9', '#e0e1dd'],
-            ['#ffcdb2', '#ffb4a2', '#e5989b', '#b5838d', '#6d6875'],
-            ['#202c39', '#283845', '#b8b08d', '#f2d492', '#f29559'],
-            ['#386641', '#6a994e', '#a7c957', '#f2e8cf', '#bc4749'],
-            ['#ff9f1c', '#ffbf69', '#ffffff', '#cbf3f0', '#2ec4b6'],
-            ['#011627', '#fdfffc', '#2ec4b6', '#e71d36', '#ff9f1c'],
-            ['#3d348b', '#7678ed', '#f7b801', '#f18701', '#f35b04'],
-            ['#114b5f', '#1a936f', '#88d498', '#c6dabf', '#f3e9d2'],
-            ['#eae4e9', '#fff1e6', '#fde2e4', '#fad2e1', '#e2ece9', '#bee1e6', '#f0efeb', '#dfe7fd', '#cddafd'],
-            ['#ff0000', '#000000'],
-            ['#00ff00', '#000000'],
-            ['#0000ff', '#000000'],
-            ['#ffff00', '#000000'],
-            ['#ff00ff', '#000000'],
-            ['#00ffff', '#000000'],
-            ['#ffffff', '#000000'],
-            ['#111111', '#eeeeee'],
-            ['#f4f4f9', '#b8b8b8'],
-            ['#1e1e24', '#fb9f89'],
-            ['#2b2d42', '#ef233c'],
-            ['#ff595e', '#1982c4'],
-            ['#8ac926', '#6a4c93'],
-            ['#fca311', '#14213d'],
-            ['#00a8e8', '#003459'],
-            ['#ffd166', '#ef476f'],
-            ['#06d6a0', '#118ab2'],
-            ['#e07a5f', '#3d405b'],
-            ['#f2cc8f', '#81b29a'],
-            ['#d90429', '#edf2f4'],
-            ['#ff0000', '#00ff00', '#0000ff'],
-            ['#e63946', '#f1faee', '#a8dadc'],
-            ['#023047', '#ffb703', '#fb8500'],
-            ['#264653', '#2a9d8f', '#e9c46a'],
-            ['#22223b', '#4a4e69', '#c9ada7'],
-            ['#ffcdb2', '#ffb4a2', '#e5989b'],
-            ['#003049', '#d62828', '#f77f00'],
-            ['#3d5a80', '#98c1d9', '#e0fbfc'],
-            ['#ee6c4d', '#293241', '#e0fbfc'],
-            ['#5f0f40', '#9a031e', '#fb8b24'],
-            ['#0f4c5c', '#e36414', '#fdfcdc'],
-            ['#cad2c5', '#84a98c', '#52796f'],
-            ['#212529', '#6c757d', '#f8f9fa'],
-            ['#495057', '#ced4da', '#e9ecef'],
-            ['#1a1a1d', '#c3073f', '#950740'],
-            ['#20283e', '#e5e7eb', '#ff4d4d'],
-            ['#3aafa9', '#2b7a78', '#17252a'],
-            ['#feffff', '#def2f1', '#17252a'],
-            ['#fce181', '#fef9c7', '#026670'],
-            ['#edeae5', '#9ce5cb', '#026670'],
-            ['#ff0000', '#cc0000', '#990000', '#660000', '#330000'],
-            ['#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd'],
-            ['#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02'],
-            ['#f8ad9d', '#fbc4ab', '#ffdab9', '#f08080', '#f4978e'],
-            ['#4a0404', '#680505', '#8f0a0a', '#b31212', '#d61a1a'],
-            ['#7a1111', '#941b1b', '#b32424', '#cf3434', '#e64747'],
-            ['#001a33', '#003366', '#004c99', '#0066cc', '#0080ff'],
-            ['#03045e', '#023e8a', '#0077b6', '#0096c7', '#00b4d8'],
-            ['#012a4a', '#013a63', '#01497c', '#014f86', '#2a6f97'],
-            ['#e3f2fd', '#bbdefb', '#90caf9', '#64b5f6', '#42a5f5'],
-            ['#2196f3', '#1e88e5', '#1976d2', '#1565c0', '#0d47a1'],
-            ['#121b22', '#1a2733', '#223445', '#2a4156', '#335068'],
-            ['#003300', '#004d00', '#006600', '#008000', '#009900'],
-            ['#e8f5e9', '#c8e6c9', '#a5d6a7', '#81c784', '#66bb6a'],
-            ['#4caf50', '#43a047', '#388e3c', '#2e7d32', '#1b5e20'],
-            ['#0b210f', '#123819', '#195223', '#236b2f', '#2c853b'],
-            ['#75c986', '#8fd19d', '#abdbb5', '#c8e8ce', '#e3f5e8'],
-            ['#fffde7', '#fff9c4', '#fff59d', '#fff176', '#ffee58'],
-            ['#ffeb3b', '#fdd835', '#fbc02d', '#f9a825', '#f57f17'],
-            ['#fff3e0', '#ffe0b2', '#ffcc80', '#ffb74d', '#ffa726'],
-            ['#ff9800', '#fb8c00', '#f57c00', '#ef6c00', '#e65100'],
-            ['#332000', '#4d3000', '#664000', '#805000', '#996000'],
-            ['#f3e5f5', '#e1bee7', '#ce93d8', '#ba68c8', '#ab47bc'],
-            ['#9c27b0', '#8e24aa', '#7b1fa2', '#6a1b9a', '#4a148c'],
-            ['#311b3b', '#442652', '#58326a', '#6d3d82', '#824899'],
-            ['#a168b5', '#b687c7', '#cca6d9', '#e0c7eb', '#f5e8fa'],
-            ['#000000', '#0a0a0a', '#141414', '#1f1f1f', '#292929'],
-            ['#111111', '#222222', '#333333', '#444444', '#555555'],
-            ['#fafafa', '#f5f5f5', '#eeeeee', '#e0e0e0', '#bdbdbd'],
-            ['#9e9e9e', '#757575', '#616161', '#424242', '#212121'],
-            ['#ffffff', '#fcfcfc', '#f7f7f7', '#f2f2f2', '#ededed'],
-            ['#efebe9', '#d7ccc8', '#bcaaa4', '#a1887f', '#8d6e63'],
-            ['#795548', '#6d4c41', '#5d4037', '#4e342e', '#3e2723'],
-            ['#eceff1', '#cfd8dc', '#b0bec5', '#90a4ae', '#78909c'],
-            ['#607d8b', '#546e7a', '#455a64', '#37474f', '#263238'],
-            ['#e0f7fa', '#b2ebf2', '#80deea', '#4dd0e1', '#26c6da'],
-            ['#00bcd4', '#00acc1', '#0097a7', '#00838f', '#006064'],
-            ['#1a1c20', '#f4ebd0', '#d6ad60', '#b68d40'],
-            ['#1f2833', '#c5c6c7', '#66fcf1', '#45a29e'],
-            ['#0b0c10', '#1f2833', '#c5c6c7', '#66fcf1'],
-            ['#05386b', '#379683', '#5cdb95', '#8ee4af'],
-            ['#000000', '#2b2b28', '#c1c8e4', '#5680e9'],
-            ['#84ceeb', '#5ab9ea', '#c1c8e4', '#8860d0'],
-            ['#fcf6f5', '#990011', '#8a0010', '#63000b'],
-            ['#00203f', '#adefd1', '#003a73', '#68c4af'],
-            ['#2c5f2d', '#97bc62', '#1b3a1a', '#b7d48a'],
-            ['#101820', '#fee715', '#203040', '#ffd600'],
-            ['#5b5b5b', '#7a7a7a', '#9c9c9c', '#c2c2c2', '#ebebeb'],
-            ['#715d5d', '#8a7474', '#a68c8c', '#c4a7a7', '#e3c5c5'],
-            ['#48525e', '#596573', '#6e7c8c', '#8596aa', '#9eb1c7'],
-            ['#525c54', '#677369', '#818f83', '#9bab9e', '#b7c7ba'],
-            ['#594d46', '#73635b', '#8c7a70', '#a89388', '#c4ada1'],
-            ['#1e1e1e', '#2e2e2e', '#3e3e3e', '#4e4e4e', '#5e5e5e'],
-            ['#cccccc', '#bbbbbb', '#aaaaaa', '#999999', '#888888'],
-            ['#ff00ff', '#e600e6', '#cc00cc', '#b300b3', '#990099'],
-            ['#00ffff', '#00e6e6', '#00cccc', '#00b3b3', '#009999'],
-            ['#ffff00', '#e6e600', '#cccc00', '#b3b300', '#999900'],
-            ['#ff6b6b', '#4ecdc4'],
-            ['#f7fff7', '#292f36'],
-            ['#ffe66d', '#1b998b'],
-            ['#f46036', '#2e294e'],
-            ['#d90368', '#04a777'],
-            ['#f1c40f', '#8e44ad']
+            ['#355070', '#6d597a', '#b56576', '#e56b6f', '#eaac8b']
         ];
 
         function hexToRgb(hex) {
@@ -1874,13 +1773,90 @@
             pointerX = null;
         });
 
-        // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
-        let isCollageMode = true; 
-        let resizeTimer;
-        let collageDataInitialized = false;
+        // --- GALLERY DRAGGING ENGINE ---
+        function initDragSystem() {
+            let draggedItem = null;
+            let startPointerX, startPointerY;
+            let itemStartX, itemStartY;
 
+            document.querySelectorAll('.work-item').forEach(item => {
+                // Initialize drag coordinates if they don't exist
+                if (!item.dataset.dragX) item.dataset.dragX = 0;
+                if (!item.dataset.dragY) item.dataset.dragY = 0;
+
+                item.addEventListener('pointerdown', (e) => {
+                    if (!isCollageMode) return;
+                    draggedItem = item;
+                    startPointerX = e.clientX;
+                    startPointerY = e.clientY;
+                    itemStartX = parseFloat(item.dataset.dragX) || 0;
+                    itemStartY = parseFloat(item.dataset.dragY) || 0;
+                    
+                    item.style.zIndex = 200; // Bring to front while dragging
+                    item.style.transition = 'none'; // Disable CSS transition for instant snappiness
+                    window.isDraggingGalleryItem = false;
+                    item.setPointerCapture(e.pointerId);
+                });
+
+                item.addEventListener('pointermove', (e) => {
+                    if (draggedItem !== item) return;
+                    
+                    const dx = e.clientX - startPointerX;
+                    const dy = e.clientY - startPointerY;
+
+                    // Only count as a drag if moved more than 3 pixels
+                    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                        window.isDraggingGalleryItem = true;
+                    }
+
+                    item.dataset.dragX = itemStartX + dx;
+                    item.dataset.dragY = itemStartY + dy;
+
+                    // Apply layout manually on the fly without triggering full updates
+                    let rotate = parseFloat(item.dataset.rotate) || 0;
+                    let percentX = parseFloat(item.dataset.translateX) || 0;
+                    let dxpx = item.dataset.dragX;
+                    let dypx = item.dataset.dragY;
+
+                    item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+                });
+
+                item.addEventListener('pointerup', (e) => {
+                    if (draggedItem !== item) return;
+                    draggedItem = null;
+                    item.releasePointerCapture(e.pointerId);
+                    
+                    // Re-enable smooth transition (clearing inline style falls back to CSS transition)
+                    item.style.transition = ''; 
+                    item.style.zIndex = item.dataset.baseZIndex;
+                    
+                    // Slight delay before resetting drag flag to prevent lightbox opening
+                    setTimeout(() => window.isDraggingGalleryItem = false, 100);
+                });
+
+                item.addEventListener('pointercancel', (e) => {
+                    if (draggedItem === item) {
+                        draggedItem = null;
+                        item.style.transition = '';
+                        item.style.zIndex = item.dataset.baseZIndex;
+                        setTimeout(() => window.isDraggingGalleryItem = false, 100);
+                    }
+                });
+            });
+        }
+
+        function updateDragCapabilities() {
+            document.querySelectorAll('.work-item').forEach(item => {
+                // Prevent mobile scroll on the items themselves so they can be dragged freely
+                item.style.touchAction = isCollageMode ? 'none' : 'auto';
+            });
+        }
+
+        // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
         function toggleLayoutMode() {
             isCollageMode = !isCollageMode;
+            localStorage.setItem('layoutMode', isCollageMode ? 'collage' : 'rows');
+
             const iconGrid = document.querySelector('.icon-grid');
             const iconCollage = document.querySelector('.icon-collage');
             
@@ -1893,6 +1869,7 @@
             }
             
             updateGalleryLayout();
+            updateDragCapabilities();
         }
 
         function initCollageData() {
@@ -1938,19 +1915,24 @@
                 grid.classList.add('mode-collage');
 
                 items.forEach((item, index) => {
-                    let deskSpan, tabSpan, mobSpan;
+                    // Reset drag offsets so the animation sweeps cleanly without dragging offsets
+                    item.dataset.dragX = 0;
+                    item.dataset.dragY = 0;
+
+                    let deskSpan, tabSpan;
                     switch(item.dataset.sizeTier) {
-                        case 'super-hero': deskSpan = 4; tabSpan = 3; mobSpan = 2; break; // Massive
-                        case 'hero':       deskSpan = 3; tabSpan = 2; mobSpan = 2; break; // Large
-                        case 'medium':     deskSpan = 2; tabSpan = 2; mobSpan = 1; break; // Medium
-                        default:           deskSpan = 1; tabSpan = 1; mobSpan = 1; break; // Small
+                        case 'super-hero': deskSpan = 4; tabSpan = 3; break; // Massive
+                        case 'hero':       deskSpan = 3; tabSpan = 2; break; // Large
+                        case 'medium':     deskSpan = 2; tabSpan = 2; break; // Medium
+                        default:           deskSpan = 1; tabSpan = 1; break; // Small
                     }
 
-                    let span = isMobile ? mobSpan : (isTablet ? tabSpan : deskSpan);
+                    // Strict single-column lock on mobile resolves the iPhone right-shift centering issue 
+                    let span = isMobile ? 1 : (isTablet ? tabSpan : deskSpan);
 
                     let pullUp = parseFloat(item.dataset.pullUp);
                     if (isTablet) pullUp *= 0.5;
-                    if (isMobile) pullUp *= 0.10; 
+                    if (isMobile) pullUp *= 0.20; 
                     if (index < (isMobile ? 2 : (isTablet ? 3 : 4))) pullUp = 0;
 
                     let rotate = parseFloat(item.dataset.rotate);
@@ -1960,12 +1942,16 @@
                     const marginTop = -pullUp;
                     const zIndex = item.dataset.zIndex;
 
+                    // Pull drag offsets to retain their floor positions
+                    let dxpx = parseFloat(item.dataset.dragX) || 0;
+                    let dypx = parseFloat(item.dataset.dragY) || 0;
+
                     item.style.gridColumn = `span ${span}`;
                     item.style.marginTop = `${marginTop}%`;
                     item.style.zIndex = zIndex;
                     item.dataset.baseZIndex = zIndex;
 
-                    const baseTransform = `rotate(${rotate}deg) translateX(${translateX}%) scale(1)`;
+                    const baseTransform = `rotate(${rotate}deg) translate(calc(${translateX}% + ${dxpx}px), ${dypx}px) scale(1)`;
                     item.style.setProperty('--base-transform', baseTransform);
                 });
 
@@ -1974,11 +1960,17 @@
                 grid.classList.add('mode-rows');
 
                 items.forEach(item => {
+                    // Reset drag offsets so the animation sweeps cleanly without dragging offsets
+                    item.dataset.dragX = 0;
+                    item.dataset.dragY = 0;
+
                     item.style.gridColumn = '';
                     item.style.marginTop = '0%';
                     item.style.zIndex = 1;
                     item.dataset.baseZIndex = 1;
-                    item.style.setProperty('--base-transform', 'rotate(0deg) translateX(0%) scale(1)');
+                    
+                    // The CSS transitions will gracefully sweep them into these structured layout coordinates
+                    item.style.setProperty('--base-transform', 'rotate(0deg) translate(0px, 0px) scale(1)');
                 });
             }
         }
