@@ -435,6 +435,9 @@ Margin-top: -60px;
                 margin: 0 auto; 
                 justify-items: center; /* Fixed: Forces iPad grids to center */
             }
+.works-grid.mode-collage {
+        margin-top: -45px !important; /* Increased from the global -60px */
+    }
             .works-grid.mode-rows { 
                 grid-template-columns: repeat(2, 1fr); 
                 gap: 75px; 
@@ -447,11 +450,55 @@ Margin-top: -60px;
             .works-container {
                 padding: 20px 0 80px 0; /* Fixed: Even and generous gutters for mobile */
             }
-            .works-grid.mode-rows, .works-grid.mode-collage { 
+            .works-grid.mode-rows { 
                 width: 100%; 
                 margin: 0 auto; 
                 justify-items: center; /* Fixed: Forces mobile grids to center */
             }
+#page-works .overlay-content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+.works-grid.mode-collage {
+        margin-top: -30px !important; /* Increased from the global -60px */
+    }
+.works-grid.mode-collage .work-item {
+        width: 100% !important;
+        padding: 0 !important; 
+        box-sizing: border-box;
+        /* Override the random JS rotations/translations so it stays perfectly centered */
+        transform: scale(1) !important; 
+    }
+
+    /* Keep a subtle tap animation for mobile since hover doesn't exist */
+    .works-grid.mode-collage .work-item:active {
+        transform: scale(1.02) !important;
+    }
+
+/* Constrain the image container to create a nice left/right border */
+    .works-grid.mode-collage .work-image {
+        width: 92% !important;
+        max-width: 92% !important;
+        margin: 0 auto !important; /* Keeps it perfectly centered */
+    }
+
+    /* Let the image itself fill that new 92% container */
+    .works-grid.mode-collage .work-image img {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important; 
+        min-width: 0 !important; 
+        border-radius: 0 !important;
+        object-fit: contain !important; 
+    }
+
+
+    /* Use % instead of vw to keep the text aligned with the new container constraints */
+    .works-grid.mode-collage .work-caption {
+        width: 92% !important;
+        max-width: 92% !important;
+        margin: 0 auto;
+    }
 
             .works-grid.mode-rows {
                 grid-template-columns: 1fr; 
