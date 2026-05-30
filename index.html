@@ -879,7 +879,8 @@ padding-left: 15px !important;
                     <img src="random/galleryglitch.png" id="btn-gallery-img" class="gallery-glitch-img">
                 </div>
             </a>
-            <div class="dropdown-content">
+        <div class="dropdown-content">
+                <a id="btn-paint">Paint</a>
                 <a id="btn-exhibitions">Exhibitions</a>
                 <a id="btn-press">Press</a>
             </div>
@@ -1327,6 +1328,7 @@ openWorks();
 
         // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
+const btnPaint = document.getElementById('btn-paint');
         const btnAbout = document.getElementById('btn-about');
         const btnGallery = document.getElementById('btn-gallery');
         const btnExhibitions = document.getElementById('btn-exhibitions');
@@ -1380,6 +1382,7 @@ openWorks();
         }
 
         btnHome.addEventListener('click', clearNavigation);
+btnPaint.addEventListener('click', clearNavigation);
         
         btnAbout.addEventListener('click', openAbout);
         btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openAbout(); });
