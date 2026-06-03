@@ -1324,7 +1324,24 @@ openWorks();
             setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         }
         setTimeout(glitchGallery, Math.random() * 4000 + 2000);
+function updateFooterIcons(activePage) {
+    const btnDownload = document.getElementById('btn-download');
+    const layoutToggle = document.getElementById('layout-toggle');
 
+    if (activePage === 'paint') {
+        // Empty string lets your CSS media queries decide if it should be visible (mobile only)
+        // If you want it visible on desktop too, change '' to 'flex'
+        btnDownload.style.display = ''; 
+        layoutToggle.style.display = 'none';
+    } else if (activePage === 'gallery') {
+        btnDownload.style.display = 'none';
+        layoutToggle.style.display = 'flex';
+    } else {
+        // Hides both on About, Exhibitions, Press, and Contact pages
+        btnDownload.style.display = 'none';
+        layoutToggle.style.display = 'none';
+    }
+}
 
         // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
@@ -1341,45 +1358,54 @@ const btnPaint = document.getElementById('btn-paint');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
 
-        function clearNavigation() {
-            pageAbout.classList.remove('visible');
-            pageWorks.classList.remove('visible');
-            pageExhibitions.classList.remove('visible');
-            pagePress.classList.remove('visible');
-            pageContact.classList.remove('visible');
-            
-            btnAbout.classList.remove('active');
-            btnGallery.classList.remove('active');
-            btnExhibitions.classList.remove('active');
-            btnPress.classList.remove('active');
-            btnContact.classList.remove('active');
-            
-            document.body.classList.remove('overlay-open');
-            closeLightbox();
-            document.body.style.cursor = 'none';
-            
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
-        }
+   function clearNavigation() {
+    pageAbout.classList.remove('visible');
+    pageWorks.classList.remove('visible');
+    pageExhibitions.classList.remove('visible');
+    pagePress.classList.remove('visible');
+    pageContact.classList.remove('visible');
+    
+    btnAbout.classList.remove('active');
+    btnGallery.classList.remove('active');
+    btnExhibitions.classList.remove('active');
+    btnPress.classList.remove('active');
+    btnContact.classList.remove('active');
+    
+    document.body.classList.remove('overlay-open');
+    closeLightbox();
+    document.body.style.cursor = 'none';
+    
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
 
-        function openAbout() {
-            if (pageAbout.classList.contains('visible')) return;
-            clearNavigation();
-            pageAbout.classList.add('visible');
-            btnAbout.classList.add('active');
-            document.body.classList.add('overlay-open');
-            document.body.style.cursor = 'default';
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-        }
+    // ADD THIS LINE
+    updateFooterIcons('paint');
+}
 
-        function openWorks() {
-            if (pageWorks.classList.contains('visible')) return;
-            clearNavigation();
-            pageWorks.classList.add('visible');
-            btnGallery.classList.add('active');
-            document.body.classList.add('overlay-open');
-            document.body.style.cursor = 'default';
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-        }
+  function openAbout() {
+    if (pageAbout.classList.contains('visible')) return;
+    clearNavigation();
+    pageAbout.classList.add('visible');
+    btnAbout.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+
+    // ADD THIS LINE
+    updateFooterIcons('other');
+}
+
+function openWorks() {
+    if (pageWorks.classList.contains('visible')) return;
+    clearNavigation();
+    pageWorks.classList.add('visible');
+    btnGallery.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+
+    // ADD THIS LINE
+    updateFooterIcons('gallery');
+}
 
         btnHome.addEventListener('click', clearNavigation);
 btnPaint.addEventListener('click', clearNavigation);
@@ -1397,34 +1423,43 @@ btnPaint.addEventListener('click', clearNavigation);
             }
         });
 
-        btnExhibitions.addEventListener('click', () => {
-            clearNavigation();
-            pageExhibitions.classList.add('visible');
-            btnExhibitions.classList.add('active');
-            btnGallery.classList.add('active');
-            document.body.classList.add('overlay-open');
-            document.body.style.cursor = 'default';
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-        });
+btnExhibitions.addEventListener('click', () => {
+    clearNavigation();
+    pageExhibitions.classList.add('visible');
+    btnExhibitions.classList.add('active');
+    btnGallery.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
 
-        btnPress.addEventListener('click', () => {
-            clearNavigation();
-            pagePress.classList.add('visible');
-            btnPress.classList.add('active');
-            btnGallery.classList.add('active');
-            document.body.classList.add('overlay-open');
-            document.body.style.cursor = 'default';
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-        });
+    // ADD THIS LINE
+    updateFooterIcons('other');
+});
 
-        btnContact.addEventListener('click', () => {
-            clearNavigation();
-            pageContact.classList.add('visible');
-            btnContact.classList.add('active');
-            document.body.classList.add('overlay-open');
-            document.body.style.cursor = 'default';
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-        });
+btnPress.addEventListener('click', () => {
+    clearNavigation();
+    pagePress.classList.add('visible');
+    btnPress.classList.add('active');
+    btnGallery.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+
+    // ADD THIS LINE
+    updateFooterIcons('other');
+});
+
+btnContact.addEventListener('click', () => {
+    clearNavigation();
+    pageContact.classList.add('visible');
+    btnContact.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+
+    // ADD THIS LINE
+    updateFooterIcons('other');
+});
 
         // --- ABOUT PAGE IMAGE SLIDER ---
        const aboutImages = ['me/aboutme_001.jpg', 'me/aboutme_002.jpg', 'me/aboutme_003.jpg', 'me/aboutme_004.jpg', 'me/aboutme_005.jpg', 'me/aboutme_006.jpg'];
