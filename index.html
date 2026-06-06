@@ -135,19 +135,21 @@
             transition: filter 0.3s ease;
         }
 
-        .theme-toggle, .download-icon, .layout-toggle {
+        .theme-toggle, .download-icon, .layout-toggle, .zoom-toggle {
             cursor: pointer;
             width: 18px; height: 18px;
             display: flex; align-items: center; justify-content: center;
-            opacity: 0.6; transition: opacity 0.3s ease;
+            opacity: 0.6; transition: opacity 0.3s ease, transform 0.2s ease;
             color: var(--text-color);
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation; 
         }
 
-        .theme-toggle:hover, .download-icon:hover, .layout-toggle:hover { opacity: 1; }
-        .theme-toggle svg, .download-icon svg, .layout-toggle svg { width: 100%; height: 100%; }
+        .theme-toggle:hover, .download-icon:hover, .layout-toggle:hover, .zoom-toggle:hover { opacity: 1; }
+        .zoom-toggle:active { transform: scale(0.85); } /* Nice little click pop */
+        
+        .theme-toggle svg, .download-icon svg, .layout-toggle svg, .zoom-toggle svg { width: 100%; height: 100%; }
         
         .icon-sun { display: block; }
         .icon-moon { display: none; }
@@ -156,6 +158,7 @@
         body.dark-mode .icon-moon { display: block; }
 
         .download-icon { display: none; }
+        .zoom-toggle { display: none; } /* Hidden by default until Gallery is opened */
 
         .copyright {
             position: fixed; bottom: 25px; left: 25px;
@@ -424,14 +427,15 @@
             order: 0; 
         }
 
-        /* Collage Mode Setup - Single Column Everywhere */
+        /* Collage Mode Setup */
         .works-grid.mode-collage {
+            /* Now handled mostly by JavaScript for the zoom feature */
             grid-template-columns: 1fr; 
             gap: 40px; 
             grid-auto-flow: row;
             justify-items: center;
             width: 100%;
-Margin-top: -60px;
+            margin-top: -60px;
         }
 
         /* Rows Mode Setup - Fixed vertical alignment */
@@ -454,9 +458,9 @@ Margin-top: -60px;
                 margin: 0 auto; 
                 justify-items: center; /* Fixed: Forces iPad grids to center */
             }
-.works-grid.mode-collage {
-        margin-top: -45px !important; /* Increased from the global -60px */
-    }
+            .works-grid.mode-collage {
+                margin-top: -45px !important; /* Increased from the global -60px */
+            }
             .works-grid.mode-rows { 
                 grid-template-columns: repeat(2, 1fr); 
                 gap: 75px; 
@@ -472,55 +476,55 @@ Margin-top: -60px;
             .works-grid.mode-rows { 
                 width: 100%; 
                 margin: 0 auto; 
-padding-left: 15px !important;
-        padding-right: 15px !important;
-        box-sizing: border-box;
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+                box-sizing: border-box;
                 justify-items: center; /* Fixed: Forces mobile grids to center */
             }
-#page-works .overlay-content {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
-.works-grid.mode-collage {
-        margin-top: -30px !important; /* Increased from the global -60px */
-    }
-.works-grid.mode-collage .work-item {
-        width: 100% !important;
-        padding: 0 !important; 
-        box-sizing: border-box;
-        /* Override the random JS rotations/translations so it stays perfectly centered */
-        transform: scale(1) !important; 
-    }
+            #page-works .overlay-content {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            .works-grid.mode-collage {
+                margin-top: -30px !important; /* Increased from the global -60px */
+            }
+            .works-grid.mode-collage .work-item {
+                width: 100% !important;
+                padding: 0 !important; 
+                box-sizing: border-box;
+                /* Override the random JS rotations/translations so it stays perfectly centered */
+                transform: scale(1) !important; 
+            }
 
-    /* Keep a subtle tap animation for mobile since hover doesn't exist */
-    .works-grid.mode-collage .work-item:active {
-        transform: scale(1.02) !important;
-    }
+            /* Keep a subtle tap animation for mobile since hover doesn't exist */
+            .works-grid.mode-collage .work-item:active {
+                transform: scale(1.02) !important;
+            }
 
-/* Constrain the image container to create a nice left/right border */
-    .works-grid.mode-collage .work-image {
-        width: 92% !important;
-        max-width: 92% !important;
-        margin: 0 auto !important; /* Keeps it perfectly centered */
-    }
+            /* Constrain the image container to create a nice left/right border */
+            .works-grid.mode-collage .work-image {
+                width: 92% !important;
+                max-width: 92% !important;
+                margin: 0 auto !important; /* Keeps it perfectly centered */
+            }
 
-    /* Let the image itself fill that new 92% container */
-    .works-grid.mode-collage .work-image img {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto !important; 
-        min-width: 0 !important; 
-        border-radius: 0 !important;
-        object-fit: contain !important; 
-    }
+            /* Let the image itself fill that new 92% container */
+            .works-grid.mode-collage .work-image img {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important; 
+                min-width: 0 !important; 
+                border-radius: 0 !important;
+                object-fit: contain !important; 
+            }
 
 
-    /* Use % instead of vw to keep the text aligned with the new container constraints */
-    .works-grid.mode-collage .work-caption {
-        width: 92% !important;
-        max-width: 92% !important;
-        margin: 0 auto;
-    }
+            /* Use % instead of vw to keep the text aligned with the new container constraints */
+            .works-grid.mode-collage .work-caption {
+                width: 92% !important;
+                max-width: 92% !important;
+                margin: 0 auto;
+            }
 
             .works-grid.mode-rows {
                 grid-template-columns: 1fr; 
@@ -602,7 +606,7 @@ padding-left: 15px !important;
 
         .works-grid.mode-collage .work-image { 
             box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
-            min-width: 200px; /* Allow it to scale down gracefully */
+            min-width: 100px; /* Allow it to scale down gracefully during zoom */
             width: 100%;     
             overflow: hidden;
         }
@@ -796,7 +800,7 @@ padding-left: 15px !important;
         /* --- BREAKPOINTS --- */
         @media (max-width: 1024px) {
             .download-icon { display: flex; }
-            .ig-icon, .download-icon, .theme-toggle, .layout-toggle { width: 22px; height: 22px; }
+            .ig-icon, .download-icon, .theme-toggle, .layout-toggle, .zoom-toggle { width: 22px; height: 22px; }
             #page-about { overflow-y: auto; }
             #page-about .overlay-content { padding: 120px 40px 60px 40px; align-items: flex-start; }
             .about-container { flex-direction: column; align-items: center; gap: 30px; width: 100%; height: auto; max-width: 1200px; }
@@ -825,7 +829,7 @@ padding-left: 15px !important;
             .dropdown-content { padding-top: 15px; gap: 12px; }
             .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 12px; }
             .footer a { font-size: 0.55rem; } 
-            .ig-icon, .download-icon, .theme-toggle, .layout-toggle { width: 22px; height: 22px; }
+            .ig-icon, .download-icon, .theme-toggle, .layout-toggle, .zoom-toggle { width: 22px; height: 22px; }
             .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
             #ios-brush-selector { bottom: 25px; left: 10px; transform: scale(0.9); transform-origin: bottom left; }
             #page-about .overlay-content { padding-top: 90px; padding-bottom: 150px; }
@@ -931,6 +935,14 @@ padding-left: 15px !important;
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+            </div>
+            
+            <div id="zoom-toggle" class="zoom-toggle" title="Change Collage Size" onclick="cycleCollageZoom()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
                 </svg>
             </div>
             
@@ -1152,6 +1164,7 @@ padding-left: 15px !important;
         let lastThemeClickTime = 0;
         
         let isCollageMode = true; 
+        let collageZoomLevel = 0; // State variable for our 4 zoom levels (0, 1, 2, 3)
         let resizeTimer;
         let collageDataInitialized = false;
 
@@ -1205,12 +1218,16 @@ padding-left: 15px !important;
                 const iconCollage = document.querySelector('.icon-collage');
                 iconGrid.style.display = 'none';
                 iconCollage.style.display = 'block';
+                document.getElementById('zoom-toggle').style.display = 'none';
+            } else {
+                // We default to collage mode being visible, so set icon to flex
+                document.getElementById('zoom-toggle').style.display = 'flex';
             }
 
             updateGalleryLayout();
             initDragSystem();
             updateDragCapabilities();
-openWorks();
+            openWorks();
         });
 
         // --- THEME TOGGLE LOGIC ---
@@ -1358,28 +1375,30 @@ openWorks();
             setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         }
         setTimeout(glitchGallery, Math.random() * 4000 + 2000);
-function updateFooterIcons(activePage) {
-    const btnDownload = document.getElementById('btn-download');
-    const layoutToggle = document.getElementById('layout-toggle');
+        
+        function updateFooterIcons(activePage) {
+            const btnDownload = document.getElementById('btn-download');
+            const layoutToggle = document.getElementById('layout-toggle');
+            const zoomToggle = document.getElementById('zoom-toggle');
 
-    if (activePage === 'paint') {
-        // Empty string lets your CSS media queries decide if it should be visible (mobile only)
-        // If you want it visible on desktop too, change '' to 'flex'
-        btnDownload.style.display = ''; 
-        layoutToggle.style.display = 'none';
-    } else if (activePage === 'gallery') {
-        btnDownload.style.display = 'none';
-        layoutToggle.style.display = 'flex';
-    } else {
-        // Hides both on About, Exhibitions, Press, and Contact pages
-        btnDownload.style.display = 'none';
-        layoutToggle.style.display = 'none';
-    }
-}
+            if (activePage === 'paint') {
+                btnDownload.style.display = ''; 
+                layoutToggle.style.display = 'none';
+                zoomToggle.style.display = 'none';
+            } else if (activePage === 'gallery') {
+                btnDownload.style.display = 'none';
+                layoutToggle.style.display = 'flex';
+                zoomToggle.style.display = isCollageMode ? 'flex' : 'none';
+            } else {
+                btnDownload.style.display = 'none';
+                layoutToggle.style.display = 'none';
+                zoomToggle.style.display = 'none';
+            }
+        }
 
         // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
-const btnPaint = document.getElementById('btn-paint');
+        const btnPaint = document.getElementById('btn-paint');
         const btnAbout = document.getElementById('btn-about');
         const btnGallery = document.getElementById('btn-gallery');
         const btnExhibitions = document.getElementById('btn-exhibitions');
@@ -1392,57 +1411,54 @@ const btnPaint = document.getElementById('btn-paint');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
 
-   function clearNavigation() {
-    pageAbout.classList.remove('visible');
-    pageWorks.classList.remove('visible');
-    pageExhibitions.classList.remove('visible');
-    pagePress.classList.remove('visible');
-    pageContact.classList.remove('visible');
-    
-    btnAbout.classList.remove('active');
-    btnGallery.classList.remove('active');
-    btnExhibitions.classList.remove('active');
-    btnPress.classList.remove('active');
-    btnContact.classList.remove('active');
-    
-    document.body.classList.remove('overlay-open');
-    closeLightbox();
-    document.body.style.cursor = 'none';
-    
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
+       function clearNavigation() {
+        pageAbout.classList.remove('visible');
+        pageWorks.classList.remove('visible');
+        pageExhibitions.classList.remove('visible');
+        pagePress.classList.remove('visible');
+        pageContact.classList.remove('visible');
+        
+        btnAbout.classList.remove('active');
+        btnGallery.classList.remove('active');
+        btnExhibitions.classList.remove('active');
+        btnPress.classList.remove('active');
+        btnContact.classList.remove('active');
+        
+        document.body.classList.remove('overlay-open');
+        closeLightbox();
+        document.body.style.cursor = 'none';
+        
+        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
 
-    // ADD THIS LINE
-    updateFooterIcons('paint');
-}
+        updateFooterIcons('paint');
+    }
 
-  function openAbout() {
-    if (pageAbout.classList.contains('visible')) return;
-    clearNavigation();
-    pageAbout.classList.add('visible');
-    btnAbout.classList.add('active');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+      function openAbout() {
+        if (pageAbout.classList.contains('visible')) return;
+        clearNavigation();
+        pageAbout.classList.add('visible');
+        btnAbout.classList.add('active');
+        document.body.classList.add('overlay-open');
+        document.body.style.cursor = 'default';
+        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
 
-    // ADD THIS LINE
-    updateFooterIcons('other');
-}
+        updateFooterIcons('other');
+    }
 
-function openWorks() {
-    if (pageWorks.classList.contains('visible')) return;
-    clearNavigation();
-    pageWorks.classList.add('visible');
-    btnGallery.classList.add('active');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    function openWorks() {
+        if (pageWorks.classList.contains('visible')) return;
+        clearNavigation();
+        pageWorks.classList.add('visible');
+        btnGallery.classList.add('active');
+        document.body.classList.add('overlay-open');
+        document.body.style.cursor = 'default';
+        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
 
-    // ADD THIS LINE
-    updateFooterIcons('gallery');
-}
+        updateFooterIcons('gallery');
+    }
 
         btnHome.addEventListener('click', clearNavigation);
-btnPaint.addEventListener('click', clearNavigation);
+        btnPaint.addEventListener('click', clearNavigation);
         
         btnAbout.addEventListener('click', openAbout);
         btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openAbout(); });
@@ -1457,46 +1473,43 @@ btnPaint.addEventListener('click', clearNavigation);
             }
         });
 
-btnExhibitions.addEventListener('click', () => {
-    clearNavigation();
-    pageExhibitions.classList.add('visible');
-    btnExhibitions.classList.add('active');
-    btnGallery.classList.add('active');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    btnExhibitions.addEventListener('click', () => {
+        clearNavigation();
+        pageExhibitions.classList.add('visible');
+        btnExhibitions.classList.add('active');
+        btnGallery.classList.add('active');
+        document.body.classList.add('overlay-open');
+        document.body.style.cursor = 'default';
+        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
 
-    // ADD THIS LINE
-    updateFooterIcons('other');
-});
+        updateFooterIcons('other');
+    });
 
-btnPress.addEventListener('click', () => {
-    clearNavigation();
-    pagePress.classList.add('visible');
-    btnPress.classList.add('active');
-    btnGallery.classList.add('active');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    btnPress.addEventListener('click', () => {
+        clearNavigation();
+        pagePress.classList.add('visible');
+        btnPress.classList.add('active');
+        btnGallery.classList.add('active');
+        document.body.classList.add('overlay-open');
+        document.body.style.cursor = 'default';
+        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
 
-    // ADD THIS LINE
-    updateFooterIcons('other');
-});
+        updateFooterIcons('other');
+    });
 
-btnContact.addEventListener('click', () => {
-    clearNavigation();
-    pageContact.classList.add('visible');
-    btnContact.classList.add('active');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    btnContact.addEventListener('click', () => {
+        clearNavigation();
+        pageContact.classList.add('visible');
+        btnContact.classList.add('active');
+        document.body.classList.add('overlay-open');
+        document.body.style.cursor = 'default';
+        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
 
-    // ADD THIS LINE
-    updateFooterIcons('other');
-});
+        updateFooterIcons('other');
+    });
 
         // --- ABOUT PAGE IMAGE SLIDER ---
- const aboutImages = ['me/aboutme_001.jpg', 'me/aboutme_002.jpg', 'me/aboutme_003.jpg', 'me/aboutme_004.jpg'];
+     const aboutImages = ['me/aboutme_001.jpg', 'me/aboutme_002.jpg', 'me/aboutme_003.jpg', 'me/aboutme_004.jpg'];
         let currentAboutIdx = 0;
         let aboutSlideInterval;
 
@@ -1537,7 +1550,6 @@ btnContact.addEventListener('click', () => {
 
 
         // --- LIGHTBOX ZOOM AND PAN ENGINE ---
- // --- LIGHTBOX ZOOM AND PAN ENGINE ---
         let zoomState = 0; 
         let currentOriginX = 50;
         let currentOriginY = 50;
@@ -1981,6 +1993,15 @@ function initDragSystem() {
 
                 let rotate = parseFloat(item.dataset.rotate) || 0;
                 let percentX = parseFloat(item.dataset.translateX) || 0;
+                
+                // Adjust rotation/translation based on current zoom level dampener
+                let dampener = 1;
+                if (collageZoomLevel === 1) dampener = 0.5;
+                if (collageZoomLevel === 2) dampener = 0.2;
+                if (collageZoomLevel === 3) dampener = 0.05;
+                rotate *= dampener;
+                percentX *= dampener;
+
                 let dxpx = item.dataset.dragX;
                 let dypx = item.dataset.dragY;
 
@@ -2017,6 +2038,12 @@ function updateDragCapabilities() {
     });
 }
 
+        // --- NEW: COLLAGE ZOOM LOGIC ---
+        function cycleCollageZoom() {
+            collageZoomLevel = (collageZoomLevel + 1) % 4; // Cycles 0 -> 1 -> 2 -> 3 -> 0
+            updateGalleryLayout();
+        }
+
         // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
         function toggleLayoutMode() {
             isCollageMode = !isCollageMode;
@@ -2024,13 +2051,16 @@ function updateDragCapabilities() {
 
             const iconGrid = document.querySelector('.icon-grid');
             const iconCollage = document.querySelector('.icon-collage');
+            const zoomToggle = document.getElementById('zoom-toggle');
             
             if(isCollageMode) {
                 iconGrid.style.display = 'block';
                 iconCollage.style.display = 'none';
+                zoomToggle.style.display = 'flex'; // Show zoom control
             } else {
                 iconGrid.style.display = 'none';
                 iconCollage.style.display = 'block';
+                zoomToggle.style.display = 'none'; // Hide zoom control
             }
             
             updateGalleryLayout();
@@ -2041,15 +2071,6 @@ function updateDragCapabilities() {
             const items = document.querySelectorAll('.work-item');
             
             items.forEach((item, index) => {
-                const rand = Math.random();
-                let sizeTier = 'normal';
-                
-                if (rand > 0.85) sizeTier = 'super-hero';     // ~15% chance for a massive image
-                else if (rand > 0.65) sizeTier = 'hero';      // ~20% chance for a large image
-                else if (rand > 0.40) sizeTier = 'medium';    // ~25% chance for a medium image
-
-                item.dataset.sizeTier = sizeTier;
-                
                 const isExtremeOverlap = Math.random() > 0.85; 
                 
                 let pullUpDesk = isExtremeOverlap ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 3) + 1;
@@ -2076,50 +2097,66 @@ function updateDragCapabilities() {
                 grid.classList.remove('mode-rows');
                 grid.classList.add('mode-collage');
 
+                // Apply Dynamic Grid Columns based on Zoom Level
+                let columnsCss = '1fr'; // Default Level 0
+                if (collageZoomLevel === 1) columnsCss = 'repeat(2, 1fr)';
+                if (collageZoomLevel === 2) columnsCss = 'repeat(3, 1fr)';
+                if (collageZoomLevel === 3) columnsCss = 'repeat(4, 1fr)';
+
+                // Keep mobile from breaking down into too many unreadable columns
+                if (window.innerWidth <= 768) {
+                    if (collageZoomLevel === 1) columnsCss = 'repeat(2, 1fr)';
+                    if (collageZoomLevel >= 2) columnsCss = 'repeat(3, 1fr)'; // Cap at 3 for mobile
+                }
+                
+                grid.style.gridTemplateColumns = columnsCss;
+
                 items.forEach((item, index) => {
-                    // Reset drag offsets so the animation sweeps cleanly without dragging offsets
+                    // Reset drag offsets on re-layout
                     item.dataset.dragX = 0;
                     item.dataset.dragY = 0;
 
-                    let span = 1;
+                    // As we zoom out (smaller images, more columns), 
+                    // we dampen the chaotic rotation/overlap so it doesn't get totally scrambled
+                    let dampener = 1;
+                    if (collageZoomLevel === 1) dampener = 0.5;
+                    if (collageZoomLevel === 2) dampener = 0.2;
+                    if (collageZoomLevel === 3) dampener = 0.05;
 
-                    let pullUp = parseFloat(item.dataset.pullUp) * 0.20; 
-                    if (index < 2) pullUp = 0;
+                    let pullUp = parseFloat(item.dataset.pullUp) * 0.20 * dampener; 
+                    // Stop overlapping entirely when heavily zoomed out to prevent clipping bugs
+                    if (index < 2 || collageZoomLevel > 0) pullUp = 0; 
 
-                    let rotate = parseFloat(item.dataset.rotate) * 0.5;
-
-                    let translateX = parseFloat(item.dataset.translateX);
+                    let rotate = parseFloat(item.dataset.rotate) * 0.5 * dampener;
+                    let translateX = parseFloat(item.dataset.translateX) * dampener;
+                    
                     const marginTop = -pullUp;
                     const zIndex = item.dataset.zIndex;
 
-                    // Pull drag offsets to retain their floor positions
-                    let dxpx = parseFloat(item.dataset.dragX) || 0;
-                    let dypx = parseFloat(item.dataset.dragY) || 0;
-
-                    item.style.gridColumn = `span ${span}`;
                     item.style.marginTop = `${marginTop}%`;
                     item.style.zIndex = zIndex;
                     item.dataset.baseZIndex = zIndex;
 
-                    const baseTransform = `rotate(${rotate}deg) translate(calc(${translateX}% + ${dxpx}px), ${dypx}px) scale(1)`;
+                    const baseTransform = `rotate(${rotate}deg) translate(${translateX}%, 0px) scale(1)`;
                     item.style.setProperty('--base-transform', baseTransform);
                 });
 
             } else {
+                // ROWS MODE
                 grid.classList.remove('mode-collage');
                 grid.classList.add('mode-rows');
 
+                // Clear inline style so the CSS handles it
+                grid.style.gridTemplateColumns = ''; 
+
                 items.forEach(item => {
-                    // Reset drag offsets so the animation sweeps cleanly without dragging offsets
                     item.dataset.dragX = 0;
                     item.dataset.dragY = 0;
 
-                    item.style.gridColumn = '';
                     item.style.marginTop = '0%';
                     item.style.zIndex = 1;
                     item.dataset.baseZIndex = 1;
                     
-                    // The CSS transitions will gracefully sweep them into these structured layout coordinates
                     item.style.setProperty('--base-transform', 'rotate(0deg) translate(0px, 0px) scale(1)');
                 });
             }
