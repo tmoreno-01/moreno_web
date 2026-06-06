@@ -453,6 +453,9 @@
             .works-container {
                 padding: 20px 1vw 80px 1vw; /* Fixed: Generous gutters for iPad */
             }
+.zoom-toggle {
+                display: none !important;
+            }
             .works-grid.mode-rows, .works-grid.mode-collage {
                 width: 100%; 
                 margin: 0 auto; 
@@ -470,6 +473,9 @@
         }
 
         @media (max-width: 768px) {
+.zoom-toggle {
+                display: none !important;
+            }
             .works-container {
                 padding: 20px 0 80px 0; /* Fixed: Even and generous gutters for mobile */
             }
@@ -1165,7 +1171,8 @@
         
         let isCollageMode = true; 
         let collageZoomLevel = 0; // State variable for our 4 zoom levels (0, 1, 2, 3)
-        let resizeTimer;
+       let currentGridDampener = 1;
+ let resizeTimer;
         let collageDataInitialized = false;
 
         // Global flag to prevent Lightbox click when dragging
@@ -2039,8 +2046,12 @@ function updateDragCapabilities() {
 }
 
         // --- NEW: COLLAGE ZOOM LOGIC ---
-        function cycleCollageZoom() {
-            collageZoomLevel = (collageZoomLevel + 1) % 4; // Cycles 0 -> 1 -> 2 -> 3 -> 0
+function cycleCollageZoom() {
+            let maxZoom = 4; // desktop: 0, 1, 2, 3
+            if (window.innerWidth <= 1024) {
+                maxZoom = 2; // ipad: modes 0 (1 col) and 1 (2 cols)
+            }
+            collageZoomLevel = (collageZoomLevel + 1) % maxZoom;
             updateGalleryLayout();
         }
 
@@ -2097,35 +2108,47 @@ function updateDragCapabilities() {
                 grid.classList.remove('mode-rows');
                 grid.classList.add('mode-collage');
 
-                // Apply Dynamic Grid Columns based on Zoom Level
-                let columnsCss = '1fr'; // Default Level 0
-                if (collageZoomLevel === 1) columnsCss = 'repeat(2, 1fr)';
-                if (collageZoomLevel === 2) columnsCss = 'repeat(3, 1fr)';
-                if (collageZoomLevel === 3) columnsCss = 'repeat(4, 1fr)';
+                let columnsCss = '1fr';
+                let dampener = 1;
 
-                // Keep mobile from breaking down into too many unreadable columns
                 if (window.innerWidth <= 768) {
-                    if (collageZoomLevel === 1) columnsCss = 'repeat(2, 1fr)';
-                    if (collageZoomLevel >= 2) columnsCss = 'repeat(3, 1fr)'; // Cap at 3 for mobile
+                    // iPhone/Mobile: Locked to 1 column, zoom button hidden via CSS
+                    collageZoomLevel = 0; 
+                    columnsCss = '1fr';
+                    dampener = 1;
+          } else if (window.innerWidth <= 1024) {
+                    // iPad: 2 modes allowed (0 = 1 column, 1 = 2 columns)
+                    if (collageZoomLevel > 1) collageZoomLevel = 0; 
+                    
+                    if (collageZoomLevel === 0) {
+                        columnsCss = '1fr'; // Default 1 column
+                        dampener = 1;
+                    } else {
+                        columnsCss = 'repeat(2, 1fr)'; // 2 columns max
+                        dampener = 0.5;
+                    }
+                } else {
+                    // Desktop: 4 modes (1, 2, 3, 4 columns)
+                    if (collageZoomLevel === 0) { columnsCss = '1fr'; dampener = 1; }
+                    if (collageZoomLevel === 1) { columnsCss = 'repeat(2, 1fr)'; dampener = 0.5; }
+                    if (collageZoomLevel === 2) { columnsCss = 'repeat(3, 1fr)'; dampener = 0.2; }
+                    if (collageZoomLevel === 3) { columnsCss = 'repeat(4, 1fr)'; dampener = 0.05; }
                 }
-                
+
+                currentGridDampener = dampener; // Save globally so the drag engine can use it
                 grid.style.gridTemplateColumns = columnsCss;
 
                 items.forEach((item, index) => {
-                    // Reset drag offsets on re-layout
                     item.dataset.dragX = 0;
                     item.dataset.dragY = 0;
 
-                    // As we zoom out (smaller images, more columns), 
-                    // we dampen the chaotic rotation/overlap so it doesn't get totally scrambled
-                    let dampener = 1;
-                    if (collageZoomLevel === 1) dampener = 0.5;
-                    if (collageZoomLevel === 2) dampener = 0.2;
-                    if (collageZoomLevel === 3) dampener = 0.05;
-
                     let pullUp = parseFloat(item.dataset.pullUp) * 0.20 * dampener; 
-                    // Stop overlapping entirely when heavily zoomed out to prevent clipping bugs
-                    if (index < 2 || collageZoomLevel > 0) pullUp = 0; 
+                    
+                    // Stop overlapping entirely when zoomed out or on smaller screens 
+                    // to prevent clipping bugs and keep it clean
+                    if (index < 2 || collageZoomLevel > 0 || window.innerWidth <= 1024) {
+                        pullUp = 0; 
+                    } 
 
                     let rotate = parseFloat(item.dataset.rotate) * 0.5 * dampener;
                     let translateX = parseFloat(item.dataset.translateX) * dampener;
@@ -2145,8 +2168,6 @@ function updateDragCapabilities() {
                 // ROWS MODE
                 grid.classList.remove('mode-collage');
                 grid.classList.add('mode-rows');
-
-                // Clear inline style so the CSS handles it
                 grid.style.gridTemplateColumns = ''; 
 
                 items.forEach(item => {
