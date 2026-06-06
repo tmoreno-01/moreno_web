@@ -1016,17 +1016,18 @@ padding-left: 15px !important;
     <div id="page-works" class="page-overlay">
         <div class="overlay-content">
             <div class="works-container">
-                <div class="works-grid mode-collage">
+              <div class="works-grid mode-collage">
                     
-<div class="work-item" onclick="openLightbox('artwork/liminalsometime.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', 'artwork/liminalsometime_back.jpg')">
-    <div class="work-image"><img src="artwork/small/liminalsometime_small.jpg" alt="Liminal some Time"></div>
-    <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
-</div>
+                    <div class="work-item" onclick="openLightbox('artwork/liminalsometime.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', 'artwork/liminalsometime_back.jpg')">
+                        <div class="work-image"><img src="artwork/small/liminalsometime_small.jpg" alt="Liminal some Time"></div>
+                        <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
+                    </div>
 
-<div class="work-item" id="art-peanut-butter" onclick="openLightbox('artwork/nicedayoff.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-    <div class="work-image"><img src="artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
-    <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
-</div>
+                    <div class="work-item" id="art-peanut-butter" onclick="openLightbox('artwork/nicedayoff.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
+                        <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
+                    </div>
+
                     <div class="work-item" onclick="openLightbox('artwork/seizethelighthouse.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
                         <div class="work-image"><img src="artwork/small/seizethelighthouse_small.jpg" alt="Seize the Lighthouse"></div>
                         <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
@@ -1048,19 +1049,21 @@ padding-left: 15px !important;
                     </div>
 
                     <div class="work-item" onclick="openLightbox('artwork/somethingaboutnextweek.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '')">
-                        <div class="work-image"><img src="artwork/small/somethingaboutnextweek_small.jpg" alt="Something about next week"></div>
+                        <div class="work-image"><img src="artwork/small/somethingaboutnextweek_small.jpg" alt="Something about next week" loading="lazy"></div>
                         <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
                     </div>
 
                     <div class="work-item" onclick="openLightbox('artwork/001.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', 'me and my wife painted this together on a sunny afternoon a few years back')">
-                        <div class="work-image"><img src="artwork/small/001_small.jpg" alt="Mayonnaise on the Roof"></div>
+                        <div class="work-image"><img src="artwork/small/001_small.jpg" alt="Mayonnaise on the Roof" loading="lazy"></div>
                         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
                     </div>
 
                     <div class="work-item" onclick="openLightbox('artwork/notitle.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '')">
-                        <div class="work-image"><img src="artwork/small/notitle_small.jpg" alt="Notitle"></div>
+                        <div class="work-image"><img src="artwork/small/notitle_small.jpg" alt="Notitle" loading="lazy"></div>
                         <div class="work-caption"><span>Notitle</span><span>2023</span></div>
                     </div>
+
+                </div>
 
                 </div>
             </div>
@@ -1071,7 +1074,10 @@ padding-left: 15px !important;
     <div class="overlay-content">
         <div class="form-container">
             
-            <img src="random/enquiryform.png" alt="Enquiry Form" class="enquiry-title-img">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; gap: 10px;">
+    <img src="random/enquiryform.png" alt="Enquiry Form" class="enquiry-title-img" style="margin-bottom: 0; max-width: 60%;">
+    <img src="frace.png" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
+</div>
             
             <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
                 <input type="hidden" name="access_key" value="b05857c6-21f6-487a-a50f-c3ed2a02c639">
