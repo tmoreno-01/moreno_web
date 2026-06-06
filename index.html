@@ -372,12 +372,11 @@
             opacity: 1;
         }
 
-        .slider-arrow {
+     .slider-arrow {
             position: absolute; top: 50%;
             width: 20px; height: 20px; cursor: pointer; z-index: 10;
             border-top: 3px solid var(--text-color); border-right: 3px solid var(--text-color);
-            opacity: 0.5; transition: opacity 0.2s ease, filter 0.3s ease;
-            filter: var(--logo-filter);
+            opacity: 0.5; transition: opacity 0.2s ease;
         }
 /* Creates a large invisible clickable area around the arrows */
 .slider-arrow::after {
@@ -415,6 +414,15 @@
             align-items: start; 
             transition: gap 1.2s cubic-bezier(0.22, 1, 0.36, 1);
         } 
+/* Force Peanut Butter to the top in Collage Mode */
+        .works-grid.mode-collage #art-peanut-butter {
+            order: -1; 
+        }
+
+        /* Ensure standard DOM order in Rows Mode */
+        .works-grid.mode-rows #art-peanut-butter {
+            order: 0; 
+        }
 
         /* Collage Mode Setup - Single Column Everywhere */
         .works-grid.mode-collage {
@@ -1010,10 +1018,15 @@ padding-left: 15px !important;
             <div class="works-container">
                 <div class="works-grid mode-collage">
                     
-<div class="work-item" onclick="openLightbox('artwork/nicedayoff.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
-                        <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
-                    </div>
+<div class="work-item" onclick="openLightbox('artwork/liminalsometime.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', 'artwork/liminalsometime_back.jpg')">
+    <div class="work-image"><img src="artwork/small/liminalsometime_small.jpg" alt="Liminal some Time"></div>
+    <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
+</div>
+
+<div class="work-item" id="art-peanut-butter" onclick="openLightbox('artwork/nicedayoff.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+    <div class="work-image"><img src="artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
+    <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
+</div>
                     <div class="work-item" onclick="openLightbox('artwork/seizethelighthouse.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
                         <div class="work-image"><img src="artwork/small/seizethelighthouse_small.jpg" alt="Seize the Lighthouse"></div>
                         <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
@@ -1098,11 +1111,15 @@ padding-left: 15px !important;
     </div>
 </div>
 
-    <div id="lightbox" class="lightbox">
+<div id="lightbox" class="lightbox">
         <div class="lightbox-close" onclick="closeLightbox()">×</div>
         <div class="lightbox-content">
             <div class="lightbox-left">
+                <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
+                
                 <img id="lb-img" src="" alt="Artwork">
+                
+                <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
             </div>
             <div class="lightbox-right">
                 <div class="lightbox-text">
@@ -1514,15 +1531,34 @@ btnContact.addEventListener('click', () => {
 
 
         // --- LIGHTBOX ZOOM AND PAN ENGINE ---
+ // --- LIGHTBOX ZOOM AND PAN ENGINE ---
         let zoomState = 0; 
         let currentOriginX = 50;
         let currentOriginY = 50;
+        let lightboxImages = [];
+        let currentLbIndex = 0;
 
-        function openLightbox(src, title, year, specs, desc) {
+        function openLightbox(src, title, year, specs, desc, altSrc = null) {
             if (window.isDraggingGalleryItem) return; // Ignore click if user was dragging an item
             
             const lbImg = document.getElementById('lb-img');
-            lbImg.src = src;
+            const prevArrow = document.getElementById('lb-prev');
+            const nextArrow = document.getElementById('lb-next');
+
+            // Check if there is a back image provided
+            if (altSrc) {
+                lightboxImages = [src, altSrc];
+                prevArrow.style.display = 'block';
+                nextArrow.style.display = 'block';
+            } else {
+                lightboxImages = [src];
+                prevArrow.style.display = 'none';
+                nextArrow.style.display = 'none';
+            }
+            
+            currentLbIndex = 0;
+            lbImg.src = lightboxImages[currentLbIndex];
+            
             zoomState = 0;
             currentOriginX = 50;
             currentOriginY = 50;
@@ -1534,6 +1570,20 @@ btnContact.addEventListener('click', () => {
             document.getElementById('lb-specs').innerText = specs;
             document.getElementById('lb-desc').innerHTML = desc;
             document.getElementById('lightbox').classList.add('active');
+        }
+
+        function nextLbImage(e) {
+            if(e) e.stopPropagation(); // Prevents the click from accidentally triggering a zoom
+            currentLbIndex = (currentLbIndex + 1) % lightboxImages.length;
+            document.getElementById('lb-img').src = lightboxImages[currentLbIndex];
+            resetZoom();
+        }
+
+        function prevLbImage(e) {
+            if(e) e.stopPropagation();
+            currentLbIndex = (currentLbIndex - 1 + lightboxImages.length) % lightboxImages.length;
+            document.getElementById('lb-img').src = lightboxImages[currentLbIndex];
+            resetZoom();
         }
 
         function resetZoom() {
