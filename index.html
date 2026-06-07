@@ -1563,7 +1563,7 @@
         let lightboxImages = [];
         let currentLbIndex = 0;
 
-        function openLightbox(src, title, year, specs, desc, altSrc = null) {
+   function openLightbox(src, title, year, specs, desc, altSrc = null) {
             if (window.isDraggingGalleryItem) return; // Ignore click if user was dragging an item
             
             const lbImg = document.getElementById('lb-img');
@@ -1575,6 +1575,12 @@
                 lightboxImages = [src, altSrc];
                 prevArrow.style.display = 'block';
                 nextArrow.style.display = 'block';
+
+                // --- ADD THESE TWO LINES TO PRELOAD THE IMAGE ---
+                const preloadedImage = new Image();
+                preloadedImage.src = altSrc;
+                // ------------------------------------------------
+                
             } else {
                 lightboxImages = [src];
                 prevArrow.style.display = 'none';
