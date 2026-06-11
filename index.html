@@ -3,6 +3,13 @@
 <head>
 <link rel="preload" href="logo_small.png" as="image">
 <link rel="preload" href="logo.png" as="image">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+
+<link rel="preload" href="/logo_small.png" as="image">
+<link rel="preload" href="/logo.png" as="image">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tyrone Moreno</title>
@@ -980,14 +987,14 @@ body.site-loaded .copyright {
 <body>
 <div id="preloader">
     <div class="loader-content">
-        <img src="logo_small.png" alt="Tyrone Moreno" class="loader-logo">
+        <img src="/logo_small.png" alt="Tyrone Moreno" class="loader-logo">
         <div class="loader-bar-container">
             <div class="loader-bar"></div>
         </div>
     </div>
 </div>
 
-    <img src="logo.png" alt="Logo" class="top-left-logo" id="btn-home">
+    <img src="/logo.png" alt="Logo" class="top-left-logo" id="btn-home">
     
 <div class="nav-links">
         <a href="/about/" id="btn-about">About</a>
@@ -1011,7 +1018,7 @@ body.site-loaded .copyright {
 
     <div id="ios-brush-selector">
         <div id="btn-palette" onclick="shufflePalette()" class="palette-toggle" title="Change Color Palette">
-            <img src="brush.png" alt="Brush Palette">
+            <img src="/brush.png" alt="Brush Palette">
         </div>
         <div class="dot dot-xs" onclick="setSize(0.12, this)"></div>
         <div class="dot dot-xs-mid" onclick="setSize(0.35, this)"></div>
@@ -1025,7 +1032,7 @@ body.site-loaded .copyright {
         <a href="mailto:tyronemoreno.studio@gmail.com">tyronemoreno.studio@gmail.com</a>
         <div class="footer-icons">
             <a href="https://instagram.com/imtyronemoreno" target="_blank">
-                <img src="instagram.png" alt="Instagram" class="ig-icon">
+                <img src="/instagram.png" alt="Instagram" class="ig-icon">
             </a>
             <div id="btn-download" class="download-icon" onclick="downloadArtwork()" title="Save Canvas">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1083,8 +1090,8 @@ body.site-loaded .copyright {
             <div class="about-container">
                <div class="about-image">
     <div class="slider-arrow left-arrow" onclick="prevAboutImage()"></div>
-    <img id="about-img-1" class="active" src="me/aboutme_001.jpg" alt="Tyrone Moreno">
-    <img id="about-img-2" src="me/aboutme_002.jpg" alt="Tyrone Moreno">
+    <img id="about-img-1" class="active" src="/me/aboutme_001.jpg" alt="Tyrone Moreno">
+    <img id="about-img-2" src="/me/aboutme_002.jpg" alt="Tyrone Moreno">
     <div class="slider-arrow right-arrow" onclick="nextAboutImage()"></div>
 </div>
                 <div class="about-text">
@@ -1126,52 +1133,52 @@ body.site-loaded .copyright {
         <div class="overlay-content">
             <div class="works-container">
               <div class="works-grid mode-collage">
-                                        <div class="work-item" onclick="openLightbox('artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                                               <div class="work-image"><img src="artwork/small/bfec_small.jpg" alt="BFEC"></div>
+                                        <div class="work-item" onclick="openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                                               <div class="work-image"><img src="/artwork/small/bfec_small.jpg" alt="BFEC"></div>
                         <div class="work-caption"><span>BFEC</span><span>2026</span></div>
                     </div>
-                    <div class="work-item" onclick="openLightbox('artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', 'artwork/small/liminalsometime_smallback.jpg')">
-                        <div class="work-image"><img src="artwork/small/liminalsometime_small.jpg" alt="Liminal some Time"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg')">
+                        <div class="work-image"><img src="/artwork/small/liminalsometime_small.jpg" alt="Liminal some Time"></div>
                         <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" id="art-peanut-butter" onclick="openLightbox('artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
+                    <div class="work-item" id="art-peanut-butter" onclick="openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="/artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
                         <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="artwork/small/seizethelighthouse_small.jpg" alt="Seize the Lighthouse"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="/artwork/small/seizethelighthouse_small.jpg" alt="Seize the Lighthouse"></div>
                         <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="artwork/small/pedestriancrossing_small.jpg" alt="Pedestrian Crossing"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="/artwork/small/pedestriancrossing_small.jpg" alt="Pedestrian Crossing"></div>
                         <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="/artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
                         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="artwork/small/mumflowers_small.jpg" alt="Give ur Mum some flowers"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+                        <div class="work-image"><img src="/artwork/small/mumflowers_small.jpg" alt="Give ur Mum some flowers"></div>
                         <div class="work-caption"><span>Give ur Mum some flowers</span><span>2026</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '')">
-                        <div class="work-image"><img src="artwork/small/somethingaboutnextweek_small.jpg" alt="Something about next week" loading="lazy"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '')">
+                        <div class="work-image"><img src="/artwork/small/somethingaboutnextweek_small.jpg" alt="Something about next week" loading="lazy"></div>
                         <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', 'me and my wife painted this together on a sunny afternoon a few years back')">
-                        <div class="work-image"><img src="artwork/small/001_small.jpg" alt="Mayonnaise on the Roof" loading="lazy"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', 'me and my wife painted this together on a sunny afternoon a few years back')">
+                        <div class="work-image"><img src="/artwork/small/001_small.jpg" alt="Mayonnaise on the Roof" loading="lazy"></div>
                         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
                     </div>
 
-                    <div class="work-item" onclick="openLightbox('artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '')">
-                        <div class="work-image"><img src="artwork/small/notitle_small.jpg" alt="Notitle" loading="lazy"></div>
+                    <div class="work-item" onclick="openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '')">
+                        <div class="work-image"><img src="/artwork/small/notitle_small.jpg" alt="Notitle" loading="lazy"></div>
                         <div class="work-caption"><span>Notitle</span><span>2023</span></div>
                     </div>
 
@@ -1613,7 +1620,7 @@ body.site-loaded .copyright {
         });
 
         // --- ABOUT PAGE IMAGE SLIDER ---
-     const aboutImages = ['me/aboutme_001.jpg', 'me/aboutme_002.jpg', 'me/aboutme_003.jpg', 'me/aboutme_004.jpg'];
+     const aboutImages = ['/me/aboutme_001.jpg', '/me/aboutme_002.jpg', '/me/aboutme_003.jpg', '/me/aboutme_004.jpg'];
         let currentAboutIdx = 0;
         let aboutSlideInterval;
 
