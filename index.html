@@ -1298,6 +1298,7 @@ body.site-loaded .copyright {
             resize();
         }
 
+
         // --- LOAD PREFERENCE ON STARTUP ---
         document.addEventListener('DOMContentLoaded', () => {
             const savedCustomBg = localStorage.getItem('customBg');
@@ -2543,7 +2544,7 @@ function cycleCollageZoom() {
             setTimeout(() => {
                 preloader.classList.add('loaded');
                 document.body.classList.add('site-loaded');
-            }, 600); 
+            }, 100); 
         });
 </script>
 </body>
