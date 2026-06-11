@@ -1,30 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<head>
     <link rel="preconnect" href="/">
     
    <link rel="preload" href="logo_small.png" as="image" fetchpriority="high">
     
     <meta charset="UTF-8">
-<script>
-  (function() {
-    // Check if there's a redirected path waiting
-    var redirect = sessionStorage.redirect;
-    delete sessionStorage.redirect;
-    
-    if (redirect && redirect != location.href) {
-      // Extract the path (e.g., "paint")
-      var path = redirect.split('/').pop();
-      
-      // CALL YOUR ROUTER FUNCTION HERE
-      // For example, if you have a function like loadPage('paint')
-      if (path === 'paint') {
-        loadPage('paint'); 
-      }
-    }
-  })();
-</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tyrone Moreno</title>
@@ -2550,6 +2531,7 @@ function cycleCollageZoom() {
         
     </script>
 <script>
+
     const form = document.getElementById('contactForm');
     const responseMessage = document.getElementById('responseMessage');
     const submitButton = document.getElementById('submitButton');
