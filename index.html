@@ -2531,7 +2531,6 @@ function cycleCollageZoom() {
         
     </script>
 <script>
-
     const form = document.getElementById('contactForm');
     const responseMessage = document.getElementById('responseMessage');
     const submitButton = document.getElementById('submitButton');
@@ -2560,21 +2559,28 @@ function cycleCollageZoom() {
             submitButton.innerText = "SEND ENQUIRY";
         });
     });
-// --- PAGE LOAD ANIMATION & ENGINE DEFERRAL ---
-window.addEventListener('load', () => {
-    const preloader = document.getElementById('preloader');
-    
-    // 1. Start the hide animation immediately
-    preloader.classList.add('loaded');
-    document.body.classList.add('site-loaded');
-    
-    // 2. Start the interactive elements immediately
-    requestAnimationFrame(renderLoop);
-    
-    // 3. Keep your random timing, but trigger it from the load event, 
-    // not from a delayed timeout chain.
-    setTimeout(glitchGallery, Math.random() * 4000 + 2000);
-});
+
+    // --- RACE METHOD: Load or 4 Seconds ---
+    let preloaderTriggered = false;
+
+    function removePreloader() {
+        if (preloaderTriggered) return;
+        preloaderTriggered = true;
+
+        const preloader = document.getElementById('preloader');
+        preloader.classList.add('loaded');
+        document.body.classList.add('site-loaded');
+        
+        // Start the interactive elements
+        requestAnimationFrame(renderLoop);
+        
+        // Start the glitch effect
+        setTimeout(glitchGallery, Math.random() * 4000 + 2000);
+    }
+
+    // Trigger when page is fully loaded OR after 4 seconds (4000ms)
+    window.addEventListener('load', removePreloader);
+    setTimeout(removePreloader, 4000);
 </script>
 </body>
 </html>
