@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="preconnect" href="/">
-    
-   <link rel="preload" href="logo_small.png" as="image" fetchpriority="high">
-    
+<link rel="preload" href="logo.png" as="image">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tyrone Moreno</title>
@@ -55,19 +52,19 @@
             position: relative;
         }
 
-   .loader-bar {
+        .loader-bar {
             position: absolute;
             top: 0; left: 0; height: 100%; width: 0%;
             background: var(--text-color);
-            /* Change 'forwards' to 'infinite' to make it loop */
-            animation: loadingBar 1.5s ease-in-out infinite; 
+            animation: loadingBar 2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
         }
 
         @keyframes loadingBar {
             0% { width: 0%; left: 0; }
             50% { width: 100%; left: 0; }
-            100% { width: 0%; left: 100%; } /* Optional: reverse the exit */
+            100% { width: 100%; left: 100%; }
         }
+
         @keyframes preloaderPulse {
             0% { opacity: 0.6; }
             100% { opacity: 1; }
@@ -981,13 +978,13 @@ body.site-loaded .copyright {
 </head>
 <body>
 <div id="preloader">
-    <div class="loader-content">
-<img src="logo_small.png" alt="Tyrone Moreno" class="loader-logo" fetchpriority="high" decoding="sync">
-        <div class="loader-bar-container">
-            <div class="loader-bar"></div>
+        <div class="loader-content">
+            <img src="logo.png" alt="Tyrone Moreno" class="loader-logo">
+            <div class="loader-bar-container">
+                <div class="loader-bar"></div>
+            </div>
         </div>
     </div>
-</div>
 
     <img src="logo.png" alt="Logo" class="top-left-logo" id="btn-home">
     
@@ -1303,58 +1300,36 @@ body.site-loaded .copyright {
         }
 
 
-     // --- LOAD PREFERENCE & ROUTING ON STARTUP ---
-document.addEventListener('DOMContentLoaded', () => {
-    const savedCustomBg = localStorage.getItem('customBg');
-    const savedTheme = localStorage.getItem('theme');
-    const savedLayoutMode = localStorage.getItem('layoutMode');
+        // --- LOAD PREFERENCE ON STARTUP ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedCustomBg = localStorage.getItem('customBg');
+            const savedTheme = localStorage.getItem('theme');
+            const savedLayoutMode = localStorage.getItem('layoutMode');
 
-    if (savedCustomBg) {
-        applyCustomBackground(savedCustomBg);
-    } else if (savedTheme === 'dark') {
-        isDarkMode = true;
-        document.body.classList.add('dark-mode');
-    }
+            if (savedCustomBg) {
+                applyCustomBackground(savedCustomBg);
+            } else if (savedTheme === 'dark') {
+                isDarkMode = true;
+                document.body.classList.add('dark-mode');
+            }
 
-    if (savedLayoutMode === 'rows') {
-        isCollageMode = false;
-        const iconGrid = document.querySelector('.icon-grid');
-        const iconCollage = document.querySelector('.icon-collage');
-        if (iconGrid) iconGrid.style.display = 'none';
-        if (iconCollage) iconCollage.style.display = 'block';
-        const zoomToggle = document.getElementById('zoom-toggle');
-        if (zoomToggle) zoomToggle.style.display = 'none';
-    } else {
-        const zoomToggle = document.getElementById('zoom-toggle');
-        if (zoomToggle) zoomToggle.style.display = 'flex';
-    }
+            if (savedLayoutMode === 'rows') {
+                isCollageMode = false;
+                const iconGrid = document.querySelector('.icon-grid');
+                const iconCollage = document.querySelector('.icon-collage');
+                iconGrid.style.display = 'none';
+                iconCollage.style.display = 'block';
+                document.getElementById('zoom-toggle').style.display = 'none';
+            } else {
+                // We default to collage mode being visible, so set icon to flex
+                document.getElementById('zoom-toggle').style.display = 'flex';
+            }
 
-    updateGalleryLayout();
-    initDragSystem();
-    updateDragCapabilities();
-
- // --- ROUTING LOGIC ---
-const path = window.location.pathname.replace(/\/$/, ""); 
-
-// 1. If path is /paint, specifically clear navigation to show the canvas
-if (path === '/paint') {
-    clearNavigation(); 
-} 
-// 2. Otherwise, check for other pages
-else if (path === '/about') {
-    openAbout();
-} else if (path === '/contact') {
-    document.getElementById('btn-contact').click();
-} else if (path === '/exhibitions') {
-    document.getElementById('btn-exhibitions').click();
-} else if (path === '/press') {
-    document.getElementById('btn-press').click();
-} 
-// 3. Default to Gallery only if no other specific path is matched
-else {
-    openWorks(); 
-}
-});
+            updateGalleryLayout();
+            initDragSystem();
+            updateDragCapabilities();
+            openWorks();
+        });
 
         // --- THEME TOGGLE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -1498,7 +1473,9 @@ else {
                 }, Math.random() * 500 + 350);
             }
             
+            setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         }
+        setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         
         function updateFooterIcons(activePage) {
             const btnDownload = document.getElementById('btn-download');
@@ -2231,6 +2208,7 @@ else {
                     draw(brushX, brushY);
                 }
             }
+            requestAnimationFrame(renderLoop);
         }
         requestAnimationFrame(renderLoop);
 
@@ -2558,28 +2536,17 @@ function cycleCollageZoom() {
             submitButton.innerText = "SEND ENQUIRY";
         });
     });
-
-    // --- RACE METHOD: Load or 4 Seconds ---
-    let preloaderTriggered = false;
-
-    function removePreloader() {
-        if (preloaderTriggered) return;
-        preloaderTriggered = true;
-
-        const preloader = document.getElementById('preloader');
-        preloader.classList.add('loaded');
-        document.body.classList.add('site-loaded');
-        
-        // Start the interactive elements
-        requestAnimationFrame(renderLoop);
-        
-        // Start the glitch effect
-        setTimeout(glitchGallery, Math.random() * 4000 + 2000);
-    }
-
-    // Trigger when page is fully loaded OR after 4 seconds (4000ms)
-    window.addEventListener('load', removePreloader);
-    setTimeout(removePreloader, 3000);
+// --- PAGE LOAD ANIMATION ---
+        window.addEventListener('load', () => {
+            // Wait for the window to fully load (all images, fonts, scripts)
+            const preloader = document.getElementById('preloader');
+            
+            // Add a tiny artificial delay so the animation feels intentional and isn't jarring on fast connections
+            setTimeout(() => {
+                preloader.classList.add('loaded');
+                document.body.classList.add('site-loaded');
+            }, 100); 
+        });
 </script>
 </body>
 </html>
