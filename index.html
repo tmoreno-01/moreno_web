@@ -52,12 +52,12 @@
             position: relative;
         }
 
-        .loader-bar {
-            position: absolute;
-            top: 0; left: 0; height: 100%; width: 0%;
-            background: var(--text-color);
-            animation: loadingBar 2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
-        }
+      .loader-bar {
+    position: absolute;
+    top: 0; left: 0; height: 100%; width: 0%;
+    background: var(--text-color);
+    animation: loadingBar 2s cubic-bezier(0.77, 0, 0.175, 1) infinite; /* Now loops forever */
+}
 
         @keyframes loadingBar {
             0% { width: 0%; left: 0; }
@@ -978,13 +978,13 @@ body.site-loaded .copyright {
 </head>
 <body>
 <div id="preloader">
-        <div class="loader-content">
-            <img src="logo.png" alt="Tyrone Moreno" class="loader-logo">
-            <div class="loader-bar-container">
-                <div class="loader-bar"></div>
-            </div>
+    <div class="loader-content">
+        <img src="logo_small.png" alt="Tyrone Moreno" class="loader-logo">
+        <div class="loader-bar-container">
+            <div class="loader-bar"></div>
         </div>
     </div>
+</div>
 
     <img src="logo.png" alt="Logo" class="top-left-logo" id="btn-home">
     
