@@ -1348,21 +1348,27 @@ document.addEventListener('DOMContentLoaded', () => {
     initDragSystem();
     updateDragCapabilities();
 
-    // --- ROUTING LOGIC ---
-    const path = window.location.pathname.replace(/\/$/, ""); // Cleans trailing slashes
-    if (path === '/paint') {
-        clearNavigation(); // Opens the paint canvas
-    } else if (path === '/about') {
-        openAbout();
-    } else if (path === '/contact') {
-        document.getElementById('btn-contact').click();
-    } else if (path === '/exhibitions') {
-        document.getElementById('btn-exhibitions').click();
-    } else if (path === '/press') {
-        document.getElementById('btn-press').click();
-    } else {
-        openWorks(); // Default load state (Gallery)
-    }
+ // --- ROUTING LOGIC ---
+const path = window.location.pathname.replace(/\/$/, ""); 
+
+// 1. If path is /paint, specifically clear navigation to show the canvas
+if (path === '/paint') {
+    clearNavigation(); 
+} 
+// 2. Otherwise, check for other pages
+else if (path === '/about') {
+    openAbout();
+} else if (path === '/contact') {
+    document.getElementById('btn-contact').click();
+} else if (path === '/exhibitions') {
+    document.getElementById('btn-exhibitions').click();
+} else if (path === '/press') {
+    document.getElementById('btn-press').click();
+} 
+// 3. Default to Gallery only if no other specific path is matched
+else {
+    openWorks(); 
+}
 });
 
         // --- THEME TOGGLE LOGIC ---
@@ -1508,7 +1514,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
         }
-        setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         
         function updateFooterIcons(activePage) {
             const btnDownload = document.getElementById('btn-download');
