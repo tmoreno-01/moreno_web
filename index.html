@@ -56,19 +56,19 @@
             position: relative;
         }
 
-        .loader-bar {
+   .loader-bar {
             position: absolute;
             top: 0; left: 0; height: 100%; width: 0%;
             background: var(--text-color);
-            animation: loadingBar 0.6s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+            /* Change 'forwards' to 'infinite' to make it loop */
+            animation: loadingBar 1.5s ease-in-out infinite; 
         }
 
         @keyframes loadingBar {
             0% { width: 0%; left: 0; }
             50% { width: 100%; left: 0; }
-            100% { width: 100%; left: 100%; }
+            100% { width: 0%; left: 100%; } /* Optional: reverse the exit */
         }
-
         @keyframes preloaderPulse {
             0% { opacity: 0.6; }
             100% { opacity: 1; }
