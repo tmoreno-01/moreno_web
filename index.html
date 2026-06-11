@@ -989,24 +989,24 @@ body.site-loaded .copyright {
 
     <img src="logo.png" alt="Logo" class="top-left-logo" id="btn-home">
     
-    <div class="nav-links">
-        <a id="btn-about">About</a>
+<div class="nav-links">
+        <a href="/about/" id="btn-about">About</a>
         
         <div class="dropdown">
-            <a class="dropbtn" id="btn-gallery" style="cursor:pointer">
+            <a href="/gallery/" class="dropbtn" id="btn-gallery" style="cursor:pointer">
                 <div class="gallery-wrapper">
                     <span id="btn-gallery-text">Gallery</span>
                     <img src="random/galleryglitch.png" id="btn-gallery-img" class="gallery-glitch-img">
                 </div>
             </a>
-        <div class="dropdown-content">
-                <a id="btn-paint">Paint</a>
-                <a id="btn-exhibitions">Exhibitions</a>
-                <a id="btn-press">Press</a>
+            <div class="dropdown-content">
+                <a href="/paint/" id="btn-paint">Paint</a>
+                <a href="/exhibitions/" id="btn-exhibitions">Exhibitions</a>
+                <a href="/press/" id="btn-press">Press</a>
             </div>
         </div>
 
-     <a id="btn-contact">Contact</a>
+        <a href="/contact/" id="btn-contact">Contact</a>
     </div>
 
     <div id="ios-brush-selector">
@@ -1498,7 +1498,7 @@ body.site-loaded .copyright {
             }
         }
 
-        // --- NAVIGATION & HOVER LOGIC ---
+   // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
         const btnPaint = document.getElementById('btn-paint');
         const btnAbout = document.getElementById('btn-about');
@@ -1513,102 +1513,104 @@ body.site-loaded .copyright {
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
 
-       function clearNavigation() {
-        pageAbout.classList.remove('visible');
-        pageWorks.classList.remove('visible');
-        pageExhibitions.classList.remove('visible');
-        pagePress.classList.remove('visible');
-        pageContact.classList.remove('visible');
+        function clearNavigation() {
+            pageAbout.classList.remove('visible');
+            pageWorks.classList.remove('visible');
+            pageExhibitions.classList.remove('visible');
+            pagePress.classList.remove('visible');
+            pageContact.classList.remove('visible');
+            
+            btnAbout.classList.remove('active');
+            btnGallery.classList.remove('active');
+            btnExhibitions.classList.remove('active');
+            btnPress.classList.remove('active');
+            btnContact.classList.remove('active');
+            
+            document.body.classList.remove('overlay-open');
+            closeLightbox();
+            document.body.style.cursor = 'none';
+            
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
+
+            updateFooterIcons('paint');
+        }
+
+        function openAbout() {
+            if (pageAbout.classList.contains('visible')) return;
+            clearNavigation();
+            pageAbout.classList.add('visible');
+            btnAbout.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+            updateFooterIcons('other');
+        }
+
+        function openWorks() {
+            if (pageWorks.classList.contains('visible')) return;
+            clearNavigation();
+            pageWorks.classList.add('visible');
+            btnGallery.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+            updateFooterIcons('gallery');
+        }
+
+        // Updated Handlers to change URLs without reloading
+        btnHome.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/'); clearNavigation(); });
+        btnPaint.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/paint/'); clearNavigation(); });
         
-        btnAbout.classList.remove('active');
-        btnGallery.classList.remove('active');
-        btnExhibitions.classList.remove('active');
-        btnPress.classList.remove('active');
-        btnContact.classList.remove('active');
-        
-        document.body.classList.remove('overlay-open');
-        closeLightbox();
-        document.body.style.cursor = 'none';
-        
-        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
+        btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
+        btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/about/'); openAbout(); }});
 
-        updateFooterIcons('paint');
-    }
-
-      function openAbout() {
-        if (pageAbout.classList.contains('visible')) return;
-        clearNavigation();
-        pageAbout.classList.add('visible');
-        btnAbout.classList.add('active');
-        document.body.classList.add('overlay-open');
-        document.body.style.cursor = 'default';
-        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-
-        updateFooterIcons('other');
-    }
-
-    function openWorks() {
-        if (pageWorks.classList.contains('visible')) return;
-        clearNavigation();
-        pageWorks.classList.add('visible');
-        btnGallery.classList.add('active');
-        document.body.classList.add('overlay-open');
-        document.body.style.cursor = 'default';
-        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-
-        updateFooterIcons('gallery');
-    }
-
-        btnHome.addEventListener('click', clearNavigation);
-        btnPaint.addEventListener('click', clearNavigation);
-        
-        btnAbout.addEventListener('click', openAbout);
-        btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openAbout(); });
-
-        btnGallery.addEventListener('click', openWorks);
-        btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) openWorks(); });
-        
+        btnGallery.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/gallery/'); openWorks(); });
+        btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/gallery/'); openWorks(); }});
         btnGallery.addEventListener('touchend', (e) => {
             if (window.innerWidth <= 1024) {
                 e.preventDefault();
+                window.history.pushState(null, '', '/gallery/');
                 openWorks();
             }
         });
 
-    btnExhibitions.addEventListener('click', () => {
-        clearNavigation();
-        pageExhibitions.classList.add('visible');
-        btnExhibitions.classList.add('active');
-        btnGallery.classList.add('active');
-        document.body.classList.add('overlay-open');
-        document.body.style.cursor = 'default';
-        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+        btnExhibitions.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.history.pushState(null, '', '/exhibitions/');
+            clearNavigation();
+            pageExhibitions.classList.add('visible');
+            btnExhibitions.classList.add('active');
+            btnGallery.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+            updateFooterIcons('other');
+        });
 
-        updateFooterIcons('other');
-    });
+        btnPress.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.history.pushState(null, '', '/press/');
+            clearNavigation();
+            pagePress.classList.add('visible');
+            btnPress.classList.add('active');
+            btnGallery.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+            updateFooterIcons('other');
+        });
 
-    btnPress.addEventListener('click', () => {
-        clearNavigation();
-        pagePress.classList.add('visible');
-        btnPress.classList.add('active');
-        btnGallery.classList.add('active');
-        document.body.classList.add('overlay-open');
-        document.body.style.cursor = 'default';
-        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-
-        updateFooterIcons('other');
-    });
-
-    btnContact.addEventListener('click', () => {
-        clearNavigation();
-        pageContact.classList.add('visible');
-        btnContact.classList.add('active');
-        document.body.classList.add('overlay-open');
-        document.body.style.cursor = 'default';
-        if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-
-        updateFooterIcons('other');
-    });
+        btnContact.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.history.pushState(null, '', '/contact/');
+            clearNavigation();
+            pageContact.classList.add('visible');
+            btnContact.classList.add('active');
+            document.body.classList.add('overlay-open');
+            document.body.style.cursor = 'default';
+            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+            updateFooterIcons('other');
+        });
 
         // --- ABOUT PAGE IMAGE SLIDER ---
      const aboutImages = ['me/aboutme_001.jpg', 'me/aboutme_002.jpg', 'me/aboutme_003.jpg', 'me/aboutme_004.jpg'];
@@ -2544,6 +2546,30 @@ function hidePreloader() {
         document.body.classList.add('site-loaded');
     }
 }
+// --- URL ROUTING ON LOAD ---
+window.addEventListener('DOMContentLoaded', () => {
+    const hash = window.location.hash;
+    
+    if (hash === '#about') {
+        openAbout();
+        window.history.replaceState(null, '', '/about/');
+    } else if (hash === '#gallery') {
+        openWorks();
+        window.history.replaceState(null, '', '/gallery/');
+    } else if (hash === '#contact') {
+        btnContact.click();
+        window.history.replaceState(null, '', '/contact/');
+    } else if (hash === '#exhibitions') {
+        btnExhibitions.click();
+        window.history.replaceState(null, '', '/exhibitions/');
+    } else if (hash === '#press') {
+        btnPress.click();
+        window.history.replaceState(null, '', '/press/');
+    } else if (hash === '#paint') {
+        clearNavigation();
+        window.history.replaceState(null, '', '/paint/');
+    }
+});
 </script>
 </body>
 </html>
