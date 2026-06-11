@@ -2537,16 +2537,19 @@ function cycleCollageZoom() {
         });
     });
 // --- PAGE LOAD ANIMATION ---
-        window.addEventListener('load', () => {
-            // Wait for the window to fully load (all images, fonts, scripts)
-            const preloader = document.getElementById('preloader');
-            
-            // Add a tiny artificial delay so the animation feels intentional and isn't jarring on fast connections
-            setTimeout(() => {
-                preloader.classList.add('loaded');
-                document.body.classList.add('site-loaded');
-            }, 100); 
-        });
+ // --- IMPROVED PRELOADER TIMING ---
+window.addEventListener('load', hidePreloader);
+setTimeout(hidePreloader, 3000); // Enforce max 3000ms
+
+function hidePreloader() {
+    const preloader = document.getElementById('preloader');
+    
+    // Only execute if it hasn't been hidden yet
+    if (!preloader.classList.contains('loaded')) {
+        preloader.classList.add('loaded');
+        document.body.classList.add('site-loaded');
+    }
+}
 </script>
 </body>
 </html>
