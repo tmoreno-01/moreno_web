@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Loading...</title>
+    <script>
+        // Get the folder name from the URL path
+        const path = window.location.pathname.replace(/\/$/, '').split('/').pop();
+        // Redirect to the main site with the folder name as a hash
+        window.location.replace('/#' + path);
+    </script>
+</head>
+<body></body>
+</html>
