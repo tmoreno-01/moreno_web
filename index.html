@@ -9,6 +9,76 @@
     <link rel="apple-touch-icon" href="favicon.png">
 
     <style>
+/* --- PRELOADER --- */
+        #preloader {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-color); /* Matches your dark/light mode */
+            z-index: 99999; /* Stays above absolutely everything */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.8s;
+        }
+
+        #preloader.loaded {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            animation: preloaderPulse 2s infinite alternate ease-in-out;
+        }
+
+        .loader-logo {
+            width: 170px;
+            height: auto;
+            filter: var(--logo-filter);
+            transition: filter 0.3s ease;
+        }
+
+        .loader-bar-container {
+            width: 100px;
+            height: 1px;
+            background: var(--text-muted);
+            opacity: 0.3;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loader-bar {
+            position: absolute;
+            top: 0; left: 0; height: 100%; width: 0%;
+            background: var(--text-color);
+            animation: loadingBar 2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+        }
+
+        @keyframes loadingBar {
+            0% { width: 0%; left: 0; }
+            50% { width: 100%; left: 0; }
+            100% { width: 100%; left: 100%; }
+        }
+
+        @keyframes preloaderPulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        /* Add a subtle entrance animation to the main UI once loaded */
+        /* Fixed: Excluded lightbox and page-overlays from being forced visible */
+        body.site-loaded > *:not(#preloader):not(#canvas):not(.page-overlay):not(.lightbox) {
+            animation: uiFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes uiFadeIn {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
         /* --- CSS VARIABLES FOR DARK MODE --- */
         :root {
             --bg-color: #ffffff;
@@ -160,16 +230,27 @@
         .download-icon { display: none; }
         .zoom-toggle { display: none; } /* Hidden by default until Gallery is opened */
 
-        .copyright {
-            position: fixed; bottom: 25px; left: 25px;
-            font-size: 0.45rem; color: var(--text-color); letter-spacing: 0.8px; 
-            opacity: 0.3; z-index: 100; pointer-events: none; 
-            max-width: calc(100vw - 300px); line-height: 1.5;
-            transition: opacity 0.4s ease, color 0.3s ease;
-        }
+/* --- FOOTER, COPYRIGHT & THEME TOGGLE --- */
+.copyright {
+    position: fixed; bottom: 25px; left: 25px;
+    font-size: 0.45rem; color: var(--text-color); letter-spacing: 0.8px; 
+    opacity: 0.3; /* Base opacity */
+    z-index: 100; pointer-events: none; 
+    max-width: calc(100vw - 300px); line-height: 1.5;
+    transition: opacity 0.4s ease, color 0.3s ease;
+}
 
-        body.overlay-open .copyright { opacity: 0.15; }
+/* Ensure this selector is specific enough to override other styles */
+body.overlay-open .copyright { 
+    opacity: 0.15 !important; 
+}
 
+/* If the site-loaded animation is affecting it, ensure copyright is not forced to full opacity */
+body.site-loaded .copyright {
+    /* If you added an animation that targets all children, 
+       make sure it doesn't force opacity: 1 on the copyright */
+    animation: none; 
+}
         /* --- IOS BRUSH SELECTOR --- */
         #ios-brush-selector {
             display: none; 
@@ -895,6 +976,14 @@
     </style>
 </head>
 <body>
+<div id="preloader">
+        <div class="loader-content">
+            <img src="logo.png" alt="Tyrone Moreno" class="loader-logo">
+            <div class="loader-bar-container">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
 
     <img src="logo.png" alt="Logo" class="top-left-logo" id="btn-home">
     
@@ -2445,6 +2534,17 @@ function cycleCollageZoom() {
             submitButton.innerText = "SEND ENQUIRY";
         });
     });
+// --- PAGE LOAD ANIMATION ---
+        window.addEventListener('load', () => {
+            // Wait for the window to fully load (all images, fonts, scripts)
+            const preloader = document.getElementById('preloader');
+            
+            // Add a tiny artificial delay so the animation feels intentional and isn't jarring on fast connections
+            setTimeout(() => {
+                preloader.classList.add('loaded');
+                document.body.classList.add('site-loaded');
+            }, 600); 
+        });
 </script>
 </body>
 </html>
