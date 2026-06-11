@@ -1659,28 +1659,26 @@ body.site-loaded .copyright {
         let currentLbIndex = 0;
 
    function openLightbox(src, title, year, specs, desc, altSrc = null) {
-            if (window.isDraggingGalleryItem) return; // Ignore click if user was dragging an item
-            
-            const lbImg = document.getElementById('lb-img');
-            const prevArrow = document.getElementById('lb-prev');
-            const nextArrow = document.getElementById('lb-next');
+    if (window.isDraggingGalleryItem) return;
+    
+    const lbImg = document.getElementById('lb-img');
+    const prevArrow = document.getElementById('lb-prev');
+    const nextArrow = document.getElementById('lb-next');
 
-            // Check if there is a back image provided
-            if (altSrc) {
-                lightboxImages = [src, altSrc];
-                prevArrow.style.display = 'block';
-                nextArrow.style.display = 'block';
+    // Always use small versions
+    function toSmall(path) {
+        return path.replace('artwork/', 'artwork/small/').replace('.jpg', '_small.jpg');
+    }
 
-                // --- ADD THESE TWO LINES TO PRELOAD THE IMAGE ---
-                const preloadedImage = new Image();
-                preloadedImage.src = altSrc;
-                // ------------------------------------------------
-                
-            } else {
-                lightboxImages = [src];
-                prevArrow.style.display = 'none';
-                nextArrow.style.display = 'none';
-            }
+    if (altSrc) {
+        lightboxImages = [toSmall(src), toSmall(altSrc)];
+        prevArrow.style.display = 'block';
+        nextArrow.style.display = 'block';
+    } else {
+        lightboxImages = [toSmall(src)];
+        prevArrow.style.display = 'none';
+        nextArrow.style.display = 'none';
+    }
             
             currentLbIndex = 0;
             lbImg.src = lightboxImages[currentLbIndex];
