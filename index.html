@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="preload" href="logo.png" as="image">
+<link rel="preload" href="logo.png" as="image" fetchpriority="high">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tyrone Moreno</title>
@@ -978,13 +978,13 @@ body.site-loaded .copyright {
 </head>
 <body>
 <div id="preloader">
-        <div class="loader-content">
-            <img src="logo.png" alt="Tyrone Moreno" class="loader-logo">
-            <div class="loader-bar-container">
-                <div class="loader-bar"></div>
-            </div>
+    <div class="loader-content">
+        <img src="logo.png" alt="Tyrone Moreno" class="loader-logo" fetchpriority="high" decoding="sync">
+        <div class="loader-bar-container">
+            <div class="loader-bar"></div>
         </div>
     </div>
+</div>
 
     <img src="logo.png" alt="Logo" class="top-left-logo" id="btn-home">
     
@@ -1300,36 +1300,52 @@ body.site-loaded .copyright {
         }
 
 
-        // --- LOAD PREFERENCE ON STARTUP ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedCustomBg = localStorage.getItem('customBg');
-            const savedTheme = localStorage.getItem('theme');
-            const savedLayoutMode = localStorage.getItem('layoutMode');
+     // --- LOAD PREFERENCE & ROUTING ON STARTUP ---
+document.addEventListener('DOMContentLoaded', () => {
+    const savedCustomBg = localStorage.getItem('customBg');
+    const savedTheme = localStorage.getItem('theme');
+    const savedLayoutMode = localStorage.getItem('layoutMode');
 
-            if (savedCustomBg) {
-                applyCustomBackground(savedCustomBg);
-            } else if (savedTheme === 'dark') {
-                isDarkMode = true;
-                document.body.classList.add('dark-mode');
-            }
+    if (savedCustomBg) {
+        applyCustomBackground(savedCustomBg);
+    } else if (savedTheme === 'dark') {
+        isDarkMode = true;
+        document.body.classList.add('dark-mode');
+    }
 
-            if (savedLayoutMode === 'rows') {
-                isCollageMode = false;
-                const iconGrid = document.querySelector('.icon-grid');
-                const iconCollage = document.querySelector('.icon-collage');
-                iconGrid.style.display = 'none';
-                iconCollage.style.display = 'block';
-                document.getElementById('zoom-toggle').style.display = 'none';
-            } else {
-                // We default to collage mode being visible, so set icon to flex
-                document.getElementById('zoom-toggle').style.display = 'flex';
-            }
+    if (savedLayoutMode === 'rows') {
+        isCollageMode = false;
+        const iconGrid = document.querySelector('.icon-grid');
+        const iconCollage = document.querySelector('.icon-collage');
+        if (iconGrid) iconGrid.style.display = 'none';
+        if (iconCollage) iconCollage.style.display = 'block';
+        const zoomToggle = document.getElementById('zoom-toggle');
+        if (zoomToggle) zoomToggle.style.display = 'none';
+    } else {
+        const zoomToggle = document.getElementById('zoom-toggle');
+        if (zoomToggle) zoomToggle.style.display = 'flex';
+    }
 
-            updateGalleryLayout();
-            initDragSystem();
-            updateDragCapabilities();
-            openWorks();
-        });
+    updateGalleryLayout();
+    initDragSystem();
+    updateDragCapabilities();
+
+    // --- ROUTING LOGIC ---
+    const path = window.location.pathname.replace(/\/$/, ""); // Cleans trailing slashes
+    if (path === '/paint') {
+        clearNavigation(); // Opens the paint canvas
+    } else if (path === '/about') {
+        openAbout();
+    } else if (path === '/contact') {
+        document.getElementById('btn-contact').click();
+    } else if (path === '/exhibitions') {
+        document.getElementById('btn-exhibitions').click();
+    } else if (path === '/press') {
+        document.getElementById('btn-press').click();
+    } else {
+        openWorks(); // Default load state (Gallery)
+    }
+});
 
         // --- THEME TOGGLE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -1473,7 +1489,6 @@ body.site-loaded .copyright {
                 }, Math.random() * 500 + 350);
             }
             
-            setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         }
         setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         
@@ -2208,7 +2223,6 @@ body.site-loaded .copyright {
                     draw(brushX, brushY);
                 }
             }
-            requestAnimationFrame(renderLoop);
         }
         requestAnimationFrame(renderLoop);
 
@@ -2536,17 +2550,22 @@ function cycleCollageZoom() {
             submitButton.innerText = "SEND ENQUIRY";
         });
     });
-// --- PAGE LOAD ANIMATION ---
-        window.addEventListener('load', () => {
-            // Wait for the window to fully load (all images, fonts, scripts)
-            const preloader = document.getElementById('preloader');
-            
-            // Add a tiny artificial delay so the animation feels intentional and isn't jarring on fast connections
-            setTimeout(() => {
-                preloader.classList.add('loaded');
-                document.body.classList.add('site-loaded');
-            }, 100); 
-        });
+// --- PAGE LOAD ANIMATION & ENGINE DEFERRAL ---
+window.addEventListener('load', () => {
+    const preloader = document.getElementById('preloader');
+    
+    setTimeout(() => {
+        preloader.classList.add('loaded');
+        document.body.classList.add('site-loaded');
+        
+        // Wait for the preloader CSS fade (0.8s) to finish before kicking off the heavy math
+        setTimeout(() => {
+            requestAnimationFrame(renderLoop);
+            setTimeout(glitchGallery, Math.random() * 4000 + 2000);
+        }, 800); 
+
+    }, 100); 
+});
 </script>
 </body>
 </html>
