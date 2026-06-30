@@ -173,6 +173,66 @@
             white-space: nowrap;
         }
 
+/* --- SEVEN OF HEARTS SLICED GRID LOGIC --- */
+
+/* 1. Hide the single image fallback so it doesn't block the grid */
+#art-sevenofhearts .single-fallback {
+    display: none !important;
+}
+
+/* 2. Override the global hover-scale logic specifically for this piece */
+/* We reset the transform to the base state so the item doesn't scale as a whole */
+#art-sevenofhearts:has(.work-image:hover) {
+    transform: var(--base-transform) !important;
+    opacity: 1 !important;
+}
+
+/* 3. Grid Container Setup */
+#art-sevenofhearts .sliced-container {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    grid-auto-rows: auto;
+    gap: 0;
+    width: 100%;
+    height: auto;
+    position: relative;
+    overflow: visible !important;
+}
+
+/* 4. Ensure images fill grid cells and react to hover individually */
+#art-sevenofhearts .sliced-container img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    pointer-events: auto !important;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    z-index: 1;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: var(--slice-transform, translate(0px, 0px)) !important;
+}
+
+/* 5. The Hover Effect: Scale ONLY the slice, matching the calmer feel of other works */
+#art-sevenofhearts .sliced-container img:hover {
+    transform: var(--slice-transform, translate(0px, 0px)) scale(1.15) !important;
+    z-index: 100 !important;
+    cursor: pointer;
+}
+
+/* 6. Ensure the work-image wrapper doesn't clip the zoomed slices */
+#art-sevenofhearts .work-image {
+    overflow: visible !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Mobile Fallback */
+@media (max-width: 768px) {
+    #art-sevenofhearts .sliced-container {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
         .dropdown-content a {
             width: 100%;
             text-align: center;
@@ -1138,7 +1198,50 @@ body.site-loaded .copyright {
             <div class="works-container">
               <div class="works-grid mode-collage">
 <div class="work-item" id="art-sevenofhearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3 x 8.8 cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp')">
-    <div class="work-image"><img src="/artwork/small/sevenofhearts_small.webp" alt="Seven of Hearts"></div>
+    <div class="work-image">
+        <!-- This single image shows only in Rows mode -->
+        <img class="single-fallback" src="/artwork/small/sevenofhearts_small.webp" alt="Seven of Hearts">
+        
+        <!-- This grid of 36 images shows only in Collage mode -->
+        <div class="sliced-container">
+            <img src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
+            <img src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
+            <img src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
+            <img src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
+            <img src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
+            <img src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
+            <img src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
+            <img src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
+            <img src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
+            <img src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
+            <img src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
+            <img src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
+            <img src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
+            <img src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
+            <img src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
+            <img src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
+            <img src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
+            <img src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
+            <img src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
+            <img src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
+            <img src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
+            <img src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
+            <img src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
+            <img src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
+            <img src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
+            <img src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
+            <img src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
+            <img src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
+            <img src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
+            <img src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
+            <img src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
+            <img src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
+            <img src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
+            <img src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
+            <img src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
+            <img src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
+        </div>
+    </div>
     <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
 </div>
               <div class="work-item" onclick="openLightbox('/artwork/small/dairypirates_small.jpg', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
@@ -1367,11 +1470,13 @@ body.site-loaded .copyright {
                 document.getElementById('zoom-toggle').style.display = 'flex';
             }
 
-            updateGalleryLayout();
+    updateGalleryLayout();
             initDragSystem();
+            initSliceDragSystem();  
             updateDragCapabilities();
             openWorks();
         });
+ 
 
         // --- THEME TOGGLE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -2322,9 +2427,10 @@ function initDragSystem() {
         if (!item.dataset.dragX) item.dataset.dragX = 0;
         if (!item.dataset.dragY) item.dataset.dragY = 0;
 
-        item.addEventListener('pointerdown', (e) => {
-            // FIX: Only trigger drag if it's a mouse (not a touch)
-            if (!isCollageMode || e.pointerType !== 'mouse') return;
+      item.addEventListener('pointerdown', (e) => {
+    // Skip whole-card dragging when the target is a Seven of Hearts slice — those drag individually
+    if (e.target.closest('.sliced-container')) return;
+    if (!isCollageMode || e.pointerType !== 'mouse') return;
 
             draggedItem = item;
             startPointerX = e.clientX;
@@ -2397,7 +2503,61 @@ function updateDragCapabilities() {
         item.style.touchAction = 'auto';
     });
 }
+// --- INDIVIDUAL SLICE DRAGGING FOR SEVEN OF HEARTS ---
+function initSliceDragSystem() {
+    document.querySelectorAll('#art-sevenofhearts .sliced-container img').forEach(slice => {
+        if (!slice.dataset.dragX) slice.dataset.dragX = 0;
+        if (!slice.dataset.dragY) slice.dataset.dragY = 0;
 
+        let sliceDragging = false;
+        let sliceStartX, sliceStartY, sliceItemStartX, sliceItemStartY;
+
+        slice.addEventListener('pointerdown', (e) => {
+            if (!isCollageMode || e.pointerType !== 'mouse') return;
+            e.stopPropagation();
+            sliceDragging = true;
+            sliceStartX = e.clientX;
+            sliceStartY = e.clientY;
+            sliceItemStartX = parseFloat(slice.dataset.dragX) || 0;
+            sliceItemStartY = parseFloat(slice.dataset.dragY) || 0;
+            slice.style.zIndex = 200;
+            slice.style.transition = 'none';
+            window.isDraggingGalleryItem = false;
+            slice.setPointerCapture(e.pointerId);
+        });
+
+        slice.addEventListener('pointermove', (e) => {
+            if (!sliceDragging) return;
+            const dx = e.clientX - sliceStartX;
+            const dy = e.clientY - sliceStartY;
+            const DRAG_THRESHOLD = 8;
+            if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+                window.isDraggingGalleryItem = true;
+                slice.dataset.dragX = sliceItemStartX + dx;
+                slice.dataset.dragY = sliceItemStartY + dy;
+                slice.style.setProperty('--slice-transform', `translate(${slice.dataset.dragX}px, ${slice.dataset.dragY}px)`);
+            }
+        });
+
+        slice.addEventListener('pointerup', (e) => {
+            if (!sliceDragging) return;
+            sliceDragging = false;
+            slice.releasePointerCapture(e.pointerId);
+            slice.style.transition = '';
+            slice.style.zIndex = '';
+            setTimeout(() => window.isDraggingGalleryItem = false, 100);
+        });
+
+        slice.addEventListener('pointercancel', (e) => {
+            if (sliceDragging) {
+                sliceDragging = false;
+                slice.style.transition = '';
+                slice.style.zIndex = '';
+                setTimeout(() => window.isDraggingGalleryItem = false, 100);
+            }
+        });
+    });
+}
         // --- NEW: COLLAGE ZOOM LOGIC ---
 function cycleCollageZoom() {
             let maxZoom = 4; // desktop: 0, 1, 2, 3
