@@ -511,6 +511,10 @@ body.site-loaded .copyright {
         .works-grid.mode-collage #art-peanut-butter {
             order: -1; 
         }
+/* Remove drop shadow for transparent/custom shadow artworks in collage mode */
+.works-grid.mode-collage #art-sevenofhearts .work-image {
+    box-shadow: none !important;
+}
 
         /* Ensure standard DOM order in Rows Mode */
         .works-grid.mode-rows #art-peanut-butter {
@@ -1133,6 +1137,10 @@ body.site-loaded .copyright {
         <div class="overlay-content">
             <div class="works-container">
               <div class="works-grid mode-collage">
+<div class="work-item" id="art-sevenofhearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3 x 8.8 cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp')">
+    <div class="work-image"><img src="/artwork/small/sevenofhearts_small.webp" alt="Seven of Hearts"></div>
+    <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
+</div>
               <div class="work-item" onclick="openLightbox('/artwork/small/dairypirates_small.jpg', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
                         <div class="work-image"><img src="/artwork/small/dairypirates_small.jpg" alt="Dairy Pirates"></div>
                         <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
