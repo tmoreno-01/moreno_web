@@ -66,7 +66,25 @@
     background: var(--text-color);
     animation: loadingBar 2s cubic-bezier(0.77, 0, 0.175, 1) infinite; /* Now loops forever */
 }
+#page-duck {
+    z-index: 9999; /* Ensure it sits on top */
+    background: var(--bg-color); /* Matches your current theme */
+}
 
+#page-duck .overlay-content {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Ensure the viewer is responsive */
+#duck-viewer {
+    width: 100%;
+    height: 100%;
+}
         @keyframes loadingBar {
             0% { width: 0%; left: 0; }
             50% { width: 100%; left: 0; }
@@ -571,10 +589,7 @@ body.site-loaded .copyright {
         .works-grid.mode-collage #art-peanut-butter {
             order: -1; 
         }
-/* Remove drop shadow for transparent/custom shadow artworks in collage mode */
-.works-grid.mode-collage #art-sevenofhearts .work-image {
-    box-shadow: none !important;
-}
+
 
         /* Ensure standard DOM order in Rows Mode */
         .works-grid.mode-rows #art-peanut-butter {
@@ -1047,8 +1062,24 @@ body.site-loaded .copyright {
 }
 
     </style>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
 <body>
+<!-- New Duck Page -->
+<div id="page-duck" class="page-overlay">
+    <div class="overlay-content">
+        <model-viewer 
+            id="duck-viewer"
+            src="artwork/3d/duck/source/duck_animation.glb" 
+            alt="A 3D duck animation" 
+            auto-rotate 
+            camera-controls 
+            shadow-intensity="1" 
+            autoplay
+            style="width: 100vw; height: 100vh; --poster-color: transparent;">
+        </model-viewer>
+    </div>
+</div>
 <div id="preloader">
     <div class="loader-content">
         <img src="/logo_small.png" alt="Tyrone Moreno" class="loader-logo">
@@ -1481,8 +1512,31 @@ body.site-loaded .copyright {
         // --- THEME TOGGLE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
 
-        themeToggleBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+      let clickCount = 0;
+let clickTimer;
+
+themeToggleBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    clickCount++;
+    
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => { clickCount = 0; }, 500);
+
+    if (clickCount === 3) {
+        clickCount = 0;
+        openDuckPage(); // Calls the function below
+        return;
+    }
+function openDuckPage() {
+    clearNavigation();
+    const pageDuck = document.getElementById('page-duck');
+    pageDuck.classList.add('visible');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    // Hide brush if on mobile
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('other');
+}
             const currentTime = new Date().getTime();
             const timeDiff = currentTime - lastThemeClickTime;
 
@@ -1672,6 +1726,7 @@ body.site-loaded .copyright {
             btnPress.classList.remove('active');
             btnContact.classList.remove('active');
             
+document.getElementById('page-duck').classList.remove('visible');
             document.body.classList.remove('overlay-open');
             closeLightbox();
             document.body.style.cursor = 'none';
