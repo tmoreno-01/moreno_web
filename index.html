@@ -1070,7 +1070,6 @@ body.site-loaded .copyright {
     <div class="overlay-content">
         <model-viewer 
             id="duck-viewer"
-            src="artwork/3d/duck/source/duck_animation.glb" 
             alt="A 3D duck animation" 
             auto-rotate 
             camera-controls 
@@ -1529,11 +1528,18 @@ themeToggleBtn.addEventListener('click', (e) => {
     }
 function openDuckPage() {
     clearNavigation();
+    
+    // Inject the source only when the page opens
+    const duckViewer = document.getElementById('duck-viewer');
+    if (!duckViewer.src) {
+        duckViewer.src = 'artwork/3d/duck/source/duck_animation.glb';
+    }
+    
     const pageDuck = document.getElementById('page-duck');
     pageDuck.classList.add('visible');
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
-    // Hide brush if on mobile
+    
     if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
 }
