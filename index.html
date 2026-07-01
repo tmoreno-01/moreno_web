@@ -9,6 +9,7 @@
 <link rel="preload" href="/logo_small.png" as="image">
 <link rel="preload" href="/logo.png" as="image">
 <link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preload" href="/artwork/3d/duck/source/duck_animation.glb" as="fetch" type="model/gltf-binary" crossorigin>
 <link rel="apple-touch-icon" href="/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1682,18 +1683,21 @@ function openDuckPage() {
     const overlay = document.getElementById('page-duck');
     const content = overlay.querySelector('.overlay-content');
 
-    // Lazy inject the model-viewer only if it doesn't already exist
+    // Check if it already exists
     if (!document.getElementById('duck-viewer')) {
         const mv = document.createElement('model-viewer');
         mv.id = 'duck-viewer';
-        mv.src = 'artwork/3d/duck/source/duck_animation.glb';
+        mv.src = '/artwork/3d/duck/source/duck_animation.glb';
         mv.setAttribute('alt', 'A 3D duck animation');
         mv.setAttribute('auto-rotate', '');
         mv.setAttribute('camera-controls', '');
         mv.setAttribute('shadow-intensity', '1');
         mv.setAttribute('autoplay', '');
         
-        // Apply the same styles you had in your original HTML
+        // Add listeners to debug the failure
+        mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
+        mv.addEventListener('error', (e) => console.error('Duck model failed to load:', e.detail));
+
         mv.style.width = '100vw';
         mv.style.height = '100vh';
         mv.style.setProperty('--poster-color', 'transparent');
