@@ -1068,15 +1068,6 @@ body.site-loaded .copyright {
 <!-- New Duck Page -->
 <div id="page-duck" class="page-overlay">
     <div class="overlay-content">
-        <model-viewer 
-            id="duck-viewer"
-            alt="A 3D duck animation" 
-            auto-rotate 
-            camera-controls 
-            shadow-intensity="1" 
-            autoplay
-            style="width: 100vw; height: 100vh; --poster-color: transparent;">
-        </model-viewer>
     </div>
 </div>
 <div id="preloader">
@@ -1526,23 +1517,6 @@ themeToggleBtn.addEventListener('click', (e) => {
         openDuckPage(); // Calls the function below
         return;
     }
-function openDuckPage() {
-    clearNavigation();
-    
-    // Inject the source only when the page opens
-    const duckViewer = document.getElementById('duck-viewer');
-    if (!duckViewer.src) {
-        duckViewer.src = 'artwork/3d/duck/source/duck_animation.glb';
-    }
-    
-    const pageDuck = document.getElementById('page-duck');
-    pageDuck.classList.add('visible');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    
-    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
-    updateFooterIcons('other');
-}
             const currentTime = new Date().getTime();
             const timeDiff = currentTime - lastThemeClickTime;
 
@@ -1703,7 +1677,37 @@ function openDuckPage() {
                 zoomToggle.style.display = 'none';
             }
         }
+function openDuckPage() {
+    clearNavigation();
+    const overlay = document.getElementById('page-duck');
+    const content = overlay.querySelector('.overlay-content');
 
+    // Lazy inject the model-viewer only if it doesn't already exist
+    if (!document.getElementById('duck-viewer')) {
+        const mv = document.createElement('model-viewer');
+        mv.id = 'duck-viewer';
+        mv.src = 'artwork/3d/duck/source/duck_animation.glb';
+        mv.setAttribute('alt', 'A 3D duck animation');
+        mv.setAttribute('auto-rotate', '');
+        mv.setAttribute('camera-controls', '');
+        mv.setAttribute('shadow-intensity', '1');
+        mv.setAttribute('autoplay', '');
+        
+        // Apply the same styles you had in your original HTML
+        mv.style.width = '100vw';
+        mv.style.height = '100vh';
+        mv.style.setProperty('--poster-color', 'transparent');
+        
+        content.appendChild(mv);
+    }
+
+    overlay.classList.add('visible');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('other');
+}
    // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
         const btnPaint = document.getElementById('btn-paint');
