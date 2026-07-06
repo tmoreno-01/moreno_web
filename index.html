@@ -2704,71 +2704,71 @@ function initDragSystem() {
             item.setPointerCapture(e.pointerId);
         });
 
-        item.addEventListener('pointermove', (e) => {
-            if (draggedItem !== item) return;
-            
-            const dx = e.clientX - startPointerX;
-            const dy = e.clientY - startPointerY;
-            const DRAG_THRESHOLD = 15; 
+    item.addEventListener('pointermove', (e) => {
+    if (draggedItem !== item) return;
+    
+    const dx = e.clientX - startPointerX;
+    const dy = e.clientY - startPointerY;
+    const DRAG_THRESHOLD = 15; 
 
-            if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
-                window.isDraggingGalleryItem = true;
-                
-                item.dataset.dragX = itemStartX + dx;
-                item.dataset.dragY = itemStartY + dy;
+    if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        window.isDraggingGalleryItem = true;
+        
+        item.dataset.dragX = itemStartX + dx;
+        item.dataset.dragY = itemStartY + dy;
 
-                let percentX = parseFloat(item.dataset.translateX) || 0;
-                let dxpx = item.dataset.dragX;
-                let dypx = item.dataset.dragY;
-                let dampener = currentGridDampener;
-                percentX *= dampener;
+        let percentX = parseFloat(item.dataset.translateX) || 0;
+        let dxpx = item.dataset.dragX;
+        let dypx = item.dataset.dragY;
+        let dampener = currentGridDampener;
+        percentX *= dampener;
 
-                let currentRotation = parseFloat(item.dataset.currentRotation);
-                
-                if (item.classList.contains('sketch-item')) {
-                    // Instantly calculate the dialed-back angle without CSS transitions
-                    if (originalRotation > 15) {
-                        currentRotation = originalRotation - 12;
-                    } else if (originalRotation < -15) {
-                        currentRotation = originalRotation + 12;
-                    } else {
-                        currentRotation = originalRotation * 0.5; 
-                    }
-                    item.dataset.currentRotation = currentRotation; // Save it
-                } else {
-                    currentRotation = originalRotation * dampener;
-                }
+        // Keep the original rotation while dragging so it doesn't snap
+        let dragRotation = originalRotation;
+        
+        if (!item.classList.contains('sketch-item')) {
+            dragRotation = originalRotation * dampener;
+        }
 
-                item.style.setProperty('--base-transform', `rotate(${currentRotation}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
-            }
-        });
+        item.style.setProperty('--base-transform', `rotate(${dragRotation}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+    }
+});
 
-        item.addEventListener('pointerup', (e) => {
-            if (draggedItem !== item) return;
-            draggedItem = null;
-            item.releasePointerCapture(e.pointerId);
-            
-            if (item.classList.contains('sketch-item')) {
-                // Restore fluid transitions for future layout changes
-                item.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1)';
-                
-                let percentX = parseFloat(item.dataset.translateX) || 0;
-                let dxpx = item.dataset.dragX;
-                let dypx = item.dataset.dragY;
-                let finalRotation = parseFloat(item.dataset.currentRotation) || 0;
-                
-                // Set the element's base angle to the newly relaxed angle so it stays put!
-                item.dataset.rotate = finalRotation; 
+    item.addEventListener('pointerup', (e) => {
+    if (draggedItem !== item) return;
+    draggedItem = null;
+    item.releasePointerCapture(e.pointerId);
+    
+    if (item.classList.contains('sketch-item')) {
+        // 1. Add a nice springy easing curve for the rotation settling
+        item.style.transition = 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1)';
+        
+        // 2. Calculate the relaxed angle NOW, upon dropping
+        let finalRotation = originalRotation;
+        if (originalRotation > 15) {
+            finalRotation = originalRotation - 12;
+        } else if (originalRotation < -15) {
+            finalRotation = originalRotation + 12;
+        } else {
+            finalRotation = originalRotation * 0.5; 
+        }
 
-                item.style.setProperty('--base-transform', `rotate(${finalRotation}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
-            } else {
-                item.style.transition = ''; 
-            }
-            
-            item.style.zIndex = item.dataset.zIndex;
-            setTimeout(() => window.isDraggingGalleryItem = false, 100);
-        });
+        let percentX = parseFloat(item.dataset.translateX) || 0;
+        let dxpx = item.dataset.dragX;
+        let dypx = item.dataset.dragY;
+        
+        // 3. Save the new relaxed rotation for the next interaction
+        item.dataset.rotate = finalRotation; 
 
+        // 4. Apply it. Because transition is active, it will smoothly animate to this angle.
+        item.style.setProperty('--base-transform', `rotate(${finalRotation}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+    } else {
+        item.style.transition = ''; 
+    }
+    
+    item.style.zIndex = item.dataset.zIndex;
+    setTimeout(() => window.isDraggingGalleryItem = false, 100);
+});
         item.addEventListener('pointercancel', (e) => {
             if (draggedItem === item) {
                 draggedItem = null;
@@ -2960,28 +2960,38 @@ function updateGalleryLayout() {
         }
     });
 
-    // --- PASS 1: assign grid-column spans and zero out transforms so the browser
-    // can settle into its real layout before we measure anything ---
-    items.forEach((item) => {
-        item.dataset.dragX = 0;
-        item.dataset.dragY = 0;
+   // --- PASS 1: assign grid-column spans and zero out transforms so the browser
+// can settle into its real layout before we measure anything ---
+items.forEach((item) => {
+    item.dataset.dragX = 0;
+    item.dataset.dragY = 0;
 
-        if (isCollageMode && item.classList.contains('sketch-item')) {
-            let spanPool;
-            if (window.innerWidth <= 768) spanPool = [2, 3];
-            else if (window.innerWidth <= 1024) spanPool = [3, 4];
-            else spanPool = [2, 3];
-            const span = spanPool[Math.floor(Math.random() * spanPool.length)];
-            item.style.gridColumn = `span ${span}`;
-        } else {
-            item.style.gridColumn = '';
-        }
+    // 👇 ADD THIS FIX FOR THE SEVEN OF HEARTS SLICES 👇
+    if (!isCollageMode && item.id === 'art-sevenofhearts') {
+        const slices = item.querySelectorAll('.sliced-container img');
+        slices.forEach(slice => {
+            slice.dataset.dragX = 0;
+            slice.dataset.dragY = 0;
+            slice.style.removeProperty('--slice-transform');
+            slice.style.zIndex = '';
+        });
+    }
 
-        item.style.marginTop = '0px';
-        item.style.zIndex = item.dataset.zIndex;
-        item.style.setProperty('--base-transform', 'rotate(0deg) translate(0px, 0px) scale(1)');
-    });
+    if (isCollageMode && item.classList.contains('sketch-item')) {
+        let spanPool;
+        if (window.innerWidth <= 768) spanPool = [2, 3];
+        else if (window.innerWidth <= 1024) spanPool = [3, 4];
+        else spanPool = [2, 3];
+        const span = spanPool[Math.floor(Math.random() * spanPool.length)];
+        item.style.gridColumn = `span ${span}`;
+    } else {
+        item.style.gridColumn = '';
+    }
 
+    item.style.marginTop = '0px';
+    item.style.zIndex = item.dataset.zIndex;
+    item.style.setProperty('--base-transform', 'rotate(0deg) translate(0px, 0px) scale(1)');
+});
     // --- PASS 2: after layout has settled, measure which items are actually
     // in the first visual row and only apply pull-up / rotation to the rest ---
     requestAnimationFrame(() => {
