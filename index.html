@@ -598,15 +598,17 @@ body.site-loaded .copyright {
         }
 
         /* Collage Mode Setup */
-        .works-grid.mode-collage {
-            /* Now handled mostly by JavaScript for the zoom feature */
-            grid-template-columns: 1fr; 
-            gap: 40px; 
-            grid-auto-flow: row;
-            justify-items: center;
-            width: 100%;
-            margin-top: -60px;
-        }
+/* Collage Mode Setup */
+.works-grid.mode-collage {
+    /* Now handled mostly by JavaScript for the zoom feature */
+    grid-template-columns: 1fr; 
+    gap: 40px; 
+    grid-auto-flow: row;
+    justify-items: center;
+    align-items: center; /* <-- ADD THIS LINE */
+    width: 100%;
+    margin-top: -60px;
+}
 
         /* Rows Mode Setup - Fixed vertical alignment */
         .works-grid.mode-rows {
