@@ -664,12 +664,16 @@ body.site-loaded .copyright {
             .works-grid.mode-collage {
                 margin-top: -30px !important; /* Increased from the global -60px */
             }
-            .works-grid.mode-collage .work-item {
+     .works-grid.mode-collage .work-item:not(.sketch-item) {
                 width: 100% !important;
                 padding: 0 !important; 
                 box-sizing: border-box;
-                /* Override the random JS rotations/translations so it stays perfectly centered */
                 transform: scale(1) !important; 
+            }
+            
+            .works-grid.mode-collage .sketch-item {
+                /* Let sketches keep their wild rotations and translations on mobile */
+                transform: var(--base-transform) !important;
             }
 
             /* Keep a subtle tap animation for mobile since hover doesn't exist */
@@ -1061,7 +1065,116 @@ body.site-loaded .copyright {
         margin-left: 0 !important;
     }
 }
+/* --- SKETCHES SPECIFIC --- */
+.sketch-item {
+    cursor: grab; /* Shows they can be dragged but not clicked */
+}
+.sketch-item:active {
+    cursor: grabbing;
+}
+.sketch-item:has(.work-image:hover) {
+    transform: var(--base-transform) scale(1.02) !important; /* Calmer hover effect */
+}
+/* --- SKETCHES SPECIFIC RESPONSIVE & LAYOUT FIXES --- */
 
+/* Ensure the layout controls respond specifically when the sketches view is active */
+#page-sketches:not(.visible) ~ .footer #zoom-toggle,
+#page-sketches.visible ~ .footer #zoom-toggle {
+    /* Let JS or default styles handle it, but hide explicitly when on sketches tab */
+}
+/* Force hide zoom on sketches regardless of screen size */
+body:has(#page-sketches.visible) #zoom-toggle {
+    display: none !important;
+}
+
+/* --- SKETCHES ASYMMETRIC COLLAGE OVERRIDES --- */
+#page-sketches .works-grid.mode-collage {
+    margin-top: -50px !important;
+    padding-top: 0px !important;
+    grid-template-columns: repeat(12, 1fr) !important;
+    grid-auto-flow: row dense !important;   /* ← add this */
+    gap: 6px !important;
+    justify-items: center;
+    align-items: center;
+}
+
+#page-sketches .works-grid.mode-collage .sketch-item .work-image {
+    width: calc(var(--sketch-jitter-size, 1) * 100%) !important;
+    max-width: 40vw !important;
+    margin: 0 auto;
+}
+#page-sketches .overlay-content {
+    padding-top: 110px !important;
+}
+@media (max-width: 1024px) {
+    #page-sketches .overlay-content { padding-top: 70px !important; }
+}
+@media (max-width: 768px) {
+    #page-sketches .overlay-content { padding-top: 80px !important; }
+}
+
+@media (max-width: 1024px) {
+    #page-sketches .works-grid.mode-collage {
+        margin-top: -20px !important;
+        grid-template-columns: repeat(12, 1fr) !important;
+        gap: 10px 12px !important;
+    }
+    #page-sketches .works-grid.mode-collage .sketch-item {
+        transform: var(--base-transform) scale(0.95) !important;
+    }
+    #page-sketches .works-grid.mode-collage .sketch-item .work-image {
+        max-width: 32vw !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #page-sketches .works-grid.mode-collage {
+        margin-top: -10px !important;
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 10px !important;
+    }
+    #page-sketches .works-grid.mode-collage .sketch-item .work-image {
+        max-width: 42vw !important;
+    }
+}
+
+/* 1. Rows Mode: 4 per line for Sketches */
+#page-sketches .works-grid.mode-rows {
+    grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 1024px) {
+    #page-sketches .works-grid.mode-rows {
+        grid-template-columns: repeat(3, 1fr) !important; 
+    }
+}
+@media (max-width: 768px) {
+    #page-sketches .works-grid.mode-rows {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 20px;
+    }
+}
+/* 2. Collage Mode: Way smaller for Sketches */
+.works-grid.mode-collage .sketch-item .work-image {
+    max-width: 60vw !important; /* Way smaller base size */
+}
+@media (min-width: 1025px) {
+    .works-grid.mode-collage .sketch-item .work-image {
+min-width: 300px !important;
+        max-width: 60vw !important; /* Even smaller on large screens */
+    }
+}
+@media (max-width: 1024px) {
+    .works-grid.mode-collage .sketch-item .work-image {
+min-width: 320px !important;
+        max-width: 50vw !important; /* Keep slightly bigger on mobile so they are visible */
+    }
+}
+@media (max-width: 768px) {
+    .works-grid.mode-collage .sketch-item .work-image {
+min-width: 130px !important;
+        max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
+    }
+}
     </style>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
@@ -1093,6 +1206,7 @@ body.site-loaded .copyright {
                 </div>
             </a>
           <div class="dropdown-content">
+<a href="/sketches/" id="btn-sketches">Sketches</a>
     <a href="/paint/" id="btn-paint">Paint</a>
     <a href="/exhibitions/" id="btn-exhibitions" style="display: none;">Exhibitions</a>
     <a href="/press/" id="btn-press" style="display: none;">Press</a>
@@ -1347,7 +1461,60 @@ body.site-loaded .copyright {
             </div>
         </div>
     </div>
+<div id="page-sketches" class="page-overlay">
+    <div class="overlay-content">
+        <div class="works-container">
+            <div class="works-grid mode-collage">
+                
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_01.webp" alt="Sketch 1"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_02.webp" alt="Sketch 2"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_03.webp" alt="Sketch 3"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_04.webp" alt="Sketch 4"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_05.webp" alt="Sketch 5"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_06.webp" alt="Sketch 6"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_07.webp" alt="Sketch 7"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_08.webp" alt="Sketch 8"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_09.webp" alt="Sketch 9"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_10.webp" alt="Sketch 10"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_11.webp" alt="Sketch 11"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/sketch/sketch_12.webp" alt="Sketch 12"></div>
+                </div>
+<div class="work-item sketch-item">
+    <div class="work-image"><img src="/artwork/sketch/sketch_13.webp" alt="Sketch 13"></div>
+</div>
+<div class="work-item sketch-item">
+    <div class="work-image"><img src="/artwork/sketch/sketch_14.webp" alt="Sketch 14"></div>
+</div>
 
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
 <div id="page-contact" class="page-overlay">
     <div class="overlay-content">
         <div class="form-container">
@@ -1659,25 +1826,29 @@ themeToggleBtn.addEventListener('click', (e) => {
         }
         setTimeout(glitchGallery, Math.random() * 4000 + 2000);
         
-        function updateFooterIcons(activePage) {
-            const btnDownload = document.getElementById('btn-download');
-            const layoutToggle = document.getElementById('layout-toggle');
-            const zoomToggle = document.getElementById('zoom-toggle');
+  function updateFooterIcons(activePage) {
+    const btnDownload = document.getElementById('btn-download');
+    const layoutToggle = document.getElementById('layout-toggle');
+    const zoomToggle = document.getElementById('zoom-toggle');
+    const pageSketchesVisible = document.getElementById('page-sketches').classList.contains('visible');
 
-            if (activePage === 'paint') {
-                btnDownload.style.display = ''; 
-                layoutToggle.style.display = 'none';
-                zoomToggle.style.display = 'none';
-            } else if (activePage === 'gallery') {
-                btnDownload.style.display = 'none';
-                layoutToggle.style.display = 'flex';
-                zoomToggle.style.display = isCollageMode ? 'flex' : 'none';
-            } else {
-                btnDownload.style.display = 'none';
-                layoutToggle.style.display = 'none';
-                zoomToggle.style.display = 'none';
-            }
-        }
+    if (activePage === 'paint') {
+        btnDownload.style.display = ''; 
+        layoutToggle.style.display = 'none';
+        zoomToggle.style.display = 'none';
+    } else if (activePage === 'gallery') {
+        btnDownload.style.display = 'none';
+        layoutToggle.style.display = 'flex';
+        // Force hide zoom-toggle if the currently visible view block is sketches
+        zoomToggle.style.display = (isCollageMode && !pageSketchesVisible) ? 'flex' : 'none';
+    } else {
+        btnDownload.style.display = 'none';
+        layoutToggle.style.display = 'none';
+        zoomToggle.style.display = 'none';
+    }
+}
+
+
 function openDuckPage() {
     clearNavigation();
     const overlay = document.getElementById('page-duck');
@@ -1715,6 +1886,7 @@ function openDuckPage() {
    // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
         const btnPaint = document.getElementById('btn-paint');
+const btnSketches = document.getElementById('btn-sketches');
         const btnAbout = document.getElementById('btn-about');
         const btnGallery = document.getElementById('btn-gallery');
         const btnExhibitions = document.getElementById('btn-exhibitions');
@@ -1723,6 +1895,7 @@ function openDuckPage() {
         
         const pageAbout = document.getElementById('page-about');
         const pageWorks = document.getElementById('page-works');
+const pageSketches = document.getElementById('page-sketches');
         const pageExhibitions = document.getElementById('page-exhibitions');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
@@ -1730,11 +1903,13 @@ function openDuckPage() {
         function clearNavigation() {
             pageAbout.classList.remove('visible');
             pageWorks.classList.remove('visible');
+pageSketches.classList.remove('visible');
             pageExhibitions.classList.remove('visible');
             pagePress.classList.remove('visible');
             pageContact.classList.remove('visible');
             
             btnAbout.classList.remove('active');
+btnSketches.classList.remove('active');
             btnGallery.classList.remove('active');
             btnExhibitions.classList.remove('active');
             btnPress.classList.remove('active');
@@ -1771,6 +1946,17 @@ document.getElementById('page-duck').classList.remove('visible');
             if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
             updateFooterIcons('gallery');
         }
+function openSketches() {
+    if (pageSketches.classList.contains('visible')) return;
+    clearNavigation();
+    pageSketches.classList.add('visible');
+    btnSketches.classList.add('active');
+    btnGallery.classList.add('active'); // Keep gallery root active
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('gallery'); // Triggers the layout and zoom toggles to appear
+}
 
         // Updated Handlers to change URLs without reloading
         btnHome.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/'); clearNavigation(); });
@@ -1778,7 +1964,7 @@ document.getElementById('page-duck').classList.remove('visible');
         
         btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
         btnAbout.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/about/'); openAbout(); }});
-
+btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/sketches/'); openSketches(); });
         btnGallery.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/gallery/'); openWorks(); });
         btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/gallery/'); openWorks(); }});
         btnGallery.addEventListener('touchend', (e) => {
@@ -2486,20 +2672,20 @@ document.getElementById('page-duck').classList.remove('visible');
         });
 
    // --- GALLERY DRAGGING ENGINE (DESKTOP ONLY) ---
+// --- UPDATED INTERACTIVE DRAG SYSTEM ENGINE ---
 function initDragSystem() {
     let draggedItem = null;
     let startPointerX, startPointerY;
     let itemStartX, itemStartY;
+    let originalRotation = 0;
 
     document.querySelectorAll('.work-item').forEach(item => {
-        // Initialize drag coordinates if they don't exist
         if (!item.dataset.dragX) item.dataset.dragX = 0;
         if (!item.dataset.dragY) item.dataset.dragY = 0;
 
-      item.addEventListener('pointerdown', (e) => {
-    // Skip whole-card dragging when the target is a Seven of Hearts slice — those drag individually
-    if (e.target.closest('.sliced-container')) return;
-    if (!isCollageMode || e.pointerType !== 'mouse') return;
+        item.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.sliced-container')) return;
+            if (!isCollageMode || e.pointerType !== 'mouse') return;
 
             draggedItem = item;
             startPointerX = e.clientX;
@@ -2507,8 +2693,13 @@ function initDragSystem() {
             itemStartX = parseFloat(item.dataset.dragX) || 0;
             itemStartY = parseFloat(item.dataset.dragY) || 0;
             
-            item.style.zIndex = 200; 
+            originalRotation = parseFloat(item.dataset.rotate) || 0;
+            item.dataset.currentRotation = originalRotation; // Track live rotation
+            
+            // KILL the transition on pickup to ensure instant, zero-lag dragging
             item.style.transition = 'none'; 
+            
+            item.style.zIndex = 200; 
             window.isDraggingGalleryItem = false;
             item.setPointerCapture(e.pointerId);
         });
@@ -2526,21 +2717,29 @@ function initDragSystem() {
                 item.dataset.dragX = itemStartX + dx;
                 item.dataset.dragY = itemStartY + dy;
 
-                let rotate = parseFloat(item.dataset.rotate) || 0;
                 let percentX = parseFloat(item.dataset.translateX) || 0;
-                
-                // Adjust rotation/translation based on current zoom level dampener
-                let dampener = 1;
-                if (collageZoomLevel === 1) dampener = 0.5;
-                if (collageZoomLevel === 2) dampener = 0.2;
-                if (collageZoomLevel === 3) dampener = 0.05;
-                rotate *= dampener;
-                percentX *= dampener;
-
                 let dxpx = item.dataset.dragX;
                 let dypx = item.dataset.dragY;
+                let dampener = currentGridDampener;
+                percentX *= dampener;
 
-                item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+                let currentRotation = parseFloat(item.dataset.currentRotation);
+                
+                if (item.classList.contains('sketch-item')) {
+                    // Instantly calculate the dialed-back angle without CSS transitions
+                    if (originalRotation > 15) {
+                        currentRotation = originalRotation - 12;
+                    } else if (originalRotation < -15) {
+                        currentRotation = originalRotation + 12;
+                    } else {
+                        currentRotation = originalRotation * 0.5; 
+                    }
+                    item.dataset.currentRotation = currentRotation; // Save it
+                } else {
+                    currentRotation = originalRotation * dampener;
+                }
+
+                item.style.setProperty('--base-transform', `rotate(${currentRotation}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
             }
         });
 
@@ -2549,9 +2748,24 @@ function initDragSystem() {
             draggedItem = null;
             item.releasePointerCapture(e.pointerId);
             
-            item.style.transition = ''; 
-            item.style.zIndex = item.dataset.baseZIndex;
+            if (item.classList.contains('sketch-item')) {
+                // Restore fluid transitions for future layout changes
+                item.style.transition = 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1)';
+                
+                let percentX = parseFloat(item.dataset.translateX) || 0;
+                let dxpx = item.dataset.dragX;
+                let dypx = item.dataset.dragY;
+                let finalRotation = parseFloat(item.dataset.currentRotation) || 0;
+                
+                // Set the element's base angle to the newly relaxed angle so it stays put!
+                item.dataset.rotate = finalRotation; 
+
+                item.style.setProperty('--base-transform', `rotate(${finalRotation}deg) translate(calc(${percentX}% + ${dxpx}px), ${dypx}px) scale(1)`);
+            } else {
+                item.style.transition = ''; 
+            }
             
+            item.style.zIndex = item.dataset.zIndex;
             setTimeout(() => window.isDraggingGalleryItem = false, 100);
         });
 
@@ -2559,7 +2773,7 @@ function initDragSystem() {
             if (draggedItem === item) {
                 draggedItem = null;
                 item.style.transition = '';
-                item.style.zIndex = item.dataset.baseZIndex;
+                item.style.zIndex = item.dataset.zIndex;
                 setTimeout(() => window.isDraggingGalleryItem = false, 100);
             }
         });
@@ -2660,110 +2874,169 @@ function cycleCollageZoom() {
             updateDragCapabilities();
         }
 
-        function initCollageData() {
-            const items = document.querySelectorAll('.work-item');
-            
-            items.forEach((item, index) => {
-                const isExtremeOverlap = Math.random() > 0.85; 
-                
-                let pullUpDesk = isExtremeOverlap ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 3) + 1;
-                if (index < 4) pullUpDesk = 0; 
-                
-                const rotateDesk = (Math.random() * 4) - 2; 
-                const translateXDesk = (Math.random() * 3) - 1.5; 
+function initCollageData() {
+    const items = document.querySelectorAll('.work-item');
+    
+    // Set up track configurations to yield roughly 4 to 6 items across dynamically per row
+    const sketchSpans = [2, 3, 2, 3, 2]; 
+    let sketchCount = 0; // Track sketches specifically to protect the top row
 
-                item.dataset.pullUp = pullUpDesk;
-                item.dataset.rotate = rotateDesk;
-                item.dataset.translateX = translateXDesk;
-                item.dataset.zIndex = Math.floor(Math.random() * 20) + 1;
-            });
-            collageDataInitialized = true;
+    items.forEach((item, index) => {
+        const isExtremeOverlap = Math.random() > 0.85; 
+        
+        let pullUpDesk = isExtremeOverlap ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 3) + 1;
+        if (index < 4 && !item.classList.contains('sketch-item')) pullUpDesk = 0; 
+        
+        let rotateDesk = (Math.random() * 4) - 2; 
+        let translateXDesk = (Math.random() * 3) - 1.5; 
+
+// 💥 CHAOTIC SCATTER & ASYMMETRIC COLS FOR SKETCHES ONLY 💥
+        if (item.classList.contains('sketch-item')) {
+            rotateDesk = (Math.random() * 40) - 20; // Calmer rotations
+            translateXDesk = (Math.random() * 50) - 25; // Tighter horizontal spread for less background gaps
+
+            if (sketchCount < 4) {
+                // Strict boundary: ZERO pull up so they never overlap the header
+                pullUpDesk = 0; 
+            } else {
+                // Toned down vertical flyaway so it's denser
+                pullUpDesk = (Math.random() * 70) + 15; 
+            }
+            sketchCount++;
+
+            // Pick a random track footprint assignment
+            const randomSpan = sketchSpans[Math.floor(Math.random() * sketchSpans.length)];
+            item.dataset.colSpan = randomSpan;
+
+            // Extremely tight sizing variance (basically the exact same size)
+            const jitterScale = 1.04 + (Math.random() * 0.06); 
+            item.style.setProperty('--sketch-jitter-size', jitterScale);
         }
 
-        function updateGalleryLayout() {
-            if (!collageDataInitialized) initCollageData();
-            
-            const grid = document.querySelector('.works-grid');
-            const items = document.querySelectorAll('.work-item');
+        item.dataset.pullUp = pullUpDesk;
+        item.dataset.rotate = rotateDesk;
+        item.dataset.translateX = translateXDesk;
+        item.dataset.zIndex = Math.floor(Math.random() * 25) + 1;
+    });
+    collageDataInitialized = true;
+}
 
-            if (isCollageMode) {
-                grid.classList.remove('mode-rows');
-                grid.classList.add('mode-collage');
+function updateGalleryLayout() {
+    if (!collageDataInitialized) initCollageData();
+    
+    const grids = document.querySelectorAll('.works-grid');
+    const items = document.querySelectorAll('.work-item');
 
-                let columnsCss = '1fr';
-                let dampener = 1;
+    let columnsCss = '1fr';
+    let dampener = 1;
 
-                if (window.innerWidth <= 768) {
-                    // iPhone/Mobile: Locked to 1 column, zoom button hidden via CSS
-                    collageZoomLevel = 0; 
-                    columnsCss = '1fr';
-                    dampener = 1;
-          } else if (window.innerWidth <= 1024) {
-                    // iPad: 2 modes allowed (0 = 1 column, 1 = 2 columns)
-                    if (collageZoomLevel > 1) collageZoomLevel = 0; 
-                    
-                    if (collageZoomLevel === 0) {
-                        columnsCss = '1fr'; // Default 1 column
-                        dampener = 1;
-                    } else {
-                        columnsCss = 'repeat(2, 1fr)'; // 2 columns max
-                        dampener = 0.5;
-                    }
-                } else {
-                    // Desktop: 4 modes (1, 2, 3, 4 columns)
-                    if (collageZoomLevel === 0) { columnsCss = '1fr'; dampener = 1; }
-                    if (collageZoomLevel === 1) { columnsCss = 'repeat(2, 1fr)'; dampener = 0.5; }
-                    if (collageZoomLevel === 2) { columnsCss = 'repeat(3, 1fr)'; dampener = 0.2; }
-                    if (collageZoomLevel === 3) { columnsCss = 'repeat(4, 1fr)'; dampener = 0.05; }
+    if (isCollageMode) {
+        if (window.innerWidth <= 768) {
+            collageZoomLevel = 0; 
+            columnsCss = '1fr';
+            dampener = 1;
+        } else if (window.innerWidth <= 1024) {
+            if (collageZoomLevel > 1) collageZoomLevel = 0; 
+            if (collageZoomLevel === 0) { columnsCss = '1fr'; dampener = 1; }
+            else { columnsCss = 'repeat(2, 1fr)'; dampener = 0.5; }
+        } else {
+            if (collageZoomLevel === 0) { columnsCss = '1fr'; dampener = 1; }
+            if (collageZoomLevel === 1) { columnsCss = 'repeat(2, 1fr)'; dampener = 0.5; }
+            if (collageZoomLevel === 2) { columnsCss = 'repeat(3, 1fr)'; dampener = 0.2; }
+            if (collageZoomLevel === 3) { columnsCss = 'repeat(4, 1fr)'; dampener = 0.05; }
+        }
+        currentGridDampener = dampener; 
+    }
+
+    grids.forEach(grid => {
+        if (isCollageMode) {
+            grid.classList.remove('mode-rows');
+            grid.classList.add('mode-collage');
+            grid.style.gridTemplateColumns = columnsCss;
+        } else {
+            grid.classList.remove('mode-collage');
+            grid.classList.add('mode-rows');
+            grid.style.gridTemplateColumns = ''; 
+        }
+    });
+
+    // --- PASS 1: assign grid-column spans and zero out transforms so the browser
+    // can settle into its real layout before we measure anything ---
+    items.forEach((item) => {
+        item.dataset.dragX = 0;
+        item.dataset.dragY = 0;
+
+        if (isCollageMode && item.classList.contains('sketch-item')) {
+            let spanPool;
+            if (window.innerWidth <= 768) spanPool = [2, 3];
+            else if (window.innerWidth <= 1024) spanPool = [3, 4];
+            else spanPool = [2, 3];
+            const span = spanPool[Math.floor(Math.random() * spanPool.length)];
+            item.style.gridColumn = `span ${span}`;
+        } else {
+            item.style.gridColumn = '';
+        }
+
+        item.style.marginTop = '0px';
+        item.style.zIndex = item.dataset.zIndex;
+        item.style.setProperty('--base-transform', 'rotate(0deg) translate(0px, 0px) scale(1)');
+    });
+
+    // --- PASS 2: after layout has settled, measure which items are actually
+    // in the first visual row and only apply pull-up / rotation to the rest ---
+    requestAnimationFrame(() => {
+        const sketchGrid = document.querySelector('#page-sketches .works-grid');
+        let topRowY = null;
+
+        if (sketchGrid) {
+            const sketchItems = sketchGrid.querySelectorAll('.sketch-item');
+            sketchItems.forEach(item => {
+                const top = Math.round(item.getBoundingClientRect().top);
+                if (topRowY === null || top < topRowY) topRowY = top;
+            });
+        }
+
+        items.forEach((item, index) => {
+            if (!isCollageMode) return;
+
+            let rotate = parseFloat(item.dataset.rotate);
+            let translateX = parseFloat(item.dataset.translateX);
+            let pullUp = parseFloat(item.dataset.pullUp) * 0.20 * dampener;
+
+            if (item.classList.contains('sketch-item')) {
+                const isTopRow = Math.round(item.getBoundingClientRect().top) <= topRowY + 2;
+
+                if (isTopRow) {
+                    pullUp = 0;
+                    rotate *= 0.5;
+                } 
+
+                if (window.innerWidth <= 1024) {
+                    translateX *= 0.25;
+                    rotate *= 0.35;
+                    pullUp *= 0.4;
                 }
 
-                currentGridDampener = dampener; // Save globally so the drag engine can use it
-                grid.style.gridTemplateColumns = columnsCss;
-
-                items.forEach((item, index) => {
-                    item.dataset.dragX = 0;
-                    item.dataset.dragY = 0;
-
-                    let pullUp = parseFloat(item.dataset.pullUp) * 0.20 * dampener; 
-                    
-                    // Stop overlapping entirely when zoomed out or on smaller screens 
-                    // to prevent clipping bugs and keep it clean
-                    if (index < 2 || collageZoomLevel > 0 || window.innerWidth <= 1024) {
-                        pullUp = 0; 
-                    } 
-
-                    let rotate = parseFloat(item.dataset.rotate) * 0.5 * dampener;
-                    let translateX = parseFloat(item.dataset.translateX) * dampener;
-                    
-                    const marginTop = -pullUp;
-                    const zIndex = item.dataset.zIndex;
-
-                    item.style.marginTop = `${marginTop}%`;
-                    item.style.zIndex = zIndex;
-                    item.dataset.baseZIndex = zIndex;
-
-                    const baseTransform = `rotate(${rotate}deg) translate(${translateX}%, 0px) scale(1)`;
-                    item.style.setProperty('--base-transform', baseTransform);
-                });
+                // Hard safety cap: never let pull-up exceed a fixed pixel amount,
+                // regardless of item width — this is what actually prevents
+                // any possibility of reaching the nav.
+                const MAX_PULLUP_PX = 60;
+                const marginTopPx = -Math.min(pullUp * 4, MAX_PULLUP_PX); // px, not %
+                item.style.marginTop = `${marginTopPx}px`;
 
             } else {
-                // ROWS MODE
-                grid.classList.remove('mode-collage');
-                grid.classList.add('mode-rows');
-                grid.style.gridTemplateColumns = ''; 
-
-                items.forEach(item => {
-                    item.dataset.dragX = 0;
-                    item.dataset.dragY = 0;
-
-                    item.style.marginTop = '0%';
-                    item.style.zIndex = 1;
-                    item.dataset.baseZIndex = 1;
-                    
-                    item.style.setProperty('--base-transform', 'rotate(0deg) translate(0px, 0px) scale(1)');
-                });
+                if ((index < 2) || (collageZoomLevel > 0) || (window.innerWidth <= 1024)) {
+                    pullUp = 0;
+                }
+                rotate *= (0.5 * dampener);
+                translateX *= dampener;
+                item.style.marginTop = `${-pullUp}%`;
             }
-        }
+
+            item.style.setProperty('--base-transform', `rotate(${rotate}deg) translate(${translateX}%, 0px) scale(1)`);
+        });
+    });
+}
 
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
@@ -2826,6 +3099,9 @@ window.addEventListener('DOMContentLoaded', () => {
     } else if (hash === '#gallery') {
         openWorks();
         window.history.replaceState(null, '', '/gallery/');
+} else if (hash === '#sketches') {
+    openSketches();
+    window.history.replaceState(null, '', '/sketches/');
     } else if (hash === '#contact') {
         btnContact.click();
         window.history.replaceState(null, '', '/contact/');
