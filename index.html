@@ -19,6 +19,20 @@
     <link rel="apple-touch-icon" href="favicon.png">
 
     <style>
+/* Hides the default 3D model loading bar */
+model-viewer::part(default-progress-bar) {
+    display: none;
+}
+.work-image.no-shadow {
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+
+/* Ensure the close button stays on top of the fullscreen 3D model */
+.lightbox-close {
+    z-index: 310 !important;
+}
 /* --- PRELOADER --- */
         #preloader {
             position: fixed;
@@ -239,8 +253,9 @@
     cursor: pointer;
 }
 
-/* 6. Ensure the work-image wrapper doesn't clip the zoomed slices */
-#art-sevenofhearts .work-image {
+/* Update this block to include both elements */
+#art-sevenofhearts .work-image,
+#art-camera .work-image {
     overflow: visible !important;
     background: transparent !important;
     box-shadow: none !important;
@@ -789,19 +804,24 @@ body.site-loaded .copyright {
             }
         }
 
-        .works-grid.mode-collage .work-image { 
-            box-shadow: 0 18px 44px rgba(0,0,0,0.45); 
-            min-width: 100px; /* Allow it to scale down gracefully during zoom */
-            width: 100%;     
-            overflow: hidden;
-        }
+   /* 1. Remove the box-shadow from the div */
+.works-grid.mode-collage .work-image { 
+    box-shadow: none !important; 
+    background: transparent !important;
+}
 
-        .works-grid.mode-collage .work-image img {
-            width: 100%;     
-            height: auto;     
-            display: block;
-            max-width: 100%; 
-        }
+/* 2. Add the organic drop-shadow to the image inside */
+.works-grid.mode-collage .work-image img {
+    filter: drop-shadow(3px 12px 12px rgba(0,0,0,0.46));
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* 3. Keep your existing override for the no-shadow items */
+.work-image.no-shadow img {
+    filter: none !important;
+}
 
         body.dark-mode .works-grid.mode-collage .work-image { box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
         
@@ -929,61 +949,107 @@ body.site-loaded .copyright {
             #responseMessage { margin-left: 0 !important; }
         }
         
-        /* --- LIGHTBOX --- */
-        .lightbox { 
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-            background: var(--lightbox-bg); z-index: 300; display: flex; 
-            align-items: center; justify-content: center; opacity: 0; 
-            pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease; 
-            overflow-y: auto; padding: 20px;
-            box-sizing: border-box; 
-        }
-        .lightbox.active { opacity: 1; pointer-events: auto; }
-        .lightbox-close { position: fixed; top: 30px; right: 40px; font-size: 3rem; font-weight: 300; cursor: pointer; color: var(--text-color); opacity: 0.3; transition: opacity 0.2s, color 0.3s ease; z-index: 301; line-height: 1; }
-        .lightbox-close:hover { opacity: 1; }
-        .lightbox-content { 
-            display: flex; max-width: 1400px; 
-            width: 100%; gap: 40px; align-items: center; margin: auto; 
-        }
+/* --- LIGHTBOX OPTIMIZED --- */
+.lightbox { 
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+    background: var(--lightbox-bg); z-index: 300; display: flex; 
+    align-items: center; justify-content: center; opacity: 0; 
+    pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease; 
+    overflow-y: auto; overflow-x: hidden; padding: 10px; /* Reduced padding */
+    box-sizing: border-box; 
+}
+.lightbox.active { opacity: 1; pointer-events: auto; }
 
-        .lightbox-left { 
-            flex: 2; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative; 
-            z-index: 10;
-            height: 90vh; 
-            width: 100%;
-        }
+.lightbox-close { 
+    position: fixed; top: 30px; right: 40px; font-size: 3rem; font-weight: 300; 
+    cursor: pointer; color: var(--text-color); opacity: 0.3; 
+    transition: opacity 0.2s, color 0.3s ease; z-index: 301; line-height: 1; 
+}
+.lightbox-close:hover { opacity: 1; }
 
-        .lightbox-left img { 
-            max-width: 100%; 
-            max-height: 90vh; 
-            width: auto;
-            height: auto;
-            object-fit: contain; 
-            cursor: zoom-in; 
-            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); 
-            transform-origin: center center;
-            min-width: 400px; 
-            min-height: 400px;
-        }
+.lightbox-content { 
+    display: flex; max-width: 95vw; /* Use almost full screen width */
+    width: 100%; gap: 27px; align-items: center; margin: auto; 
+    position: relative; z-index: 5; 
+    pointer-events: none; 
+}
 
-        .lightbox-right { flex: 1; display: flex; flex-direction: column; text-align: left; position: relative; z-index: 5; }
-        .lightbox-text strong { font-size: 1.4rem; display: block; margin-bottom: 5px; color: var(--text-color); transition: color 0.3s ease; }
-        .lightbox-specs { font-size: 1rem; color: var(--text-muted); margin-bottom: 15px; font-style: italic; transition: color 0.3s ease; }
-        .lightbox-text p { font-size: 1rem; line-height: 1.6; color: var(--text-color); margin: 0; transition: color 0.3s ease; }
-.lightbox-text {
-            max-width: 350px; 
-        }
+.lightbox-left {
+    flex: 3; /* Give image 75% of container width */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+    height: 95vh;
+    width: 100%;
+    overflow: visible; 
+}
 
+/* Allow children to be clickable */
+.lightbox.active .lightbox-left img,
+.lightbox.active .lightbox-left .slider-arrow,
+.lightbox.active .lightbox-text,
+.lightbox.active #lb-fullscreen-btn {
+    pointer-events: auto;
+}
+
+.lightbox-left img { 
+    max-width: 100%; 
+    max-height: 95vh; /* Larger max height */
+    width: auto;
+    height: auto;
+    object-fit: contain; 
+    cursor: zoom-in; 
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); 
+    transform-origin: center center;
+    min-width: 0; /* Removed fixed 400px constraint */
+}
+
+.lightbox-right { 
+    flex: 1; /* Keep text column slim */
+    display: flex; flex-direction: column; text-align: left; 
+    position: relative; z-index: 5; 
+}
+
+.lightbox-text { max-width: 350px; }
+.lightbox-text strong { font-size: 1.4rem; display: block; margin-bottom: 5px; color: var(--text-color); }
+.lightbox-specs { font-size: 1rem; color: var(--text-muted); margin-bottom: 15px; font-style: italic; }
+.lightbox-text p { font-size: 1rem; line-height: 1.6; color: var(--text-color); margin: 0; }
+
+/* --- FULLSCREEN & RESPONSIVE OVERRIDES --- */
+#lb-fullscreen-btn {
+    position: absolute; bottom: 20px; right: 20px;
+    width: 30px; height: 30px; z-index: 30;
+    cursor: pointer; opacity: 0.3; transition: opacity 0.2s;
+    color: var(--text-color); display: block;
+}
+#lb-fullscreen-btn:hover { opacity: 1; }
+
+.lightbox.is-fullscreen { background: var(--bg-color); padding: 0 !important; }
+.lightbox.is-fullscreen #lb-img {
+    max-width: 100vw; max-height: 100vh; padding: 10px; cursor: zoom-out; z-index: 10000;
+}
+.lightbox.is-fullscreen .lightbox-close, .lightbox.is-fullscreen #lb-fullscreen-btn, 
+.lightbox.is-fullscreen .lightbox-right, .lightbox.is-fullscreen .slider-arrow { display: none !important; }
+
+@media (max-width: 1024px) {
+    .lightbox-content { flex-direction: column; gap: 20px; padding-bottom: 20px; }
+    .lightbox-left { flex: 1; height: 70vh; }
+    .lightbox-left img { max-height: 70vh; }
+}
+
+@media (max-width: 768px) {
+    .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
+    .lightbox-left img { max-height: 65vh; max-width: 90vw; }
+}
         /* --- CANVAS --- */
         #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; z-index: 1; cursor: none; touch-action: none; transition: filter 0.3s ease; }
         body.dark-mode #canvas { filter: invert(1) hue-rotate(180deg); }
 
         /* --- BREAKPOINTS --- */
         @media (max-width: 1024px) {
+
             .download-icon { display: flex; }
             .ig-icon, .download-icon, .theme-toggle, .layout-toggle, .zoom-toggle { width: 22px; height: 22px; }
             #page-about { overflow-y: auto; }
@@ -1182,6 +1248,16 @@ min-width: 130px !important;
         max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
     }
 }
+#lb-fullscreen-btn {
+    display: none !important;
+}
+
+#lb-model {
+    display: none !important;
+}
+#art-camera {
+    display: none !important;
+}
     </style>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
@@ -1340,12 +1416,20 @@ min-width: 130px !important;
         <div class="overlay-content">
             <div class="works-container">
               <div class="works-grid mode-collage">
+<div class="work-item" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp')">
+    <div class="work-image"><img src="/artwork/small/notimeforoverthinking.webp" alt="No time 4 overthinking"></div>
+    <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
+</div>
+<div class="work-item" id="art-camera" onclick="openLightbox('/artwork/3d/test/camera/camera.glb', 'Camera', '2026', '3D Model', 'A rotatable 3D camera model.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+<div class="work-image"><img src="/artwork/3d/test/camera/cameraposter.webp" alt="Camera 3D Model"></div>
+    <div class="work-caption"><span>Camera</span><span>2026</span></div>
+</div>
                 <div class="work-item" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
                         <div class="work-image"><img src="/artwork/small/splinter_small.webp" alt="Splinter"></div>
                         <div class="work-caption"><span>Splinter</span><span>2026</span></div>
  </div>
 <div class="work-item" id="art-sevenofhearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp')">
-    <div class="work-image">
+    <div class="work-image  no-shadow">
         <!-- This single image shows only in Rows mode -->
         <img class="single-fallback" src="/artwork/small/sevenofhearts_small.webp" alt="Seven of Hearts">
         
@@ -1580,8 +1664,14 @@ min-width: 130px !important;
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
                 <img id="lb-img" src="" alt="Artwork">
+<model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1"></model-viewer>
                 
                 <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
+<div id="lb-fullscreen-btn" onclick="toggleFullscreen(event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+    </svg>
+</div>
             </div>
             <div class="lightbox-right">
                 <div class="lightbox-text">
@@ -1650,7 +1740,11 @@ min-width: 130px !important;
             const savedCustomBg = localStorage.getItem('customBg');
             const savedTheme = localStorage.getItem('theme');
             const savedLayoutMode = localStorage.getItem('layoutMode');
-
+// Add this block to load the zoom level
+    const savedZoom = localStorage.getItem('collageZoomLevel');
+    if (savedZoom !== null) {
+        collageZoomLevel = parseInt(savedZoom, 10);
+    }
             if (savedCustomBg) {
                 applyCustomBackground(savedCustomBg);
             } else if (savedTheme === 'dark') {
@@ -2071,7 +2165,41 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
         let currentOriginY = 50;
         let lightboxImages = [];
         let currentLbIndex = 0;
-
+function renderLightboxMedia(src) {
+    const lbImg = document.getElementById('lb-img');
+    const lbModel = document.getElementById('lb-model');
+    const fsBtn = document.getElementById('lb-fullscreen-btn');
+    
+    if (src && src.toLowerCase().endsWith('.glb')) {
+        lbImg.style.display = 'none';
+        lbModel.style.display = 'block';
+        fsBtn.style.display = 'none'; // Hide button for 3D
+        
+        lbModel.src = null;
+        requestAnimationFrame(() => { lbModel.src = src; });
+    } else {
+        lbModel.style.display = 'none';
+        lbModel.src = null;
+        lbImg.style.display = 'block';
+        fsBtn.style.display = 'block'; // Show button for Images
+        lbImg.src = src;
+    }
+}
+function toggleFullscreen(e) {
+    if (e) e.stopPropagation();
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lb-img');
+    
+    lb.classList.toggle('is-fullscreen');
+    
+    // Reset zoom styles when entering/exiting fullscreen
+    if (lb.classList.contains('is-fullscreen')) {
+        lbImg.style.transform = 'scale(1)';
+        lbImg.style.cursor = 'zoom-out';
+    } else {
+        lbImg.style.cursor = 'zoom-in';
+    }
+}
    function openLightbox(src, title, year, specs, desc, altSrc = null) {
     if (window.isDraggingGalleryItem) return;
     
@@ -2090,7 +2218,7 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
     }
             
             currentLbIndex = 0;
-            lbImg.src = lightboxImages[currentLbIndex];
+            renderLightboxMedia(lightboxImages[currentLbIndex]);
             
             zoomState = 0;
             currentOriginX = 50;
@@ -2108,14 +2236,14 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
         function nextLbImage(e) {
             if(e) e.stopPropagation(); // Prevents the click from accidentally triggering a zoom
             currentLbIndex = (currentLbIndex + 1) % lightboxImages.length;
-            document.getElementById('lb-img').src = lightboxImages[currentLbIndex];
+            renderLightboxMedia(lightboxImages[currentLbIndex]);
             resetZoom();
         }
 
         function prevLbImage(e) {
             if(e) e.stopPropagation();
             currentLbIndex = (currentLbIndex - 1 + lightboxImages.length) % lightboxImages.length;
-            document.getElementById('lb-img').src = lightboxImages[currentLbIndex];
+           renderLightboxMedia(lightboxImages[currentLbIndex]);
             resetZoom();
         }
 
@@ -2133,18 +2261,34 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
             }, 250);
         }
 
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('active');
-            resetZoom();
-            setTimeout(() => {
-                if (!document.getElementById('lightbox').classList.contains('active')) {
-                    document.getElementById('lb-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-                }
-            }, 300);
+function closeLightbox() {
+    const lb = document.getElementById('lightbox');
+    const lbModel = document.getElementById('lb-model'); // Add this line
+    
+    lb.classList.remove('active', 'is-fullscreen'); 
+    
+    // Now use the defined lbModel variable
+    if (lbModel) {
+        lbModel.style.display = 'none'; 
+        lbModel.src = '';
+    }
+    
+    resetZoom();
+    
+    setTimeout(() => {
+        if (!document.getElementById('lightbox').classList.contains('active')) {
+            document.getElementById('lb-img').src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         }
+    }, 300);
+}
 
         const lbImg = document.getElementById('lb-img');
         lbImg.addEventListener('click', function(e) {
+    const lb = document.getElementById('lightbox');
+    if (lb.classList.contains('is-fullscreen')) {
+        toggleFullscreen(e); // Exit fullscreen if active
+        return;
+    }
             const previousZoomState = zoomState;
             zoomState = (zoomState + 1) % 3;
             if (zoomState > 0) {
@@ -2854,13 +2998,17 @@ function initSliceDragSystem() {
 }
         // --- NEW: COLLAGE ZOOM LOGIC ---
 function cycleCollageZoom() {
-            let maxZoom = 4; // desktop: 0, 1, 2, 3
-            if (window.innerWidth <= 1024) {
-                maxZoom = 2; // ipad: modes 0 (1 col) and 1 (2 cols)
-            }
-            collageZoomLevel = (collageZoomLevel + 1) % maxZoom;
-            updateGalleryLayout();
-        }
+    let maxZoom = 4; // desktop: 0, 1, 2, 3
+    if (window.innerWidth <= 1024) {
+        maxZoom = 2; // ipad: modes 0 (1 col) and 1 (2 cols)
+    }
+    collageZoomLevel = (collageZoomLevel + 1) % maxZoom;
+    
+    // Add this line to save the level to the browser
+    localStorage.setItem('collageZoomLevel', collageZoomLevel);
+    
+    updateGalleryLayout();
+}
 
         // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
         function toggleLayoutMode() {
