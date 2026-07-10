@@ -3864,12 +3864,15 @@ function updateProductUI(variant) {
     const priceEl = document.getElementById('prod-price');
     const addBtn = document.querySelector('.buy-btn.black:not(#btn-buy-now)');
     const buyNowBtn = document.getElementById('btn-buy-now');
+    const qtyContainer = document.querySelector('.quantity-container');
     
     const isSoldOut = !variant.availableForSale;
 
     if (isSoldOut) {
         addBtn.style.display = 'none';
         buyNowBtn.style.display = 'none';
+        qtyContainer.style.display = 'none'; // Hides the -, +, and quantity display
+        
         if (!document.getElementById('sold-out-msg')) {
              const msg = document.createElement('div');
              msg.id = 'sold-out-msg';
@@ -3882,6 +3885,8 @@ function updateProductUI(variant) {
     } else {
         addBtn.style.display = 'block';
         buyNowBtn.style.display = 'block';
+        qtyContainer.style.display = 'flex'; // Restores the quantity selector
+        
         const msg = document.getElementById('sold-out-msg');
         if (msg) msg.remove();
     }
@@ -3970,14 +3975,6 @@ if (isShopLoaded) return; // Stop if we already loaded the products
     }
 }
 
-// Ensure this runs on load
-document.addEventListener('DOMContentLoaded', () => {
-    window.resetButtons();
-    const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
-    if(addBtn) {
-        addBtn.addEventListener('click', (e) => addToCart(e));
-    }
-});
 // Add this below your openProduct function
 function closeProduct() {
     const prodPage = document.getElementById('page-product');
@@ -4308,14 +4305,6 @@ window.checkoutCart = async function(event) {
     }
 };
 
-// DOM bindings hookup execution
-document.addEventListener('DOMContentLoaded', () => {
-    // Ensuring the add to cart button connects correctly.
-    const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
-    if(addBtn) {
-        addBtn.addEventListener('click', addToCart);
-    }
-});
 const PRODUCT_QUERY = `
   query getProductByHandle($handle: String!) {
     productByHandle(handle: $handle) {
@@ -4423,9 +4412,14 @@ function initShopCountdown() {
     }
 }
 
-// Initialize the timer on load
 document.addEventListener('DOMContentLoaded', () => {
+    window.resetButtons();
     initShopCountdown();
+
+    const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
+    if (addBtn) {
+        addBtn.addEventListener('click', addToCart);
+    }
 });
 function clearCustomStyles() {
     const root = document.documentElement;
