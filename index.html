@@ -3865,15 +3865,11 @@ function updateProductUI(variant) {
     const addBtn = document.querySelector('.buy-btn.black:not(#btn-buy-now)');
     const buyNowBtn = document.getElementById('btn-buy-now');
     
-    // Check if the specific variant is sold out
     const isSoldOut = !variant.availableForSale;
 
-    // Toggle button visibility
     if (isSoldOut) {
         addBtn.style.display = 'none';
         buyNowBtn.style.display = 'none';
-        
-        // Add a "Sold Out" label if it doesn't exist
         if (!document.getElementById('sold-out-msg')) {
              const msg = document.createElement('div');
              msg.id = 'sold-out-msg';
@@ -3890,13 +3886,12 @@ function updateProductUI(variant) {
         if (msg) msg.remove();
     }
 
-    // Update Price
-    const basePrice = parseFloat(variant.price.amount);
-    priceEl.dataset.basePrice = basePrice;
-    priceEl.innerText = `£${basePrice.toFixed(2)} GBP`;
+    // Capture the price specifically from the variant
+    const variantPrice = parseFloat(variant.price.amount);
     
-    // Trigger quantity update just in case
-    window.updateQty(0);
+    // Store in data attribute for updateQty to use
+    priceEl.dataset.basePrice = variantPrice;
+    priceEl.innerText = `£${variantPrice.toFixed(2)} GBP`;
 }
 function renderCarousel(imageArray, title) {
     const carousel = document.getElementById('prod-carousel');
@@ -3997,37 +3992,36 @@ function saveCart() {
     localStorage.setItem('tm_cart', JSON.stringify(cart));
 }
 
-// Update the global window variable if your state resets on route updates
 window.updateQty = function(change) {
     currentQty += change;
     if (currentQty < 1) currentQty = 1;
     document.getElementById('qty-display').innerText = currentQty;
 
-    // Recalculate price dynamically
     const priceEl = document.getElementById('prod-price');
-    const basePrice = parseFloat(priceEl.dataset.basePrice);
-    
-    // Check if framed (for UI logic)
-    const activeOptionBtn = document.querySelector('.prod-option-btn.active');
-    const isFramed = activeOptionBtn && activeOptionBtn.dataset.option === 'frame';
+    // Read the price stored in the data attribute by updateProductUI
+    const basePrice = parseFloat(priceEl.dataset.basePrice || 0);
 
-    // FIX: If your variant prices in Shopify already reflect the frame cost, 
-    // remove the "+ (isFramed ? 35 : 0)" part completely.
-    // Use this if Shopify handles the price:
-    const unitPrice = basePrice; 
-
-    const totalPrice = unitPrice * currentQty;
+    const totalPrice = basePrice * currentQty;
     priceEl.innerText = `£${totalPrice.toFixed(2)} GBP`;
 };
-
-// This remains in your code (around line 1285)
 document.querySelectorAll('.prod-option-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.prod-option-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
 
-        // This triggers the calculation using the logic updated in Step 2
-        window.updateQty(0);
+        // Identify the selected option text (Print Only vs Black Frame)
+        const selectedOption = this.innerText.toLowerCase();
+        
+        // Find the variant node that matches the selected option
+        const selectedVariant = currentProductVariants.find(v => 
+            v.node.title.toLowerCase().includes(selectedOption)
+        );
+
+        if (selectedVariant) {
+            // Update UI with this specific variant's price
+            updateProductUI(selectedVariant.node);
+            window.updateQty(0); // Refresh totals based on new base price
+        }
     });
 });
 
