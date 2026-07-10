@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="preload" href="logo_small.png" as="image">
-<link rel="preload" href="logo.png" as="image">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
 
 <link rel="preload" href="/logo_small.png" as="image">
 <link rel="preload" href="/logo.png" as="image">
-<link rel="icon" type="image/png" href="/favicon.png">
 <link rel="preload" href="/artwork/3d/duck/source/duck_animation.glb" as="fetch" type="model/gltf-binary" crossorigin>
 <link rel="apple-touch-icon" href="/favicon.png">
     <meta charset="UTF-8">
@@ -2609,6 +2606,9 @@ function openShop() {
     document.body.style.cursor = 'default';
     if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
+    
+    // FETCH THE SHOP DATA HERE
+    renderShop(); 
 }
 
         function openWorks() {
@@ -3888,7 +3888,9 @@ function renderCarousel(imageArray, title) {
     });
 }
 // Add this fetch logic
+let isShopLoaded = false; //
 async function renderShop() {
+if (isShopLoaded) return; // Stop if we already loaded the products
     const grid = document.getElementById('shop-grid');
     const PRODUCT_QUERY = `
     query getProducts {
@@ -3934,6 +3936,7 @@ async function renderShop() {
             
             grid.appendChild(item);
         });
+   isShopLoaded = true; // Set the flag to true so it never runs twice
     } catch (error) {
         console.error("Failed to load shop:", error);
     }
@@ -3941,11 +3944,9 @@ async function renderShop() {
 
 // Ensure this runs on load
 document.addEventListener('DOMContentLoaded', () => {
-    renderShop();
-window.resetButtons();
-const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
+    window.resetButtons();
+    const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
     if(addBtn) {
-        // Change this line to pass the event 'e'
         addBtn.addEventListener('click', (e) => addToCart(e));
     }
 });
@@ -4356,7 +4357,7 @@ function removeAllLoadingIndicators() {
 function initShopCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
-    const targetDate = Date.UTC(2026, 6, 12, 16, 0, 0); 
+   const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
     const countdownContainer = document.getElementById('shop-countdown-container');
     const shopContent = document.getElementById('shop-content');
