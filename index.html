@@ -15,7 +15,7 @@
 <link rel="preload" href="/logo.png" as="image">
 
 <!-- Third Party Libraries -->
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
 #page-works:not(.visible) .works-container {
     pointer-events: none !important;
@@ -465,7 +465,7 @@ body.site-loaded .copyright {
             z-index: 1;
         }
         .inline-human {
-            height: 2.8em; 
+            height: 2.5em; 
             width: auto; 
             vertical-align: middle; 
             mix-blend-mode: var(--frace-blend);
@@ -608,12 +608,29 @@ body.site-loaded .copyright {
         .left-arrow { left: 40px; transform: translateY(-50%) rotate(-135deg); }
         .right-arrow { right: 40px; transform: translateY(-50%) rotate(45deg); }
 
-        .about-text { 
-            position: relative;
-            flex: none; width: 40%; height: 100%; display: flex; flex-direction: column; 
-            justify-content: flex-start; box-sizing: border-box; padding: 120px 80px 100px 60px; overflow-y: auto; 
-        }
-        .about-text p { line-height: 1.8; color: var(--text-color); margin-bottom: 25px; font-size: 1.1rem; transition: color 0.3s ease; position: relative; z-index: 2; }
+   .about-text {
+    position: relative;
+    flex: none;
+    width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    padding: 120px 60px 100px 60px; /* Slightly adjusted padding for balance */
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevents symbols from pushing the page width */
+}
+        .about-text p {
+    line-height: 2; /* Ensures a consistent, readable gap between lines */
+    margin-bottom: 22px; /* Aligns paragraph spacing to match the line-height rhythm */
+    color: var(--text-color);
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 2;
+    padding-right: 20px; /* Adds breathing room from the right-hand symbols */
+}
 
         /* --- DYNAMIC WORKS GRID --- */
         .works-container { 
@@ -1712,6 +1729,17 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     .cd-separator { font-size: 2.2rem; margin-bottom: 20px; }
     .cd-title { font-size: 1rem; }
 }
+.inline-artist {
+    height: 2.4em; /* Scales perfectly with the paragraph text */
+    width: auto; 
+    vertical-align: middle; 
+    mix-blend-mode: var(--frace-blend);
+    filter: var(--logo-filter);
+    margin: 0 3px; /* Gives the image a tiny bit of breathing room from the commas */
+    position: relative;
+    top: -2px; /* Nudges it down slightly to sit nicely on the baseline */
+    transition: filter 0.3s ease;
+}
     </style>
 </head>
 <body>
@@ -1847,8 +1875,8 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
 <img src="random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5">
 <img src="random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6">
                     
-                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English 𝖠̶𝗋̶𝗍̶𝗂̶𝗌̶𝗍̶. I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
-                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img src="random/human_01.webp" alt="human" class="inline-human">; the flow state of creating is the closest we get to dreaming whilst awake.</p>
+                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img src="/random/artistcrossed.webp" alt="Artist" class="inline-artist">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
+                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img src="random/human_01.webp" alt="human" class="inline-human">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
                     
                     <div class="frace-cabbage-wrapper">
@@ -4349,7 +4377,8 @@ function removeAllLoadingIndicators() {
 function initShopCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
-const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
+ //const targetDate = 0;
+   const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
     const countdownContainer = document.getElementById('shop-countdown-container');
     const shopContent = document.getElementById('shop-content');
