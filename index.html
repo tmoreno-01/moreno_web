@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="/favicon.png">
 
 <!-- Main Image Preloads -->
+<link rel="preload" href="/frace.png" as="image">
 <link rel="preload" href="/logo_small.png" as="image">
 <link rel="preload" href="/logo.png" as="image">
 
@@ -766,7 +767,7 @@ body.site-loaded .copyright {
             width: 100%; 
             contain: layout style;
             transform-origin: center center;
-
+will-change: transform, opacity;
             /* Set up for Dragging */
             touch-action: auto; 
             user-select: none;
@@ -1712,7 +1713,6 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     .cd-title { font-size: 1rem; }
 }
     </style>
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
 <body>
 <!-- New Duck Page -->
@@ -1901,142 +1901,138 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     <div id="page-works" class="page-overlay">
         <div class="overlay-content">
             <div class="works-container">
-              <div class="works-grid mode-collage">
-<div class="work-item" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp')">
-    <div class="work-image"><img src="/artwork/small/notimeforoverthinking.webp" alt="No time 4 overthinking"></div>
-    <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
-</div>
-<div class="work-item" id="art-camera" onclick="openLightbox('/artwork/3d/test/camera/camera.glb', 'Camera', '2026', '3D Model', 'A rotatable 3D camera model.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-<div class="work-image"><img src="/artwork/3d/test/camera/cameraposter.webp" alt="Camera 3D Model"></div>
-    <div class="work-caption"><span>Camera</span><span>2026</span></div>
-</div>
-                <div class="work-item" id="art-peanut-butter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/splinter_small.webp" alt="Splinter"></div>
-                        <div class="work-caption"><span>Splinter</span><span>2026</span></div>
- </div>
-<div class="work-item" id="art-sevenofhearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp')">
-    <div class="work-image  no-shadow">
-        <!-- This single image shows only in Rows mode -->
-        <img class="single-fallback" src="/artwork/small/sevenofhearts_small.webp" alt="Seven of Hearts">
-        
-        <!-- This grid of 36 images shows only in Collage mode -->
-        <div class="sliced-container">
-            <img src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
-            <img src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
-            <img src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
-            <img src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
-            <img src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
-            <img src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
-            <img src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
-            <img src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
-            <img src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
-            <img src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
-            <img src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
-            <img src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
-            <img src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
-            <img src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
-            <img src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
-            <img src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
-            <img src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
-            <img src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
-            <img src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
-            <img src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
-            <img src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
-            <img src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
-            <img src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
-            <img src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
-            <img src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
-            <img src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
-            <img src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
-            <img src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
-            <img src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
-            <img src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
-            <img src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
-            <img src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
-            <img src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
-            <img src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
-            <img src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
-            <img src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
-        </div>
+     <div class="works-grid mode-collage">
+    <div class="work-item" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp')">
+        <div class="work-image"><img src="/artwork/small/notimeforoverthinking.webp" alt="No time 4 overthinking"></div>
+        <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
     </div>
-    <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
+    <div class="work-item" id="art-camera" onclick="openLightbox('/artwork/3d/test/camera/camera.glb', 'Camera', '2026', '3D Model', 'A rotatable 3D camera model.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/3d/test/camera/cameraposter.webp" alt="Camera 3D Model"></div>
+        <div class="work-caption"><span>Camera</span><span>2026</span></div>
+    </div>
+    <div class="work-item" id="art-peanut-butter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/splinter_small.webp" alt="Splinter"></div>
+        <div class="work-caption"><span>Splinter</span><span>2026</span></div>
+    </div>
+    <div class="work-item" id="art-sevenofhearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp')">
+        <div class="work-image  no-shadow">
+            <!-- This single image shows only in Rows mode -->
+            <img class="single-fallback" src="/artwork/small/sevenofhearts_small.webp" alt="Seven of Hearts">
+            
+            <!-- This grid of 36 images shows only in Collage mode -->
+            <div class="sliced-container">
+                <img src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
+                <img src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
+                <img src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
+                <img src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
+                <img src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
+                <img src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
+                <img src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
+                <img src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
+                <img src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
+                <img src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
+                <img src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
+                <img src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
+                <img src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
+                <img src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
+                <img src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
+                <img src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
+                <img src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
+                <img src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
+                <img src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
+                <img src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
+                <img src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
+                <img src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
+                <img src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
+                <img src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
+                <img src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
+                <img src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
+                <img src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
+                <img src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
+                <img src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
+                <img src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
+                <img src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
+                <img src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
+                <img src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
+                <img src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
+                <img src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
+                <img src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
+            </div>
+        </div>
+        <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/dairypirates_small.jpg', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/dairypirates_small.jpg" alt="Dairy Pirates"></div>
+        <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/fromthechest_small.jpg" alt="From the Chest"></div>
+        <div class="work-caption"><span>From the Chest</span><span>2026</span></div>
+    </div>
+
+    <!-- Images below this point are now lazy-loaded -->
+
+    <div class="work-item" onclick="openLightbox('/artwork/small/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/soulofatelephone_smallback.jpg')">
+        <div class="work-image"><img src="/artwork/small/soulofatelephone_small.jpg" alt="Soul of an Old Telephone Box" loading="lazy"></div>
+        <div class="work-caption"><span>Soul of an Old Telephone Box</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/bfec_small.jpg" alt="BFEC" loading="lazy"></div>
+        <div class="work-caption"><span>BFEC</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg')">
+        <div class="work-image"><img src="/artwork/small/liminalsometime_small.jpg" alt="Liminal some Time" loading="lazy"></div>
+        <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck" loading="lazy"></div>
+        <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/ab_small.jpg" alt="Midsummer" loading="lazy"></div>
+        <div class="work-caption"><span>AB+</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/midsummer_small.jpg" alt="Midsummer" loading="lazy"></div>
+        <div class="work-caption"><span>Midsummer</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/seizethelighthouse_small.jpg" alt="Seize the Lighthouse" loading="lazy"></div>
+        <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/pedestriancrossing_small.jpg" alt="Pedestrian Crossing" loading="lazy"></div>
+        <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?" loading="lazy"></div>
+        <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/small/mumflowers_small.jpg" alt="Give ur Mum some flowers" loading="lazy"></div>
+        <div class="work-caption"><span>Give ur Mum some flowers</span><span>2026</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', '')">
+        <div class="work-image"><img src="/artwork/small/zennor_small.jpg" alt="Zennor" loading="lazy"></div>
+        <div class="work-caption"><span>Zennor</span><span>2025</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '')">
+        <div class="work-image"><img src="/artwork/small/somethingaboutnextweek_small.jpg" alt="Something about next week" loading="lazy"></div>
+        <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', '')">
+        <div class="work-image"><img src="/artwork/small/mealticket_small.jpg" alt="Mealticket" loading="lazy"></div>
+        <div class="work-caption"><span>Mealticket</span><span>2025</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', '')">
+        <div class="work-image"><img src="/artwork/small/001_small.jpg" alt="Mayonnaise on the Roof" loading="lazy"></div>
+        <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
+    </div>
+    <div class="work-item" onclick="openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '')">
+        <div class="work-image"><img src="/artwork/small/notitle_small.jpg" alt="Notitle" loading="lazy"></div>
+        <div class="work-caption"><span>Notitle</span><span>2023</span></div>
+    </div>
 </div>
-              <div class="work-item" onclick="openLightbox('/artwork/small/dairypirates_small.jpg', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/dairypirates_small.jpg" alt="Dairy Pirates"></div>
-                        <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
-                    </div>
-                <div class="work-item" onclick="openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/fromthechest_small.jpg" alt="From the Chest"></div>
-                        <div class="work-caption"><span>From the Chest</span><span>2026</span></div>
-                    </div>
-                <div class="work-item" onclick="openLightbox('/artwork/small/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/soulofatelephone_smallback.jpg')">
-                        <div class="work-image"><img src="/artwork/small/soulofatelephone_small.jpg" alt="Soul of an Old Telephone Box"></div>
-                        <div class="work-caption"><span>Soul of an Old Telephone Box</span><span>2026</span></div>
-                    </div>
-                                        <div class="work-item" onclick="openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                                               <div class="work-image"><img src="/artwork/small/bfec_small.jpg" alt="BFEC"></div>
-                        <div class="work-caption"><span>BFEC</span><span>2026</span></div>
-                    </div>
-                    <div class="work-item" onclick="openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg')">
-                        <div class="work-image"><img src="/artwork/small/liminalsometime_small.jpg" alt="Liminal some Time"></div>
-                        <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
-                    </div>
-
-                    <div class="work-item" onclick="openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/nicedayoff_small.jpg" alt="Nice day off, Peanut butter luck"></div>
-                        <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
-                    </div>
-               <div class="work-item" onclick="openLightbox('/artwork/small/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/ab_small.jpg" alt="Midsummer"></div>
-                        <div class="work-caption"><span>AB+</span><span>2026</span></div>
-                    </div>
-                    <div class="work-item" onclick="openLightbox('/artwork/small/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/midsummer_small.jpg" alt="Midsummer"></div>
-                        <div class="work-caption"><span>Midsummer</span><span>2026</span></div>
-                    </div>
-                    <div class="work-item" onclick="openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/seizethelighthouse_small.jpg" alt="Seize the Lighthouse"></div>
-                        <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
-                    </div>
-
-                    <div class="work-item" onclick="openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/pedestriancrossing_small.jpg" alt="Pedestrian Crossing"></div>
-                        <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
-                    </div>
-
-                    <div class="work-item" onclick="openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/isthegrassgreener_square_small.jpg" alt="Is the Grass Greener?"></div>
-                        <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
-                    </div>
-
-                    <div class="work-item" onclick="openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-                        <div class="work-image"><img src="/artwork/small/mumflowers_small.jpg" alt="Give ur Mum some flowers"></div>
-                        <div class="work-caption"><span>Give ur Mum some flowers</span><span>2026</span></div>
-                    </div>
-<div class="work-item" onclick="openLightbox('/artwork/small/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', '')">
-                        <div class="work-image"><img src="/artwork/small/zennor_small.jpg" alt="Zennor" loading="lazy"></div>
-                        <div class="work-caption"><span>Zennor</span><span>2025</span></div>
-                    </div>
-                    <div class="work-item" onclick="openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '')">
-                        <div class="work-image"><img src="/artwork/small/somethingaboutnextweek_small.jpg" alt="Something about next week" loading="lazy"></div>
-                        <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
-                    </div>
-<div class="work-item" onclick="openLightbox('/artwork/small/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', '')">
-                        <div class="work-image"><img src="/artwork/small/mealticket_small.jpg" alt="Mealticket" loading="lazy"></div>
-                        <div class="work-caption"><span>Mealticket</span><span>2025</span></div>
-                    </div>
-
-                    <div class="work-item" onclick="openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', '')">
-                        <div class="work-image"><img src="/artwork/small/001_small.jpg" alt="Mayonnaise on the Roof" loading="lazy"></div>
-                        <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
-                    </div>
-
-                    <div class="work-item" onclick="openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '')">
-                        <div class="work-image"><img src="/artwork/small/notitle_small.jpg" alt="Notitle" loading="lazy"></div>
-                        <div class="work-caption"><span>Notitle</span><span>2023</span></div>
-                    </div>
-
-                </div>
 
                 </div>
             </div>
@@ -4263,25 +4259,6 @@ window.buyItNow = async function(event) {
     // but the error catch handles it if redirect fails.
 };
 
-// Ensure resetButtons cleans up effectively
-window.resetButtons = function() {
-    const buttons = document.querySelectorAll('.buy-btn');
-    buttons.forEach(btn => {
-        removeLoadingOverlay(btn); // Removes the frace-img
-        btn.disabled = false;
-        
-        // Restore text from data-original-text
-        if (btn.dataset.originalText) {
-            btn.innerText = btn.dataset.originalText;
-        } else {
-            // Fallback logic based on specific buttons
-            if (btn.id === 'btn-buy-now') btn.innerText = "Buy it now";
-            else if (btn.id === 'checkout-btn') btn.innerText = "Check out";
-            else btn.innerText = "Add to cart";
-        }
-    });
-};
-
 window.checkoutCart = async function(event) {
     if (cart.length === 0) return;
 
@@ -4329,18 +4306,17 @@ availableForSale
 `;
 function showLoadingOverlay(btn) {
     btn.style.position = 'relative';
-    // Hide text while keeping layout stable
     btn.style.color = 'transparent'; 
     
     const img = document.createElement('img');
-    img.src = '/frace.png';
     img.className = 'btn-loading-img';
+    img.src = '/frace.png';
     btn.appendChild(img);
 
-    // FAILSAFE: Force remove after 2 seconds if the script hangs
+    // Failsafe only — generous margin so it never races a real in-flight request
     btn.dataset.loadingTimer = setTimeout(() => {
         removeLoadingOverlay(btn);
-    }, 2000);
+    }, 4000);
 }
 // Add this helper function
 window.resetButtons = function() {
@@ -4373,7 +4349,7 @@ function removeAllLoadingIndicators() {
 function initShopCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
-  const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
+const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
     const countdownContainer = document.getElementById('shop-countdown-container');
     const shopContent = document.getElementById('shop-content');
