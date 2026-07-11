@@ -3895,7 +3895,7 @@ function updateProductUI(variant) {
     if (isSoldOut) {
         addBtn.style.display = 'none';
         buyNowBtn.style.display = 'none';
-        qtyContainer.style.display = 'none'; // Hides the -, +, and quantity display
+        qtyContainer.style.display = 'none'; 
         
         if (!document.getElementById('sold-out-msg')) {
              const msg = document.createElement('div');
@@ -3909,7 +3909,7 @@ function updateProductUI(variant) {
     } else {
         addBtn.style.display = 'block';
         buyNowBtn.style.display = 'block';
-        qtyContainer.style.display = 'flex'; // Restores the quantity selector
+        qtyContainer.style.display = 'flex'; 
         
         const msg = document.getElementById('sold-out-msg');
         if (msg) msg.remove();
@@ -3918,8 +3918,9 @@ function updateProductUI(variant) {
     // Capture the price specifically from the variant
     const variantPrice = parseFloat(variant.price.amount);
     
-    // Store in data attribute for updateQty to use
+    // Store in data attribute for updateQty and cart logic to use
     priceEl.dataset.basePrice = variantPrice;
+    priceEl.dataset.variantId = variant.id; // <--- WE ADDED THIS LINE
     priceEl.innerText = `£${variantPrice.toFixed(2)} GBP`;
 }
 function renderCarousel(imageArray, title) {
@@ -4130,15 +4131,19 @@ async function addToCart(event) {
     const img = document.getElementById('prod-img').dataset.path; 
     const activeOptionBtn = document.querySelector('.prod-option-btn.active');
     const option = activeOptionBtn ? activeOptionBtn.innerText : 'Print Only';
+    
     const priceEl = document.getElementById('prod-price');
-    const itemPrice = parseFloat(priceEl.innerText.replace(/[^0-9.]/g, '')) / currentQty;
+    const itemPrice = parseFloat(priceEl.dataset.basePrice); // Better than parsing innerText
+    const variantId = priceEl.dataset.variantId; // Grab exact ID directly from the UI
 
-    const existingIndex = cart.findIndex(item => item.title === title && item.option === option);
+    // Find by variantId instead of title/option string matching
+    const existingIndex = cart.findIndex(item => item.variantId === variantId);
     
     if(existingIndex > -1) {
         cart[existingIndex].qty += currentQty;
     } else {
         cart.push({
+            variantId: variantId, // Save it to the cart!
             title: title,
             img: img,
             option: option,
@@ -4171,16 +4176,6 @@ saveCart();
 const SHOPIFY_DOMAIN = 'https://notanartistokay.myshopify.com/api/2024-04/graphql.json';
 const SHOPIFY_TOKEN = '2f651b3977eb3dee70624770ed102048';
 
-const shopifyData = {
-    "Seven of Hearts": "gid://shopify/Product/16047482208636",
-    "Seven of Hearts II": "gid://shopify/Product/16047482241404"
-};
-
-const shopifyVariantData = {
-    "Seven of Hearts": { "Black Frame": "gid://shopify/ProductVariant/57156515889532" },
-    "Seven of Hearts II": { "Black Frame": "gid://shopify/ProductVariant/57156515987836" }
-};
-
 // Generic GraphQL Fetcher
 async function shopifyGraphQL(query, variables = {}) {
     const response = await fetch(SHOPIFY_DOMAIN, {
@@ -4192,34 +4187,6 @@ async function shopifyGraphQL(query, variables = {}) {
         body: JSON.stringify({ query, variables })
     });
     return response.json();
-}
-
-async function resolveVariantId(title, option) {
-    // 1. Check mapped specific variants
-    if (shopifyVariantData[title] && shopifyVariantData[title][option]) {
-        return shopifyVariantData[title][option];
-    }
-    
-    // 2. Fetch from Shopify if not explicitly mapped
-    const productId = shopifyData[title];
-    if (!productId) throw new Error("Product not configured for checkout.");
-
-    const query = `
-      query getProduct($id: ID!) {
-        product(id: $id) {
-          variants(first: 10) {
-            edges { node { id, title } }
-          }
-        }
-      }
-    `;
-    
-    const { data } = await shopifyGraphQL(query, { id: productId });
-    const variants = data.product.variants.edges.map(e => e.node);
-    
-    // Find variant by matching the selected option text
-    const variant = variants.find(v => v.title.toLowerCase().includes(option.toLowerCase()));
-    return variant ? variant.id : variants[0].id;
 }
 function removeLoadingOverlay(btn) {
     // Clear the failsafe timer so it doesn't trigger unexpectedly
@@ -4243,12 +4210,14 @@ function removeLoadingOverlay(btn) {
         btn.innerText = btn.dataset.originalText;
     }
 }
+
 // Replaces the deprecated checkoutCreate() and addLineItems()
 async function createShopifyCartAndCheckout(lineItems) {
     const query = `
       mutation cartCreate($input: CartInput) {
         cartCreate(input: $input) {
           cart { checkoutUrl }
+          userErrors { field message }
         }
       }
     `;
@@ -4257,6 +4226,13 @@ async function createShopifyCartAndCheckout(lineItems) {
     };
     
     const { data } = await shopifyGraphQL(query, variables);
+    
+    // Catch inventory or validation errors from Shopify
+    if (data.cartCreate.userErrors && data.cartCreate.userErrors.length > 0) {
+        console.error("Cart creation failed:", data.cartCreate.userErrors);
+        throw new Error(data.cartCreate.userErrors[0].message);
+    }
+    
     return data.cartCreate.cart.checkoutUrl;
 }
 
@@ -4267,12 +4243,10 @@ window.buyItNow = async function(event) {
     btn.disabled = true;
 
     try {
-        const title = document.getElementById('prod-title').innerText;
-        const activeOptionBtn = document.querySelector('.prod-option-btn.active');
-        const option = activeOptionBtn ? activeOptionBtn.innerText : 'Print Only';
         const qty = currentQty;
+        const priceEl = document.getElementById('prod-price');
+        const variantId = priceEl.dataset.variantId; // Fetch directly from UI
 
-        const variantId = await resolveVariantId(title, option);
         const checkoutUrl = await createShopifyCartAndCheckout([
             { merchandiseId: variantId, quantity: qty }
         ]);
@@ -4281,25 +4255,35 @@ window.buyItNow = async function(event) {
     } catch (error) {
         console.error("Checkout Error:", error);
         btn.innerText = "ERROR";
-        setTimeout(() => window.resetButtons(), 2000); // Auto-reset after 2s
+        setTimeout(() => window.resetButtons(), 2000); 
     }
-    // No need to remove loader here if redirecting, 
-    // but the error catch handles it if redirect fails.
 };
 
 window.checkoutCart = async function(event) {
     if (cart.length === 0) return;
 
     const btn = document.getElementById('checkout-btn');
-    btn.dataset.originalText = btn.innerText; // Store current text
+    btn.dataset.originalText = btn.innerText; 
     showLoadingOverlay(btn);
     btn.disabled = true;
 
     try {
-        const lineItems = await Promise.all(cart.map(async (item) => {
-            const variantId = await resolveVariantId(item.title, item.option);
-            return { merchandiseId: variantId, quantity: item.qty };
-        }));
+        // Filter out old test cart items that don't have a variantId yet
+        const validCart = cart.filter(item => item.variantId);
+
+        // Safety check: clear the cart if it's full of old data format
+        if (validCart.length === 0 && cart.length > 0) {
+            alert("Cart system updated! Clearing old test items.");
+            cart = [];
+            saveCart();
+            renderCart();
+            removeLoadingOverlay(btn);
+            return;
+        }
+
+        const lineItems = validCart.map((item) => {
+            return { merchandiseId: item.variantId, quantity: item.qty };
+        });
 
         const checkoutUrl = await createShopifyCartAndCheckout(lineItems);
         window.location.href = checkoutUrl;
