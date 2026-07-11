@@ -2260,6 +2260,8 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     </div>
 </div>
     <script>
+// Add this near your other global state variables
+let productSelectionState = {}; // Key will be product handle, Value will be variant ID
         // --- IOS DETECTION ---
         const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -3858,16 +3860,34 @@ async function openProduct(handle) {
 
     currentProductVariants = product.variants.edges;
     
+    // Store handle for reference
+    document.getElementById('prod-img').dataset.handle = handle;
+    
+    // 1. Restore Quantity from state
+    const savedState = productSelectionState[handle];
+    currentQty = savedState ? (savedState.qty || 1) : 1;
+    document.getElementById('qty-display').innerText = currentQty;
+
+    // 2. Restore Variant
+    let initialVariant;
+    if (savedState && savedState.variantId) {
+        const found = currentProductVariants.find(v => v.node.id === savedState.variantId);
+        initialVariant = found ? found.node : currentProductVariants[0].node;
+    } else {
+        initialVariant = currentProductVariants[0].node;
+    }
+    
     document.getElementById('prod-title').innerText = product.title;
     document.getElementById('prod-desc').innerHTML = product.descriptionHtml;
     
-    const initialVariant = currentProductVariants[0].node;
     updateProductUI(initialVariant);
+    
+    // 3. Trigger a price update calculation based on the restored quantity
+    window.updateQty(0); 
 
     const images = product.images.edges.map(e => e.node.url);
     renderCarousel(images, product.title);
 
-    // Show the product page
     document.getElementById('page-product').classList.add('visible');
     document.body.classList.add('overlay-open');
 
@@ -3885,7 +3905,8 @@ async function openProduct(handle) {
 }
 
 function updateProductUI(variant) {
-    const priceEl = document.getElementById('prod-price');
+   const priceEl = document.getElementById('prod-price');
+    const variantPrice = parseFloat(variant.price.amount);
     const addBtn = document.querySelector('.buy-btn.black:not(#btn-buy-now)');
     const buyNowBtn = document.getElementById('btn-buy-now');
     const qtyContainer = document.querySelector('.quantity-container');
@@ -3915,13 +3936,14 @@ function updateProductUI(variant) {
         if (msg) msg.remove();
     }
 
-    // Capture the price specifically from the variant
-    const variantPrice = parseFloat(variant.price.amount);
-    
-    // Store in data attribute for updateQty and cart logic to use
-    priceEl.dataset.basePrice = variantPrice;
-    priceEl.dataset.variantId = variant.id; // <--- WE ADDED THIS LINE
+priceEl.dataset.basePrice = variantPrice;
+    priceEl.dataset.variantId = variant.id;
     priceEl.innerText = `£${variantPrice.toFixed(2)} GBP`;
+
+    // 4. Highlight the correct button based on the variant loaded
+    document.querySelectorAll('.prod-option-btn').forEach(btn => {
+        btn.classList.toggle('active', variant.title.toLowerCase().includes(btn.innerText.toLowerCase()));
+    });
 }
 function renderCarousel(imageArray, title) {
     const carousel = document.getElementById('prod-carousel');
@@ -4019,10 +4041,15 @@ window.updateQty = function(change) {
     if (currentQty < 1) currentQty = 1;
     document.getElementById('qty-display').innerText = currentQty;
 
-    const priceEl = document.getElementById('prod-price');
-    // Read the price stored in the data attribute by updateProductUI
-    const basePrice = parseFloat(priceEl.dataset.basePrice || 0);
+    // Save the quantity to our state object
+    const handle = document.getElementById('prod-img').dataset.handle;
+    if (handle) {
+        if (!productSelectionState[handle]) productSelectionState[handle] = {};
+        productSelectionState[handle].qty = currentQty;
+    }
 
+    const priceEl = document.getElementById('prod-price');
+    const basePrice = parseFloat(priceEl.dataset.basePrice || 0);
     const totalPrice = basePrice * currentQty;
     priceEl.innerText = `£${totalPrice.toFixed(2)} GBP`;
 };
@@ -4031,18 +4058,22 @@ document.querySelectorAll('.prod-option-btn').forEach(btn => {
         document.querySelectorAll('.prod-option-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
 
-        // Identify the selected option text (Print Only vs Black Frame)
-        const selectedOption = this.innerText.toLowerCase();
-        
-        // Find the variant node that matches the selected option
+ const selectedOption = this.innerText.toLowerCase();
         const selectedVariant = currentProductVariants.find(v => 
             v.node.title.toLowerCase().includes(selectedOption)
         );
 
-        if (selectedVariant) {
-            // Update UI with this specific variant's price
+if (selectedVariant) {
+            const handle = document.getElementById('prod-img').dataset.handle;
+            
+            // Ensure state object is initialized
+            if (!productSelectionState[handle]) productSelectionState[handle] = {};
+            
+            // Save the variant ID
+            productSelectionState[handle].variantId = selectedVariant.node.id;
+
             updateProductUI(selectedVariant.node);
-            window.updateQty(0); // Refresh totals based on new base price
+            window.updateQty(0); // Recalculate price
         }
     });
 });
