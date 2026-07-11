@@ -4185,11 +4185,14 @@ async function addToCart(event) {
     saveCart();
     
     // Add a slight delay to let the user "ping" the graphic before closing
-    setTimeout(() => {
-        closeProduct();
-        renderCart();
-        removeLoadingOverlay(btn);
-    }, 600); 
+  setTimeout(() => {
+    closeProduct();
+    renderCart();
+    removeLoadingOverlay(btn);
+    
+    // NEW: Open the drawer automatically so they see their item
+    window.openCart(); 
+}, 600);
 }
 
 window.removeFromCart = function(index) {
