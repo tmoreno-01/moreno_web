@@ -2629,10 +2629,6 @@ pageSketches.classList.remove('visible');
 pageShop.classList.remove('visible'); // ADD THIS LINE
 removeAllLoadingIndicators();
 isPaintingActive = true;
-const duckViewer = document.getElementById('duck-viewer');
-    if (duckViewer) {
-        duckViewer.remove(); 
-    }
             
             btnAbout.classList.remove('active');
 btnSketches.classList.remove('active');
@@ -2905,7 +2901,7 @@ isPaintingActive = false;
             const imgEl = document.getElementById('lb-img');
             imgEl.style.cursor = 'zoom-in';
             // Added translateZ(0) for better GPU handling
-            imgEl.style.transform = 'scale(1)'; 
+            imgEl.style.transform = 'scale(1) translateZ(0)'; 
             setTimeout(() => {
                 if (zoomState === 0) {
                     imgEl.style.transformOrigin = 'center center';
@@ -2964,7 +2960,7 @@ const lbImg = document.getElementById('lb-img');
                     currentOriginY = Math.max(0, Math.min(100, y));
                 }
                 this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                this.style.transform = \`scale(${activeScale})`; 
+                this.style.transform = `scale(${activeScale}) translateZ(0)`; 
             } else {
                 resetZoom();
             }
@@ -3052,7 +3048,7 @@ if (e.touches.length === 2 && initialPinchDistance) {
     // ONLY update and render if the scale actually changed significantly
     if (Math.abs(newScale - currentContinuousScale) > 0.01) {
         currentContinuousScale = newScale;
-imgEl.style.transform = \`scale(${currentContinuousScale})`;
+        imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
     }
     return;
 }
@@ -3461,7 +3457,7 @@ imgEl.style.transform = \`scale(${currentContinuousScale})`;
         let pointerX = null, pointerY = null;
         let brushX = null, brushY = null;
 
-function renderLoop() {
+  function renderLoop() {
     // If painting isn't active, loop but do literally zero math
     if (!isPaintingActive || pointerX === null || brushX === null) {
         requestAnimationFrame(renderLoop);
