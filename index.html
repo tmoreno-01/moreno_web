@@ -2901,7 +2901,7 @@ isPaintingActive = false;
             const imgEl = document.getElementById('lb-img');
             imgEl.style.cursor = 'zoom-in';
             // Added translateZ(0) for better GPU handling
-            imgEl.style.transform = 'scale(1) translateZ(0)'; 
+            imgEl.style.transform = 'scale(1)'; 
             setTimeout(() => {
                 if (zoomState === 0) {
                     imgEl.style.transformOrigin = 'center center';
@@ -2960,7 +2960,7 @@ const lbImg = document.getElementById('lb-img');
                     currentOriginY = Math.max(0, Math.min(100, y));
                 }
                 this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                this.style.transform = `scale(${activeScale}) translateZ(0)`; 
+                this.style.transform = `scale(${activeScale})`; 
             } else {
                 resetZoom();
             }
@@ -3048,7 +3048,7 @@ if (e.touches.length === 2 && initialPinchDistance) {
     // ONLY update and render if the scale actually changed significantly
     if (Math.abs(newScale - currentContinuousScale) > 0.01) {
         currentContinuousScale = newScale;
-        imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
+        imgEl.style.transform = `scale(${currentContinuousScale})`;
     }
     return;
 }
