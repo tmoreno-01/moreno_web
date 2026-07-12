@@ -1046,6 +1046,11 @@ will-change: transform, opacity;
     transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); 
     transform-origin: center center;
     min-width: 0; /* Removed fixed 400px constraint */
+contain: content; /* Tells browser to isolate layout/paint for this element */
+    will-change: transform;
+    backface-visibility: hidden;
+    /* Forces the browser to keep the image in a separate layer */
+    transform: translateZ(0);
 }
 
 .lightbox-right { 
@@ -3021,45 +3026,27 @@ const lbImg = document.getElementById('lb-img');
             if (e.target.closest('.lightbox-left')) {
                 const imgEl = document.getElementById('lb-img');
                 
-         // --- PINCH-TO-ZOOM ---
-                if (e.touches.length === 2 && initialPinchDistance) {
-                    e.preventDefault(); // Stop native scrolling
-                    const currentDistance = Math.hypot(
-                        e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - e.touches[1].clientY
-                    );
-                    
-                    const scaleMultiplier = currentDistance / initialPinchDistance;
-                    let newScale = basePinchScale * scaleMultiplier;
-                    
-                    // FIXED: Strict cap for iOS Safari memory limits. 
-                    // Capping at 3.2 on iOS completely prevents the tab crash.
-                    const maxPinchScale = isIOS ? 3.2 : 4.5;
-                    newScale = Math.max(0.5, Math.min(newScale, maxPinchScale)); 
-                    currentContinuousScale = newScale;
-                    
-                    // Align zoom state for the tap-to-zoom feature
-                    if (currentContinuousScale <= 1) zoomState = 0;
-                    else if (currentContinuousScale < 2.5) zoomState = 1;
-                    else zoomState = 2;
+      // --- PINCH-TO-ZOOM ---
+if (e.touches.length === 2 && initialPinchDistance) {
+    e.preventDefault();
+    const currentDistance = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+    );
+    
+    const scaleMultiplier = currentDistance / initialPinchDistance;
+    let newScale = basePinchScale * scaleMultiplier;
+    
+    const maxPinchScale = isIOS ? 2.2 : 4.5; // Strictly capped for iOS
+    newScale = Math.max(0.5, Math.min(newScale, maxPinchScale)); 
 
-                    // Move origin between fingers when zooming from 1x
-                    if (basePinchScale === 1 && currentContinuousScale > 1) {
-                        const parentRect = imgEl.parentElement.getBoundingClientRect();
-                        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                        const x = ((centerX - parentRect.left) / parentRect.width) * 100;
-                        const y = ((centerY - parentRect.top) / parentRect.height) * 100;
-                        currentOriginX = Math.max(0, Math.min(100, x));
-                        currentOriginY = Math.max(0, Math.min(100, y));
-                        imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                        basePinchScale = 1.01; // Avoid recalculating origin on next frame
-                    }
-
-                    // translateZ(0) forces stable GPU rendering
-                    imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
-                    return;
-                }
+    // ONLY update and render if the scale actually changed significantly
+    if (Math.abs(newScale - currentContinuousScale) > 0.01) {
+        currentContinuousScale = newScale;
+        imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
+    }
+    return;
+}
 
                 // --- PANNING ---
                 if (e.touches.length === 1 && currentContinuousScale > 1) {
@@ -4474,7 +4461,7 @@ function removeAllLoadingIndicators() {
 function initShopCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
-// const targetDate = 0;
+ //const targetDate = 0;
    const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
     const countdownContainer = document.getElementById('shop-countdown-container');
