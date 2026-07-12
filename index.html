@@ -2554,6 +2554,7 @@ themeToggleBtn.addEventListener('click', (e) => {
 
 
 function openDuckPage() {
+isPaintingActive = false;
     clearNavigation();
     const overlay = document.getElementById('page-duck');
     const content = overlay.querySelector('.overlay-content');
@@ -2629,6 +2630,7 @@ pageSketches.classList.remove('visible');
             pageContact.classList.remove('visible');
 pageShop.classList.remove('visible'); // ADD THIS LINE
 removeAllLoadingIndicators();
+isPaintingActive = true;
             
             btnAbout.classList.remove('active');
 btnSketches.classList.remove('active');
@@ -2650,6 +2652,7 @@ document.getElementById('page-duck').classList.remove('visible');
 
 
         function openAbout() {
+isPaintingActive = false;
 saveLastPage('about');
             if (pageAbout.classList.contains('visible')) return;
             clearNavigation();
@@ -2661,6 +2664,7 @@ saveLastPage('about');
             updateFooterIcons('other');
         }
 function openShop() {
+isPaintingActive = false;
     saveLastPage('shop');
     if (pageShop.classList.contains('visible')) return;
     clearNavigation();
@@ -2676,6 +2680,7 @@ function openShop() {
 }
 
         function openWorks() {
+isPaintingActive = false;
 saveLastPage('gallery');
             if (pageWorks.classList.contains('visible')) return;
             clearNavigation();
@@ -2687,6 +2692,7 @@ saveLastPage('gallery');
             updateFooterIcons('gallery');
         }
 function openSketches() {
+isPaintingActive = false;
 saveLastPage('sketches');
     if (pageSketches.classList.contains('visible')) return;
     clearNavigation();
@@ -2742,6 +2748,7 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
         });
 
         btnContact.addEventListener('click', (e) => {
+isPaintingActive = false;
             e.preventDefault();
             window.history.pushState(null, '', '/contact/');
             clearNavigation();
@@ -3452,17 +3459,18 @@ if (e.touches.length === 2 && initialPinchDistance) {
         let pointerX = null, pointerY = null;
         let brushX = null, brushY = null;
 
-        function renderLoop() {
-            if (pointerX !== null && brushX !== null) {
-                const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
-                if (distToTarget > 0.5) {
-                    brushX += (pointerX - brushX) * 0.75;
-                    brushY += (pointerY - brushY) * 0.75;
-                    draw(brushX, brushY);
-                }
-            }
-            requestAnimationFrame(renderLoop);
+      function renderLoop() {
+    // Only perform drawing calculations if painting is active
+    if (isPaintingActive && pointerX !== null && brushX !== null) {
+        const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
+        if (distToTarget > 0.5) {
+            brushX += (pointerX - brushX) * 0.75;
+            brushY += (pointerY - brushY) * 0.75;
+            draw(brushX, brushY);
         }
+    }
+    requestAnimationFrame(renderLoop);
+}
         requestAnimationFrame(renderLoop);
 
         window.addEventListener('mousemove', e => {
@@ -4524,6 +4532,8 @@ function clearCustomStyles() {
 }
     </script>
 <script>
+// Add this to your global state
+let isPaintingActive = true;
     const form = document.getElementById('contactForm');
     const responseMessage = document.getElementById('responseMessage');
     const submitButton = document.getElementById('submitButton');
