@@ -3444,28 +3444,38 @@ document.addEventListener('touchmove', function(e) {
         let pointerX = null, pointerY = null;
         let brushX = null, brushY = null;
 
-        function renderLoop() {
-            if (pointerX !== null && brushX !== null) {
-                const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
-                if (distToTarget > 0.5) {
-                    brushX += (pointerX - brushX) * 0.75;
-                    brushY += (pointerY - brushY) * 0.75;
-                    draw(brushX, brushY);
-                }
-            }
-            requestAnimationFrame(renderLoop);
+       function renderLoop() {
+    // If we aren't in painting mode, just skip everything
+    if (!isPaintingMode()) {
+        requestAnimationFrame(renderLoop);
+        return;
+    }
+
+    if (pointerX !== null && brushX !== null) {
+        const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
+        if (distToTarget > 0.5) {
+            brushX += (pointerX - brushX) * 0.75;
+            brushY += (pointerY - brushY) * 0.75;
+            draw(brushX, brushY);
         }
+    }
+    requestAnimationFrame(renderLoop);
+}
         requestAnimationFrame(renderLoop);
 
-        window.addEventListener('mousemove', e => {
-            pointerX = e.clientX;
-            pointerY = e.clientY;
-            if (brushX === null) {
-                brushX = pointerX;
-                brushY = pointerY;
-                draw(brushX, brushY, true);
-            }
-        });
+    window.addEventListener('mousemove', e => {
+    // Exit early if we are on an overlay page
+    if (!isPaintingMode()) return; 
+
+    pointerX = e.clientX;
+    pointerY = e.clientY;
+    
+    if (brushX === null) {
+        brushX = pointerX;
+        brushY = pointerY;
+        draw(brushX, brushY, true);
+    }
+});
 
         document.addEventListener('mouseleave', () => {
             brushX = null;
@@ -4454,7 +4464,7 @@ function initShopCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
  //const targetDate = 0;
-  const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
+   const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
     const countdownContainer = document.getElementById('shop-countdown-container');
     const shopContent = document.getElementById('shop-content');
@@ -4513,6 +4523,10 @@ function clearCustomStyles() {
     variables.forEach(v => root.style.removeProperty(v));
     isCustomBg = false;
     currentCanvasBg = '#ffffff'; // Reset internal state
+}
+function isPaintingMode() {
+    // Returns true only if no overlay is visible
+    return !document.body.classList.contains('overlay-open');
 }
     </script>
 <script>
