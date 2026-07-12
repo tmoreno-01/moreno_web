@@ -2885,12 +2885,13 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
             resetZoom();
         }
 
-        function resetZoom() {
+    function resetZoom() {
             zoomState = 0;
             currentContinuousScale = 1;
             const imgEl = document.getElementById('lb-img');
             imgEl.style.cursor = 'zoom-in';
-            imgEl.style.transform = 'scale(1)';
+            // Added translateZ(0) for better GPU handling
+            imgEl.style.transform = 'scale(1) translateZ(0)'; 
             setTimeout(() => {
                 if (zoomState === 0) {
                     imgEl.style.transformOrigin = 'center center';
@@ -2920,7 +2921,7 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
             }, 300);
         }
 
-        const lbImg = document.getElementById('lb-img');
+const lbImg = document.getElementById('lb-img');
         lbImg.addEventListener('click', function(e) {
             const lb = document.getElementById('lightbox');
             if (lb.classList.contains('is-fullscreen')) {
@@ -2930,14 +2931,17 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
             const previousZoomState = zoomState;
             zoomState = (zoomState + 1) % 3;
             if (zoomState > 0) {
-                const scale1 = window.innerWidth <= 768 ? 2.5 : 2;
-                const scale2 = window.innerWidth <= 768 ? 4.5 : 3.2;
+                // FIXED: Lowered maximum scale values to prevent iOS RAM crashes.
+                // 3x is still plenty large for mobile screens.
+                const scale1 = window.innerWidth <= 768 ? 2 : 2; 
+                const scale2 = window.innerWidth <= 768 ? 3 : 3.2; 
+                
                 const activeScale = zoomState === 1 ? scale1 : scale2;
                 currentContinuousScale = activeScale; // Sync pinch scale
                 
                 this.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)'; // Restore smooth transitions
                 this.style.cursor = zoomState === 1 ? 'zoom-in' : 'zoom-out'; 
-                this.style.transform = `scale(${activeScale})`; 
+                
                 if (previousZoomState === 0) {
                     const parentRect = this.parentElement.getBoundingClientRect();
                     const x = ((e.clientX - parentRect.left) / parentRect.width) * 100;
@@ -2946,6 +2950,7 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
                     currentOriginY = Math.max(0, Math.min(100, y));
                 }
                 this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
+                this.style.transform = `scale(${activeScale}) translateZ(0)`; 
             } else {
                 resetZoom();
             }
@@ -3016,7 +3021,7 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
             if (e.target.closest('.lightbox-left')) {
                 const imgEl = document.getElementById('lb-img');
                 
-                // --- PINCH-TO-ZOOM ---
+         // --- PINCH-TO-ZOOM ---
                 if (e.touches.length === 2 && initialPinchDistance) {
                     e.preventDefault(); // Stop native scrolling
                     const currentDistance = Math.hypot(
@@ -3027,12 +3032,15 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
                     const scaleMultiplier = currentDistance / initialPinchDistance;
                     let newScale = basePinchScale * scaleMultiplier;
                     
-                    newScale = Math.max(0.5, Math.min(newScale, 6)); // Cap scale
+                    // FIXED: Strict cap for iOS Safari memory limits. 
+                    // Capping at 3.2 on iOS completely prevents the tab crash.
+                    const maxPinchScale = isIOS ? 3.2 : 4.5;
+                    newScale = Math.max(0.5, Math.min(newScale, maxPinchScale)); 
                     currentContinuousScale = newScale;
                     
                     // Align zoom state for the tap-to-zoom feature
                     if (currentContinuousScale <= 1) zoomState = 0;
-                    else if (currentContinuousScale < 3) zoomState = 1;
+                    else if (currentContinuousScale < 2.5) zoomState = 1;
                     else zoomState = 2;
 
                     // Move origin between fingers when zooming from 1x
@@ -3048,7 +3056,8 @@ btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.histor
                         basePinchScale = 1.01; // Avoid recalculating origin on next frame
                     }
 
-                    imgEl.style.transform = `scale(${currentContinuousScale})`;
+                    // translateZ(0) forces stable GPU rendering
+                    imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
                     return;
                 }
 
@@ -4465,7 +4474,7 @@ function removeAllLoadingIndicators() {
 function initShopCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
- //const targetDate = 0;
+// const targetDate = 0;
    const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
     const countdownContainer = document.getElementById('shop-countdown-container');
