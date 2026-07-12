@@ -1047,10 +1047,7 @@ will-change: transform, opacity;
     transform-origin: center center;
     min-width: 0; /* Removed fixed 400px constraint */
 contain: content; /* Tells browser to isolate layout/paint for this element */
-    will-change: transform;
-    backface-visibility: hidden;
-    /* Forces the browser to keep the image in a separate layer */
-    transform: translateZ(0);
+
 }
 
 .lightbox-right { 
@@ -2632,6 +2629,10 @@ pageSketches.classList.remove('visible');
 pageShop.classList.remove('visible'); // ADD THIS LINE
 removeAllLoadingIndicators();
 isPaintingActive = true;
+const duckViewer = document.getElementById('duck-viewer');
+    if (duckViewer) {
+        duckViewer.remove(); 
+    }
             
             btnAbout.classList.remove('active');
 btnSketches.classList.remove('active');
@@ -2904,7 +2905,7 @@ isPaintingActive = false;
             const imgEl = document.getElementById('lb-img');
             imgEl.style.cursor = 'zoom-in';
             // Added translateZ(0) for better GPU handling
-            imgEl.style.transform = 'scale(1) translateZ(0)'; 
+            imgEl.style.transform = 'scale(1)'; 
             setTimeout(() => {
                 if (zoomState === 0) {
                     imgEl.style.transformOrigin = 'center center';
@@ -2963,7 +2964,7 @@ const lbImg = document.getElementById('lb-img');
                     currentOriginY = Math.max(0, Math.min(100, y));
                 }
                 this.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                this.style.transform = `scale(${activeScale}) translateZ(0)`; 
+                this.style.transform = \`scale(${activeScale})`; 
             } else {
                 resetZoom();
             }
@@ -3051,7 +3052,7 @@ if (e.touches.length === 2 && initialPinchDistance) {
     // ONLY update and render if the scale actually changed significantly
     if (Math.abs(newScale - currentContinuousScale) > 0.01) {
         currentContinuousScale = newScale;
-        imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
+imgEl.style.transform = \`scale(${currentContinuousScale})`;
     }
     return;
 }
@@ -3460,16 +3461,20 @@ if (e.touches.length === 2 && initialPinchDistance) {
         let pointerX = null, pointerY = null;
         let brushX = null, brushY = null;
 
-      function renderLoop() {
-    // Only perform drawing calculations if painting is active
-    if (isPaintingActive && pointerX !== null && brushX !== null) {
-        const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
-        if (distToTarget > 0.5) {
-            brushX += (pointerX - brushX) * 0.75;
-            brushY += (pointerY - brushY) * 0.75;
-            draw(brushX, brushY);
-        }
+function renderLoop() {
+    // If painting isn't active, loop but do literally zero math
+    if (!isPaintingActive || pointerX === null || brushX === null) {
+        requestAnimationFrame(renderLoop);
+        return; 
     }
+
+    const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
+    if (distToTarget > 0.5) {
+        brushX += (pointerX - brushX) * 0.75;
+        brushY += (pointerY - brushY) * 0.75;
+        draw(brushX, brushY);
+    }
+    
     requestAnimationFrame(renderLoop);
 }
         requestAnimationFrame(renderLoop);
