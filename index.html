@@ -3022,53 +3022,46 @@ const lbImg = document.getElementById('lb-img');
             }
         });
 
-        document.addEventListener('touchmove', function(e) {
-            if (e.target.closest('.lightbox-left')) {
-                const imgEl = document.getElementById('lb-img');
-                
-      // --- PINCH-TO-ZOOM ---
+       // Add these variables globally if you don't have them
+let ticking = false; 
+
+document.addEventListener('touchmove', function(e) {
+    if (!e.target.closest('.lightbox-left')) return;
+
+    const imgEl = document.getElementById('lb-img');
+    
+   // --- PINCH-TO-ZOOM ---
 if (e.touches.length === 2 && initialPinchDistance) {
     e.preventDefault();
+
     const currentDistance = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
     );
-    
-    const scaleMultiplier = currentDistance / initialPinchDistance;
-    let newScale = basePinchScale * scaleMultiplier;
-    
-    const maxPinchScale = isIOS ? 2.2 : 4.5; // Strictly capped for iOS
-    newScale = Math.max(0.5, Math.min(newScale, maxPinchScale)); 
 
-    // ONLY update and render if the scale actually changed significantly
-    if (Math.abs(newScale - currentContinuousScale) > 0.01) {
-        currentContinuousScale = newScale;
-        imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
+    // 1. Calculate the scale based on pinch distance
+    let scaleFactor = currentDistance / initialPinchDistance;
+    let newScale = basePinchScale * scaleFactor;
+
+    // 2. HARD CAP: Prevent memory crashes
+    // 2.5x is usually plenty; you can lower this to 2.0 if you still see issues.
+    const maxPinchScale = 2.0; 
+    newScale = Math.max(0.5, Math.min(newScale, maxPinchScale));
+
+    // 3. THROTTLING: Use requestAnimationFrame to prevent memory spikes
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            if (Math.abs(newScale - currentContinuousScale) > 0.01) {
+                currentContinuousScale = newScale;
+                imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
+            }
+            ticking = false;
+        });
+        ticking = true;
     }
     return;
 }
-
-                // --- PANNING ---
-                if (e.touches.length === 1 && currentContinuousScale > 1) {
-                    e.preventDefault(); // Stop native scrolling
-                    const clientX = e.touches[0].clientX;
-                    const clientY = e.touches[0].clientY;
-                    
-                    const dx = clientX - touchStartX;
-                    const dy = clientY - touchStartY;
-                    const parentRect = imgEl.parentElement.getBoundingClientRect();
-                    
-                    currentOriginX -= (dx / parentRect.width) * 100 / currentContinuousScale;
-                    currentOriginY -= (dy / parentRect.height) * 100 / currentContinuousScale;
-                    currentOriginX = Math.max(0, Math.min(100, currentOriginX));
-                    currentOriginY = Math.max(0, Math.min(100, currentOriginY));
-                    
-                    imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
-                    touchStartX = clientX;
-                    touchStartY = clientY;
-                }
-            }
-        }, { passive: false });
+}, { passive: false });
         // --- BRUSH SCALE ---
         let currentScale = 1.0;
         function setSize(multiplier, element) {
