@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Change user-scalable=no to yes, and maximum-scale to 5.0 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.4, user-scalable=yes, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tyrone Moreno</title>
 
 <!-- Favicons -->
@@ -3023,44 +3022,53 @@ const lbImg = document.getElementById('lb-img');
             }
         });
 
-       // Add these variables globally if you don't have them
-let ticking = false; 
-// Add these constants at the top
-const MIN_SCALE = 1.0;
-const MAX_SCALE = 2.0; // Reduced from 3.0 to protect iOS RAM
-
-document.addEventListener('touchmove', function(e) {
-    if (!e.target.closest('.lightbox-left')) return;
-    const imgEl = document.getElementById('lb-img');
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.closest('.lightbox-left')) {
+                const imgEl = document.getElementById('lb-img');
+                
+      // --- PINCH-TO-ZOOM ---
+if (e.touches.length === 2 && initialPinchDistance) {
+    e.preventDefault();
+    const currentDistance = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+    );
     
-    if (e.touches.length === 2 && initialPinchDistance) {
-        e.preventDefault();
+    const scaleMultiplier = currentDistance / initialPinchDistance;
+    let newScale = basePinchScale * scaleMultiplier;
+    
+    const maxPinchScale = isIOS ? 2.2 : 4.5; // Strictly capped for iOS
+    newScale = Math.max(0.5, Math.min(newScale, maxPinchScale)); 
 
-        const currentDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-        );
-
-        let scaleFactor = currentDistance / initialPinchDistance;
-        let newScale = basePinchScale * scaleFactor;
-
-        // --- HARD CLAMP HERE ---
-        newScale = Math.max(MIN_SCALE, Math.min(newScale, MAX_SCALE));
-
-        if (!ticking) {
-            window.requestAnimationFrame(() => {
-                if (Math.abs(newScale - currentContinuousScale) > 0.01) {
-                    currentContinuousScale = newScale;
-                    // Force GPU usage sparingly
-                    imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
-                }
-                ticking = false;
-            });
-            ticking = true;
-        }
-        return;
+    // ONLY update and render if the scale actually changed significantly
+    if (Math.abs(newScale - currentContinuousScale) > 0.01) {
+        currentContinuousScale = newScale;
+        imgEl.style.transform = `scale(${currentContinuousScale}) translateZ(0)`;
     }
-}, { passive: false });
+    return;
+}
+
+                // --- PANNING ---
+                if (e.touches.length === 1 && currentContinuousScale > 1) {
+                    e.preventDefault(); // Stop native scrolling
+                    const clientX = e.touches[0].clientX;
+                    const clientY = e.touches[0].clientY;
+                    
+                    const dx = clientX - touchStartX;
+                    const dy = clientY - touchStartY;
+                    const parentRect = imgEl.parentElement.getBoundingClientRect();
+                    
+                    currentOriginX -= (dx / parentRect.width) * 100 / currentContinuousScale;
+                    currentOriginY -= (dy / parentRect.height) * 100 / currentContinuousScale;
+                    currentOriginX = Math.max(0, Math.min(100, currentOriginX));
+                    currentOriginY = Math.max(0, Math.min(100, currentOriginY));
+                    
+                    imgEl.style.transformOrigin = `${currentOriginX}% ${currentOriginY}%`;
+                    touchStartX = clientX;
+                    touchStartY = clientY;
+                }
+            }
+        }, { passive: false });
         // --- BRUSH SCALE ---
         let currentScale = 1.0;
         function setSize(multiplier, element) {
@@ -3444,38 +3452,28 @@ document.addEventListener('touchmove', function(e) {
         let pointerX = null, pointerY = null;
         let brushX = null, brushY = null;
 
-       function renderLoop() {
-    // If we aren't in painting mode, just skip everything
-    if (!isPaintingMode()) {
-        requestAnimationFrame(renderLoop);
-        return;
-    }
-
-    if (pointerX !== null && brushX !== null) {
-        const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
-        if (distToTarget > 0.5) {
-            brushX += (pointerX - brushX) * 0.75;
-            brushY += (pointerY - brushY) * 0.75;
-            draw(brushX, brushY);
+        function renderLoop() {
+            if (pointerX !== null && brushX !== null) {
+                const distToTarget = Math.hypot(pointerX - brushX, pointerY - brushY);
+                if (distToTarget > 0.5) {
+                    brushX += (pointerX - brushX) * 0.75;
+                    brushY += (pointerY - brushY) * 0.75;
+                    draw(brushX, brushY);
+                }
+            }
+            requestAnimationFrame(renderLoop);
         }
-    }
-    requestAnimationFrame(renderLoop);
-}
         requestAnimationFrame(renderLoop);
 
-    window.addEventListener('mousemove', e => {
-    // Exit early if we are on an overlay page
-    if (!isPaintingMode()) return; 
-
-    pointerX = e.clientX;
-    pointerY = e.clientY;
-    
-    if (brushX === null) {
-        brushX = pointerX;
-        brushY = pointerY;
-        draw(brushX, brushY, true);
-    }
-});
+        window.addEventListener('mousemove', e => {
+            pointerX = e.clientX;
+            pointerY = e.clientY;
+            if (brushX === null) {
+                brushX = pointerX;
+                brushY = pointerY;
+                draw(brushX, brushY, true);
+            }
+        });
 
         document.addEventListener('mouseleave', () => {
             brushX = null;
@@ -4523,10 +4521,6 @@ function clearCustomStyles() {
     variables.forEach(v => root.style.removeProperty(v));
     isCustomBg = false;
     currentCanvasBg = '#ffffff'; // Reset internal state
-}
-function isPaintingMode() {
-    // Returns true only if no overlay is visible
-    return !document.body.classList.contains('overlay-open');
 }
     </script>
 <script>
