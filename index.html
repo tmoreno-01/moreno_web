@@ -2271,12 +2271,13 @@ let productSelectionState = {}; // Key will be product handle, Value will be var
         const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 
-        // --- GLOBAL STATE ---
-        let isDarkMode = false;
-        let isCustomBg = false;
-        let currentCanvasBg = '#ffffff';
-        let themeClickTimer = null;
-        let lastThemeClickTime = 0;
+       // --- GLOBAL STATE ---
+let isDarkMode = false;
+let isCustomBg = false;
+let currentCanvasBg = '#ffffff';
+let themeClickTimer = null;
+let lastThemeClickTime = 0;
+let isPaintingActive = true; // Add this line here
         
         let isCollageMode = true; 
         let collageZoomLevel = 0; // State variable for our 4 zoom levels (0, 1, 2, 3)
@@ -4532,8 +4533,6 @@ function clearCustomStyles() {
 }
     </script>
 <script>
-// Add this to your global state
-let isPaintingActive = true;
     const form = document.getElementById('contactForm');
     const responseMessage = document.getElementById('responseMessage');
     const submitButton = document.getElementById('submitButton');
