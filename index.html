@@ -1873,10 +1873,10 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     <div id="page-about" class="page-overlay">
         <div class="overlay-content">
             <div class="about-container">
-               <div class="about-image">
+   <div class="about-image">
     <div class="slider-arrow left-arrow" onclick="prevAboutImage()"></div>
-    <img id="about-img-1" class="active" src="/me/aboutme_001.jpg" alt="Tyrone Moreno">
-    <img id="about-img-2" src="/me/aboutme_002.jpg" alt="Tyrone Moreno">
+    <img id="about-img-1" class="active" src="/me/aboutme_001.webp" alt="Tyrone Moreno">
+    <img id="about-img-2" src="/me/aboutme_002.webp" alt="Tyrone Moreno">
     <div class="slider-arrow right-arrow" onclick="nextAboutImage()"></div>
 </div>
                 <div class="about-text">
@@ -2799,10 +2799,9 @@ isPaintingActive = false;
         });
 
         // --- ABOUT PAGE IMAGE SLIDER ---
-     const aboutImages = ['/me/aboutme_001.jpg', '/me/aboutme_002.jpg', '/me/aboutme_003.jpg', '/me/aboutme_004.jpg'];
+ const aboutImages = ['/me/aboutme_001.webp', '/me/aboutme_002.webp', '/me/aboutme_003.webp', '/me/aboutme_004.webp'];
         let currentAboutIdx = 0;
         let aboutSlideInterval;
-
         function updateAboutImage(newIdx) {
             const img1 = document.getElementById('about-img-1');
             const img2 = document.getElementById('about-img-2');
