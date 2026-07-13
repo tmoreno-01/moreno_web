@@ -1312,24 +1312,25 @@ min-width: 130px !important;
 /* --- SHOP PAGE - ALIGNED LEFT, 4 COLUMNS, SHIFTED UP --- */
 
 #page-shop .overlay-content {
-    /* Reduced horizontal padding from 80px to 40px to expand the grid width */
-    padding: 30px 80px 60px 80px !important; 
+    /* Set padding to 40px on left/right for a wider grid */
+    padding: 30px 40px 60px 40px !important; 
     
-    /* Maintains your left-alignment fix */
-    justify-content: flex-start !important;
+    /* CHANGED: This centers the container so the left and right gaps are identical */
+    justify-content: center !important;
 }
 
 .shop-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); 
-    /* Tightened the gap from 50px to 30px to make items larger */
-    gap: 80px !important; 
-    margin: 10px 0px 0 0px; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 40px !important; 
+    /* CHANGED: margin left and right set to 'auto' forces perfect centering */
+    margin: 10px auto 0 auto; 
     padding: 0;
-    max-width: none;
+    width: 100%;
+    max-width: 1200px; 
 }
 
-/* Responsive adjustments for the new 4-column base */
+/* Responsive adjustments for the new 3-column base */
 @media (max-width: 1200px) {
     .shop-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -1341,7 +1342,7 @@ min-width: 130px !important;
     .shop-grid {
         grid-template-columns: repeat(1, 1fr);
         gap: 25px;
-        margin: 20px 15px;
+        margin: 20px auto; /* Ensures mobile stays centered too */
     }
 }
 
@@ -4589,6 +4590,50 @@ function clearCustomStyles() {
     isCustomBg = false;
     currentCanvasBg = '#ffffff'; // Reset internal state
 }
+// --- DYNAMIC HIGH-RES SWAP FOR FIRST 4 IMAGES ---
+function updateGalleryQuality() {
+    const isDesktop = window.innerWidth > 1024;
+    const workItems = document.querySelectorAll('#page-works .work-item');
+    
+    // Only target the first 4 gallery items
+    const firstFour = Array.from(workItems).slice(0, 4);
+
+    firstFour.forEach(item => {
+        const img = item.querySelector('.work-image img');
+        if (!img) return;
+
+        // Store the original thumbnail path so we don't lose it
+        if (!img.dataset.thumbnail) {
+            img.dataset.thumbnail = img.src;
+        }
+
+        if (isDesktop) {
+            // Determine the full-res filename
+            // This assumes your thumbnail files are named "filename_thumbnail.webp/jpg"
+            // and the full res are in /artwork/small/filename.webp/jpg
+            const fileName = img.dataset.thumbnail.split('/').pop();
+            const cleanName = fileName.replace('_thumbnail', '');
+            
+            // Only update if not already set to high-res to prevent constant re-fetching
+            if (!img.src.includes('/artwork/small/')) {
+                img.src = `/artwork/small/${cleanName}`;
+            }
+        } else {
+            // Swap back to thumbnail if the user shrinks the browser or is on mobile
+            if (img.src !== img.dataset.thumbnail) {
+                img.src = img.dataset.thumbnail;
+            }
+        }
+    });
+}
+
+// Run on load and on resize
+window.addEventListener('load', updateGalleryQuality);
+window.addEventListener('resize', () => {
+    // Debounce the resize to prevent performance hits
+    clearTimeout(window.resizeTimer);
+    window.resizeTimer = setTimeout(updateGalleryQuality, 250);
+});
     </script>
 <script>
     const form = document.getElementById('contactForm');
