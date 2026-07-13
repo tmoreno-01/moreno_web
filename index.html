@@ -1118,7 +1118,15 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 
         @media (max-width: 768px) {
             .top-left-logo { width: 125px; top: 15px; left: 15px; }
-            .nav-links { top: 28px; right: 15px; gap: 10px; max-width: calc(100vw - 200px); justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+            .nav-links { 
+    top: 28px; 
+    right: 15px; 
+    gap: 8px; 
+    max-width: calc(100vw - 150px); 
+    justify-content: flex-end; 
+    align-items: center; 
+    flex-wrap: nowrap; 
+}
             .nav-links a, .dropbtn { font-size: 0.55rem; letter-spacing: 0; white-space: nowrap; text-align: center; }
             /* Keep your existing rules here, just update these two: */
             .dropdown-content { padding-top: 10px; gap: 0; }
@@ -1303,17 +1311,20 @@ min-width: 130px !important;
 }
 /* --- SHOP PAGE - ALIGNED LEFT, 4 COLUMNS, SHIFTED UP --- */
 
-/* Move the entire shop container up */
 #page-shop .overlay-content {
-    padding-top: 30px; 
+    /* Reduced horizontal padding from 80px to 40px to expand the grid width */
+    padding: 30px 80px 60px 80px !important; 
+    
+    /* Maintains your left-alignment fix */
+    justify-content: flex-start !important;
 }
 
 .shop-grid {
     display: grid;
-    /* Reduced from 4 columns to 3 to make items larger */
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 60px; /* Increased gap slightly for balance */
-    margin: 20px 40px 0 40px; 
+    grid-template-columns: repeat(4, 1fr); 
+    /* Tightened the gap from 50px to 30px to make items larger */
+    gap: 80px !important; 
+    margin: 10px 0px 0 0px; 
     padding: 0;
     max-width: none;
 }
