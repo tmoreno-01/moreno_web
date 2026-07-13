@@ -1309,43 +1309,53 @@ min-width: 130px !important;
 #art-camera {
     display: none !important;
 }
-/* --- SHOP PAGE - ALIGNED LEFT, 4 COLUMNS, SHIFTED UP --- */
+/* --- SHOP PAGE - PERFECT EQUAL SPACING --- */
 
 #page-shop .overlay-content {
-    /* Set padding to 40px on left/right for a wider grid */
-    padding: 30px 40px 60px 40px !important; 
+    padding: 0 !important; /* Strip this so it stops fighting the wrapper below */
+    align-items: flex-start !important; /* Let items start from the top naturally */
+}
+
+#shop-content {
+    /* Overrides the inline HTML styles completely */
+    width: 100% !important;
+    max-width: 1600px !important; /* Widened to 1600px to match your gallery's breathing room */
+    margin: 0 auto !important; 
     
-    /* CHANGED: This centers the container so the left and right gaps are identical */
-    justify-content: center !important;
+    /* THE FIX: The left/right padding EXACTLY matches the grid gap */
+    padding: 100px 40px 80px 40px !important; 
+    box-sizing: border-box;
 }
 
 .shop-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); 
-    gap: 40px !important; 
-    /* CHANGED: margin left and right set to 'auto' forces perfect centering */
-    margin: 10px auto 0 auto; 
+    gap: 40px !important; /* Exactly matches the 40px L/R padding on #shop-content */
+    margin: 0 !important; 
     padding: 0;
     width: 100%;
-    max-width: 1200px; 
 }
 
-/* Responsive adjustments for the new 3-column base */
-@media (max-width: 1200px) {
+/* Responsive adjustments for iPads / Tablets */
+@media (max-width: 1024px) {
+    #shop-content {
+        padding: 90px 30px 60px 30px !important;
+    }
     .shop-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 40px;
+        gap: 30px !important; /* Locked to the new 30px padding */
     }
 }
 
+/* Responsive adjustments for Mobile */
 @media (max-width: 768px) {
+    #shop-content {
+        padding: 80px 20px 60px 20px !important;
+    }
     .shop-grid {
-        grid-template-columns: repeat(1, 1fr);
-        gap: 25px;
-        margin: 20px auto; /* Ensures mobile stays centered too */
+        grid-template-columns: 1fr;
+        gap: 40px !important;
     }
 }
-
 .shop-item {
     text-decoration: none;
     color: var(--text-color);
