@@ -6,13 +6,13 @@
 <title>Tyrone Moreno</title>
 
 <!-- Favicons -->
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/favicon.png">
+<link rel="icon" type="image/webp" href="/favicon.webp">
+<link rel="apple-touch-icon" href="/favicon.webp">
 
 <!-- Main Image Preloads -->
-<link rel="preload" href="/frace.png" as="image">
-<link rel="preload" href="/logo_small.png" as="image">
-<link rel="preload" href="/logo.png" as="image">
+<link rel="preload" href="/frace.webp" as="image">
+<link rel="preload" href="/logo_small.webp" as="image">
+<link rel="preload" href="/logo.webp" as="image">
 
 <!-- Third Party Libraries -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
@@ -1762,14 +1762,14 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
 </div>
 <div id="preloader">
     <div class="loader-content">
-        <img src="/logo_small.png" alt="Tyrone Moreno" class="loader-logo">
+        <img src="/logo_small.webp" alt="Tyrone Moreno" class="loader-logo">
         <div class="loader-bar-container">
             <div class="loader-bar"></div>
         </div>
     </div>
 </div>
 
-    <img src="/logo.png" alt="Logo" class="top-left-logo" id="btn-home">
+   <img src="/logo.webp" alt="Logo" class="top-left-logo" id="btn-home">
     
 <div class="nav-links">
         
@@ -1817,7 +1817,7 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
         <a href="mailto:tyronemoreno.studio@gmail.com">tyronemoreno.studio@gmail.com</a>
         <div class="footer-icons">
             <a href="https://instagram.com/imtyronemoreno" target="_blank">
-                <img src="/instagram.png" alt="Instagram" class="ig-icon">
+               <img src="/instagram.webp" alt="Instagram" class="ig-icon">
             </a>
             <div id="btn-download" class="download-icon" onclick="downloadArtwork()" title="Save Canvas">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1892,7 +1892,7 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
                     
                     <div class="frace-cabbage-wrapper">
-                      <img src="frace.png" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;">
+                      <img src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;">
                         <img src="random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage">
                     </div>
                 </div>
@@ -2173,7 +2173,7 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
             
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; gap: 10px;">
     <img src="random/enquiryform.webp" alt="Enquiry Form" class="enquiry-title-img" style="margin-bottom: 0; max-width: 60%;">
-    <img src="frace.png" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
+    <img src="/frace.webp" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
 </div>
             
             <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
@@ -4490,7 +4490,7 @@ function showLoadingOverlay(btn) {
     
     const img = document.createElement('img');
     img.className = 'btn-loading-img';
-    img.src = '/frace.png';
+    img.src = '/frace.webp'; // Update this line
     btn.appendChild(img);
 
     // Failsafe only — generous margin so it never races a real in-flight request
