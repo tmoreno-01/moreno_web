@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tyrone Moreno</title>
 
+
 <!-- Favicons -->
 <link rel="icon" type="image/webp" href="/favicon.webp">
 <link rel="apple-touch-icon" href="/favicon.webp">
@@ -1029,6 +1030,7 @@ body.site-loaded .copyright {
 
 /* Allow children to be clickable */
 .lightbox.active .lightbox-left img,
+.lightbox.active .lightbox-left model-viewer,
 .lightbox.active .lightbox-left .slider-arrow,
 .lightbox.active .lightbox-text,
 .lightbox.active #lb-fullscreen-btn {
@@ -1298,16 +1300,6 @@ min-width: 320px !important;
 min-width: 130px !important;
         max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
     }
-}
-#lb-fullscreen-btn {
-    display: none !important;
-}
-
-#lb-model {
-    display: none !important;
-}
-#art-camera {
-    display: none !important;
 }
 /* --- SHOP PAGE - PERFECT EQUAL SPACING --- */
 
@@ -1764,6 +1756,34 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     top: -2px; /* Nudges it down slightly to sit nicely on the baseline */
     transition: filter 0.3s ease;
 }
+/* --- UNRESTRICTED 3D MODEL VIEWER --- */
+#lb-model {
+    position: fixed !important;
+    top: 0 !important;
+    /* Spans 124% of the screen, shifted left by 24% to perfectly center on the 75% left column */
+    left: -24vw !important;
+    width: 124vw !important;
+    height: 100vh !important;
+    transform: none !important;
+    z-index: 20 !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    outline: none !important;
+}
+
+/* Mobile/Tablet alignment */
+@media (max-width: 1024px) {
+    #lb-model {
+        left: 0 !important;
+        /* Spans 128% of screen height, shifted up 28% to center perfectly on the top column */
+        top: -28vh !important;
+        width: 100vw !important;
+        height: 128vh !important;
+    }
+}
     </style>
 </head>
 <body>
@@ -1954,17 +1974,17 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
         <div class="overlay-content">
             <div class="works-container">
      <div class="works-grid mode-collage">
+    <!-- 2. Rubik -->
+<div class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', 'Mixed media on Rubiks cube', 'Do not try to solve it'); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');">
+        <div class="work-image"><img src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
+        <div class="work-caption"><span>An Unsolved Constant</span><span>2026</span></div>
+    </div>
     <!-- 1. No time 4 overthinking -->
     <div class="work-item" data-slug="no-time-4-overthinking" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp'); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');">
         <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
     </div>
 
-    <!-- 2. Camera -->
-    <div class="work-item" id="art-camera" data-slug="camera" onclick="openLightbox('/artwork/3d/test/camera/camera.glb', 'Camera', '2026', '3D Model', 'A rotatable 3D camera model.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/camera/');">
-        <div class="work-image"><img src="/artwork/thumbnails/cameraposter_thumbnail.webp" alt="Camera 3D Model"></div>
-        <div class="work-caption"><span>Camera</span><span>2026</span></div>
-    </div>
 
     <!-- 3. Splinter -->
     <div class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/splinter/');">
@@ -2233,7 +2253,7 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
                 <img id="lb-img" src="" alt="Artwork">
-<model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1"></model-viewer>
+<model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1" interaction-prompt="none"></model-viewer>
                 
                 <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
 <div id="lb-fullscreen-btn" onclick="toggleFullscreen(event)">
@@ -2674,6 +2694,8 @@ isPaintingActive = false;
         mv.setAttribute('camera-controls', '');
         mv.setAttribute('shadow-intensity', '1');
         mv.setAttribute('autoplay', '');
+mv.setAttribute('interaction-prompt', 'none');
+
         
         // Add listeners to debug the failure
         mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
@@ -4658,33 +4680,31 @@ function clearCustomStyles() {
 // --- DYNAMIC HIGH-RES SWAP FOR FIRST 4 IMAGES ---
 function updateGalleryQuality() {
     const isDesktop = window.innerWidth > 1024;
-    const workItems = document.querySelectorAll('#page-works .work-item');
+    // Select all work-items that are NOT the Rubik's cube
+    const workItems = document.querySelectorAll('#page-works .work-item:not(#art-camera)');
     
-    // Only target the first 4 gallery items
+    // Only target the first 4 eligible items
     const firstFour = Array.from(workItems).slice(0, 4);
 
     firstFour.forEach(item => {
         const img = item.querySelector('.work-image img');
         if (!img) return;
 
-        // Store the original thumbnail path so we don't lose it
+        // Store the original thumbnail path
         if (!img.dataset.thumbnail) {
             img.dataset.thumbnail = img.src;
         }
 
         if (isDesktop) {
-            // Determine the full-res filename
-            // This assumes your thumbnail files are named "filename_thumbnail.webp/jpg"
-            // and the full res are in /artwork/small/filename.webp/jpg
             const fileName = img.dataset.thumbnail.split('/').pop();
             const cleanName = fileName.replace('_thumbnail', '');
             
-            // Only update if not already set to high-res to prevent constant re-fetching
+            // Only update if not already set to high-res
             if (!img.src.includes('/artwork/small/')) {
                 img.src = `/artwork/small/${cleanName}`;
             }
         } else {
-            // Swap back to thumbnail if the user shrinks the browser or is on mobile
+            // Swap back to thumbnail
             if (img.src !== img.dataset.thumbnail) {
                 img.src = img.dataset.thumbnail;
             }
