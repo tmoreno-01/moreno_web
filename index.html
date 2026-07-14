@@ -1666,26 +1666,22 @@ body.dark-mode .cart-item {
     z-index: 10;
     pointer-events: none;
 }
-/* 2. Light Mode Logic */
-/* Button is white/transparent: Image should be black */
+/* 2. Dynamic Theme Logic */
+/* Standard transparent buttons use the base text color */
 .buy-btn .btn-loading-img {
-    filter: invert(0); 
+    filter: var(--logo-filter);
 }
 
-/* Button hover is black: Image should be white */
+/* Hovering standard buttons fills them, so invert the graphic */
 .buy-btn:hover .btn-loading-img {
-    filter: invert(1);
+    filter: var(--loader-invert);
 }
 
-/* 3. Dark Mode Logic */
-/* Button is black: Image should be white */
-body.dark-mode .buy-btn .btn-loading-img {
-    filter: invert(1);
-}
-
-/* Button hover is white: Image should be black */
-body.dark-mode .buy-btn:hover .btn-loading-img {
-    filter: invert(0);
+/* 3. Filled/Black buttons ALWAYS have a filled background matching text-color */
+/* Therefore they always need the inverted contrast graphic */
+.buy-btn.black .btn-loading-img,
+.buy-btn.black:hover .btn-loading-img {
+    filter: var(--loader-invert);
 }
 /* --- SHOP COUNTDOWN TIMER --- */
 #shop-countdown-container {
@@ -2427,6 +2423,7 @@ let isPaintingActive = true; // Add this line here
     const textMuted = isDark ? '#aaaaaa' : '#666666';
     const logoFil = isDark ? 'invert(1)' : 'none';
     const fraceBlend = isDark ? 'screen' : 'multiply';
+    const loaderInv = isDark ? 'invert(0)' : 'invert(1)'; // Automatically calculates perfect loader contrast
     const overlayBg = `rgba(${r}, ${g}, ${b}, 0.97)`;
     const lightboxBg = `rgba(${r}, ${g}, ${b}, 0.98)`;
 
@@ -2441,12 +2438,12 @@ let isPaintingActive = true; // Add this line here
     root.style.setProperty('--logo-filter', logoFil);
     root.style.setProperty('--dot-color', textCol);
     root.style.setProperty('--frace-blend', fraceBlend);
+    root.style.setProperty('--loader-invert', loaderInv); // Push to CSS
 
     isCustomBg = true;
     currentCanvasBg = colorString;
     resize();
 }
-
 
         // --- LOAD PREFERENCE ON STARTUP ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -4673,7 +4670,7 @@ function clearCustomStyles() {
     const variables = [
         '--bg-color', '--text-color', '--text-muted', 
         '--overlay-bg', '--lightbox-bg', '--logo-filter', 
-        '--dot-color', '--frace-blend'
+        '--dot-color', '--frace-blend', '--loader-invert'
     ];
     
     variables.forEach(v => root.style.removeProperty(v));
