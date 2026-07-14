@@ -1,11 +1,6 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <script>
-      // sessionStorage acts as a bridge to pass the path to your index.html
-      sessionStorage.redirect = location.href;
-      location.replace(location.origin);
-    </script>
-  </head>
-  <body></body>
-</html>
+<script>
+  // Save the intended path so index.html can see it
+  sessionStorage.redirect = location.pathname;
+  // Send them home
+  location.replace("/");
+</script>
