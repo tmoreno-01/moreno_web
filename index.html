@@ -2433,18 +2433,6 @@ let isPaintingActive = true; // Add this line here
 
       // --- LOAD PREFERENCE ON STARTUP ---
 window.addEventListener('DOMContentLoaded', () => {
-  // --- REDIRECT LOGIC ---
-  const redirect = sessionStorage.redirect;
-  if (redirect) {
-    delete sessionStorage.redirect;
-    
-    // Add logic here to perform the redirection. 
-    // Since your site uses internal page triggers, it might look like this:
-    if (redirect === 'shop') openShop();
-    if (redirect === 'gallery') openWorks();
-    if (redirect === 'contact') btnContact.click();
-  }
-  // --- END REDIRECT LOGIC ---
 
             const savedCustomBg = localStorage.getItem('customBg');
             const savedTheme = localStorage.getItem('theme');
@@ -4785,14 +4773,15 @@ function hidePreloader() {
     }
 }
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Existing routing check
-    const lastPage = localStorage.getItem('lastVisitedPage');
+    // 1. Get the path from session storage (if redirected from 404.html)
+    const storedPath = sessionStorage.getItem('redirect');
+    const path = storedPath || window.location.pathname;
     
-    // 2. Read the actual URL path (e.g., "/about/" or "/shop/")
-    const path = window.location.pathname;
-    const hash = window.location.hash;
+    // Clear it so it doesn't trigger again on page refresh
+    if (storedPath) sessionStorage.removeItem('redirect');
 
-    // 3. Path-based routing (Triggers on hard reloads or direct links)
+    // 2. Logic: use .includes() to avoid issues with subdirectories/repos
+    // We check against the stored path or current path
     if (path.includes('/about')) {
         openAbout();
     } else if (path.includes('/shop')) {
@@ -4802,47 +4791,13 @@ window.addEventListener('DOMContentLoaded', () => {
     } else if (path.includes('/sketches')) {
         openSketches();
     } else if (path.includes('/contact')) {
-        btnContact.click(); // Triggers your existing contact logic
+        btnContact.click();
     } else if (path.includes('/exhibitions')) {
         btnExhibitions.click();
     } else if (path.includes('/press')) {
         btnPress.click();
     } else if (path.includes('/paint')) {
         clearNavigation();
-    } 
-    // 4. Hash-based routing (Fallbacks)
-    else if (hash === '#about') {
-        openAbout();
-        window.history.replaceState(null, '', '/about/');
-    } else if (hash === '#shop') { 
-        openShop();
-        window.history.replaceState(null, '', '/shop/');
-    } else if (hash === '#gallery') {
-        openWorks();
-        window.history.replaceState(null, '', '/gallery/');
-    } else if (hash === '#sketches') {
-        openSketches();
-        window.history.replaceState(null, '', '/sketches/');
-    } else if (hash === '#contact') {
-        btnContact.click();
-        window.history.replaceState(null, '', '/contact/');
-    } else if (hash === '#exhibitions') {
-        btnExhibitions.click();
-        window.history.replaceState(null, '', '/exhibitions/');
-    } else if (hash === '#press') {
-        btnPress.click();
-        window.history.replaceState(null, '', '/press/');
-    } else if (hash === '#paint') {
-        clearNavigation();
-        window.history.replaceState(null, '', '/paint/');
-    } 
-    // 5. LocalStorage fallback (if no specific path or hash is present)
-    else if (lastPage && path === '/') {
-        if (lastPage === 'about') openAbout();
-        else if (lastPage === 'gallery') openWorks();
-        else if (lastPage === 'sketches') openSketches();
-        else if (lastPage === 'contact') btnContact.click();
-        else if (lastPage === 'shop') openShop();
     }
 });
 
