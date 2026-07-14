@@ -17,57 +17,6 @@
 <!-- Third Party Libraries -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
-/* Hide the Camera 3D model */
-#art-camera {
-    display: none !important;
-}
-/* --- 3D MODEL BORDERLESS FIX --- */
-#lb-model {
-    position: fixed !important;
-    top: 0 !important;
-    
-    /* 1. Make the container massive and shift it left so the canvas extends off-screen */
-    /* Center becomes 37.5vw (exactly the middle of the left gallery column) */
-    left: -37.5vw !important;
-    width: 150vw !important;
-    min-width: 150vw !important;
-    
-    height: 100vh !important;
-    min-height: 100vh !important;
-    
-    /* 2. Keep the z-index high so it zooms over the text block */
-    z-index: 15 !important; 
-    
-    /* 3. Remove the padding hack so the WebGL canvas has no hard clipping edges */
-    padding-right: 0 !important; 
-    box-sizing: border-box !important;
-    
-    background: transparent !important;
-    outline: none;
-}
-
-/* Resets the center position for Mobile/iPad where the text stacks vertically */
-@media (max-width: 1024px) {
-    #lb-model {
-        left: 0 !important;
-        width: 100vw !important;
-        min-width: 100vw !important;
-    }
-}
-
-/* Swap z-indexes so the 3D model goes over the text */
-.lightbox-left {
-    z-index: 15 !important;
-}
-
-.lightbox-right {
-    z-index: 10 !important;
-    pointer-events: none; /* Lets drag/zoom gestures pass through the empty space */
-}
-
-.lightbox-text {
-    pointer-events: auto; /* Re-enables interactions for the actual text block */
-}
 #page-works:not(.visible) .works-container {
     pointer-events: none !important;
 }
@@ -1080,7 +1029,6 @@ body.site-loaded .copyright {
 
 /* Allow children to be clickable */
 .lightbox.active .lightbox-left img,
-.lightbox.active .lightbox-left model-viewer,
 .lightbox.active .lightbox-left .slider-arrow,
 .lightbox.active .lightbox-text,
 .lightbox.active #lb-fullscreen-btn {
@@ -1350,6 +1298,16 @@ min-width: 320px !important;
 min-width: 130px !important;
         max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
     }
+}
+#lb-fullscreen-btn {
+    display: none !important;
+}
+
+#lb-model {
+    display: none !important;
+}
+#art-camera {
+    display: none !important;
 }
 /* --- SHOP PAGE - PERFECT EQUAL SPACING --- */
 
@@ -1996,15 +1954,16 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
         <div class="overlay-content">
             <div class="works-container">
      <div class="works-grid mode-collage">
-    <!-- 2. Camera -->
-    <div class="work-item" id="art-camera" onclick="openLightbox('/artwork/3d/test/camera/camera.glb', 'Camera', '2026', '3D Model', 'A rotatable 3D camera model.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
-        <div class="work-image"><img src="/artwork/3d/test/camera/cameraposter.webp" alt="Camera 3D Model"></div>
-        <div class="work-caption"><span>Camera</span><span>2026</span></div>
-    </div>
     <!-- 1. No time 4 overthinking -->
     <div class="work-item" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp')">
         <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
+    </div>
+
+    <!-- 2. Camera -->
+    <div class="work-item" id="art-camera" onclick="openLightbox('/artwork/3d/test/camera/camera.glb', 'Camera', '2026', '3D Model', 'A rotatable 3D camera model.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com')">
+        <div class="work-image"><img src="/artwork/thumbnails/cameraposter_thumbnail.webp" alt="Camera 3D Model"></div>
+        <div class="work-caption"><span>Camera</span><span>2026</span></div>
     </div>
 
     <!-- 3. Splinter -->
@@ -2274,17 +2233,7 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
                 <img id="lb-img" src="" alt="Artwork">
-<model-viewer 
-    id="lb-model" 
-    style="display:none;" 
-    auto-rotate 
-    auto-rotate-delay="0" 
-    rotation-per-second="5deg"
-    camera-controls 
-    shadow-intensity="1"
-    interaction-prompt="none"
-    disable-gesture-helper> 
-</model-viewer>
+<model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1"></model-viewer>
                 
                 <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
 <div id="lb-fullscreen-btn" onclick="toggleFullscreen(event)">
@@ -2431,9 +2380,8 @@ let isPaintingActive = true; // Add this line here
 }
 
 
-      // --- LOAD PREFERENCE ON STARTUP ---
-window.addEventListener('DOMContentLoaded', () => {
-
+        // --- LOAD PREFERENCE ON STARTUP ---
+        document.addEventListener('DOMContentLoaded', () => {
             const savedCustomBg = localStorage.getItem('customBg');
             const savedTheme = localStorage.getItem('theme');
             const savedLayoutMode = localStorage.getItem('layoutMode');
@@ -2705,6 +2653,7 @@ btnShop.addEventListener('click', (e) => {
     window.history.pushState(null, '', '/shop/');
     openShop();
 });
+
    // --- NAVIGATION & HOVER LOGIC ---
         const btnHome = document.getElementById('btn-home');
         const btnPaint = document.getElementById('btn-paint');
@@ -4669,15 +4618,16 @@ function updateGalleryQuality() {
             img.dataset.thumbnail = img.src;
         }
 
- if (isDesktop) {
-            // ONLY attempt the swap if it's actually a thumbnail image
-            if (img.dataset.thumbnail.includes('_thumbnail')) {
-                const fileName = img.dataset.thumbnail.split('/').pop();
-                const cleanName = fileName.replace('_thumbnail', '');
-                
-                if (!img.src.includes('/artwork/small/')) {
-                    img.src = `/artwork/small/${cleanName}`;
-                }
+        if (isDesktop) {
+            // Determine the full-res filename
+            // This assumes your thumbnail files are named "filename_thumbnail.webp/jpg"
+            // and the full res are in /artwork/small/filename.webp/jpg
+            const fileName = img.dataset.thumbnail.split('/').pop();
+            const cleanName = fileName.replace('_thumbnail', '');
+            
+            // Only update if not already set to high-res to prevent constant re-fetching
+            if (!img.src.includes('/artwork/small/')) {
+                img.src = `/artwork/small/${cleanName}`;
             }
         } else {
             // Swap back to thumbnail if the user shrinks the browser or is on mobile
@@ -4695,39 +4645,6 @@ window.addEventListener('resize', () => {
     clearTimeout(window.resizeTimer);
     window.resizeTimer = setTimeout(updateGalleryQuality, 250);
 });
-// --- 3D MODEL INTERACTION LOGIC ---
-const lbModel = document.getElementById('lb-model');
-let autoRotateTimeout = null;
-
-// Function to handle the pause logic
-function handleModelInteraction() {
-    // 1. If we are already waiting for a pause to end, clear the old timer
-    if (autoRotateTimeout) {
-        clearTimeout(autoRotateTimeout);
-    }
-
-    // 2. Disable auto-rotate immediately upon interaction
-    lbModel.removeAttribute('auto-rotate');
-
-    // 3. Set a timer to re-enable auto-rotate after 8 seconds (8000ms)
-    autoRotateTimeout = setTimeout(() => {
-        lbModel.setAttribute('auto-rotate', '');
-        autoRotateTimeout = null;
-    }, 8000);
-}
-
-// Attach listeners to the model-viewer
-// 'pointer-down' covers mouse click, touch, and pen interactions
-lbModel.addEventListener('pointerdown', handleModelInteraction);
-
-// Also listen for camera changes triggered by interaction
-lbModel.addEventListener('camera-change', (event) => {
-    // Only trigger if the change was due to user interaction, not auto-rotate
-    if (event.detail.source === 'user-interaction') {
-        handleModelInteraction();
-    }
-});
-
     </script>
 <script>
     const form = document.getElementById('contactForm');
@@ -4772,35 +4689,47 @@ function hidePreloader() {
         document.body.classList.add('site-loaded');
     }
 }
+// --- URL ROUTING ON LOAD ---
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Get the path from session storage (if redirected from 404.html)
-    const storedPath = sessionStorage.getItem('redirect');
-    const path = storedPath || window.location.pathname;
+// 1. Existing routing check
+    const lastPage = localStorage.getItem('lastVisitedPage');
     
-    // Clear it so it doesn't trigger again on page refresh
-    if (storedPath) sessionStorage.removeItem('redirect');
-
-    // 2. Logic: use .includes() to avoid issues with subdirectories/repos
-    // We check against the stored path or current path
-    if (path.includes('/about')) {
+    // 2. Trigger the page open if a last visited page exists
+    if (lastPage) {
+        if (lastPage === 'about') openAbout();
+        else if (lastPage === 'gallery') openWorks();
+        else if (lastPage === 'sketches') openSketches();
+        else if (lastPage === 'contact') btnContact.click();
+else if (lastPage === 'shop') openShop();
+    }
+    const hash = window.location.hash;
+    
+    if (hash === '#about') {
         openAbout();
-    } else if (path.includes('/shop')) {
-        openShop();
-    } else if (path.includes('/gallery')) {
+        window.history.replaceState(null, '', '/about/');
+} else if (hash === '#shop') { // ADD THIS BLOCK
+    openShop();
+    window.history.replaceState(null, '', '/shop/');
+    } else if (hash === '#gallery') {
         openWorks();
-    } else if (path.includes('/sketches')) {
-        openSketches();
-    } else if (path.includes('/contact')) {
+        window.history.replaceState(null, '', '/gallery/');
+} else if (hash === '#sketches') {
+    openSketches();
+    window.history.replaceState(null, '', '/sketches/');
+    } else if (hash === '#contact') {
         btnContact.click();
-    } else if (path.includes('/exhibitions')) {
+        window.history.replaceState(null, '', '/contact/');
+    } else if (hash === '#exhibitions') {
         btnExhibitions.click();
-    } else if (path.includes('/press')) {
+        window.history.replaceState(null, '', '/exhibitions/');
+    } else if (hash === '#press') {
         btnPress.click();
-    } else if (path.includes('/paint')) {
+        window.history.replaceState(null, '', '/press/');
+    } else if (hash === '#paint') {
         clearNavigation();
+        window.history.replaceState(null, '', '/paint/');
     }
 });
-
 </script>
 </body>
 </html>
