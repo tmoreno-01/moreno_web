@@ -2340,6 +2340,8 @@ function handleRouting() {
 
         if (normalizedPath.includes('/about')) {
             openAbout();
+        } else if (normalizedPath.includes('/paint')) {
+            clearNavigation();
         } else if (normalizedPath.includes('/gallery')) {
             openWorks();
         } else if (normalizedPath.includes('/sketches')) {
