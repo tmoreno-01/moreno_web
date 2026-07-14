@@ -4689,45 +4689,48 @@ function hidePreloader() {
         document.body.classList.add('site-loaded');
     }
 }
-// --- URL ROUTING ON LOAD ---
-window.addEventListener('DOMContentLoaded', () => {
-// 1. Existing routing check
-    const lastPage = localStorage.getItem('lastVisitedPage');
-    
-    // 2. Trigger the page open if a last visited page exists
-    if (lastPage) {
-        if (lastPage === 'about') openAbout();
-        else if (lastPage === 'gallery') openWorks();
-        else if (lastPage === 'sketches') openSketches();
-        else if (lastPage === 'contact') btnContact.click();
-else if (lastPage === 'shop') openShop();
-    }
+// --- CENTRALIZED ROUTING ENGINE ---
+function handleRouting() {
+    const path = sessionStorage.getItem('redirect_path');
     const hash = window.location.hash;
+
+    // Helper to determine which page to open
+    const openPageByPath = (target) => {
+        if (target.includes('/about/')) openAbout();
+        else if (target.includes('/gallery/')) openWorks();
+        else if (target.includes('/sketches/')) openSketches();
+        else if (target.includes('/contact/')) btnContact.click();
+        else if (target.includes('/shop/')) openShop();
+        else if (target.includes('/exhibitions/')) btnExhibitions.click();
+        else if (target.includes('/press/')) btnPress.click();
+        else if (target.includes('/paint/')) clearNavigation();
+    };
+
+    // 1. Handle 404 Redirects
+    if (path) {
+        sessionStorage.removeItem('redirect_path'); // Clear it immediately
+        openPageByPath(path);
+        return; // Prioritize this
+    }
+
+    // 2. Handle Hash URLs (Legacy support)
+    if (hash) {
+        openPageByPath(hash.replace('#', '/'));
+        window.history.replaceState(null, '', hash.replace('#', '/')); // Clean URL
+    }
+}
+
+// Update your existing DOMContentLoaded listener:
+window.addEventListener('DOMContentLoaded', () => {
+    window.resetButtons();
+    initShopCountdown();
     
-    if (hash === '#about') {
-        openAbout();
-        window.history.replaceState(null, '', '/about/');
-} else if (hash === '#shop') { // ADD THIS BLOCK
-    openShop();
-    window.history.replaceState(null, '', '/shop/');
-    } else if (hash === '#gallery') {
-        openWorks();
-        window.history.replaceState(null, '', '/gallery/');
-} else if (hash === '#sketches') {
-    openSketches();
-    window.history.replaceState(null, '', '/sketches/');
-    } else if (hash === '#contact') {
-        btnContact.click();
-        window.history.replaceState(null, '', '/contact/');
-    } else if (hash === '#exhibitions') {
-        btnExhibitions.click();
-        window.history.replaceState(null, '', '/exhibitions/');
-    } else if (hash === '#press') {
-        btnPress.click();
-        window.history.replaceState(null, '', '/press/');
-    } else if (hash === '#paint') {
-        clearNavigation();
-        window.history.replaceState(null, '', '/paint/');
+    // Execute routing
+    handleRouting();
+
+    const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
+    if (addBtn) {
+        addBtn.addEventListener('click', addToCart);
     }
 });
 </script>
