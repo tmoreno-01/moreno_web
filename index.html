@@ -2322,44 +2322,44 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
 </div>
     <script>
 function handleRouting() {
-    // 1. Get the path from localStorage
-    const savedPath = localStorage.getItem('redirect_path');
-    
-    // 2. Clear it immediately so it doesn't run on every refresh
-    localStorage.removeItem('redirect_path');
+    // Check for a ?redirect= param set by 404.html first, then fallback to the current browser URL
+    const params = new URLSearchParams(window.location.search);
+    const redirected = params.get('redirect');
+    const path = redirected || window.location.pathname;
 
-    // 3. Determine the path to use
-    const path = savedPath || window.location.pathname;
-    
-    console.log("Routing attempting to load path:", path); 
+    console.log("Routing attempting to load path:", path);
 
-    if (!path || path === "/" || path === "/index.html") return;
+    if (path) {
+        // Clean the ?redirect=... param out of the address bar so it doesn't linger
+        if (redirected) {
+            window.history.replaceState(null, '', redirected || '/');
+        }
 
-    // Normalize: remove trailing slashes
-    const normalizedPath = path.replace(/\/$/, ""); 
+        // Normalize path to remove potential trailing slash
+        const normalizedPath = path.replace(/\/$/, ""); 
 
-    // Handle routes
-    if (normalizedPath.includes('/about')) {
-        openAbout();
-    } else if (normalizedPath.includes('/gallery')) {
-        openWorks();
-    } else if (normalizedPath.includes('/sketches')) {
-        openSketches();
-    } else if (normalizedPath.includes('/contact')) {
-        clearNavigation();
-        document.getElementById('page-contact').classList.add('visible');
-        document.body.classList.add('overlay-open');
-        document.getElementById('btn-contact').classList.add('active');
-    } else if (normalizedPath.includes('/shop')) {
-        openShop();
-    } else if (normalizedPath.includes('/exhibitions')) {
-        clearNavigation();
-        document.getElementById('page-exhibitions').classList.add('visible');
-        document.getElementById('page-exhibitions').classList.add('active');
-    } else if (normalizedPath.includes('/press')) {
-        clearNavigation();
-        document.getElementById('page-press').classList.add('visible');
-        document.getElementById('page-press').classList.add('active');
+        if (normalizedPath.includes('/about')) {
+            openAbout();
+        } else if (normalizedPath.includes('/gallery')) {
+            openWorks();
+        } else if (normalizedPath.includes('/sketches')) {
+            openSketches();
+        } else if (normalizedPath.includes('/contact')) {
+            clearNavigation();
+            document.getElementById('page-contact').classList.add('visible');
+            document.body.classList.add('overlay-open');
+            document.getElementById('btn-contact').classList.add('active');
+        } else if (normalizedPath.includes('/shop')) {
+            openShop();
+        } else if (normalizedPath.includes('/exhibitions')) {
+            clearNavigation();
+            document.getElementById('page-exhibitions').classList.add('visible');
+            document.getElementById('page-exhibitions').classList.add('active');
+        } else if (normalizedPath.includes('/press')) {
+            clearNavigation();
+            document.getElementById('page-press').classList.add('visible');
+            document.getElementById('page-press').classList.add('active');
+        }
     }
 }
 // Add this near your other global state variables
