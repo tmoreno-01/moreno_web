@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <script>
-  // Save the path the user tried to access
-  sessionStorage.setItem('redirect_path', location.pathname);
-  // Send them to the home page
-  location.replace("/");
+  // Save the path user tried to access so index.html can read it
+  sessionStorage.setItem('redirect_path', window.location.pathname);
+  // Redirect to root
+  window.location.href = "/";
 </script>
