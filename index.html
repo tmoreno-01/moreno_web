@@ -2321,6 +2321,42 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
     </div>
 </div>
     <script>
+function handleRouting() {
+    // Check session storage first, then fallback to current browser URL
+    const path = sessionStorage.getItem('redirect_path') || window.location.pathname;
+    
+    console.log("Routing attempting to load path:", path); 
+
+    if (path) {
+        sessionStorage.removeItem('redirect_path'); 
+
+        // Normalize path to remove potential trailing slash
+        const normalizedPath = path.replace(/\/$/, ""); 
+
+        if (normalizedPath.includes('/about')) {
+            openAbout();
+        } else if (normalizedPath.includes('/gallery')) {
+            openWorks();
+        } else if (normalizedPath.includes('/sketches')) {
+            openSketches();
+        } else if (normalizedPath.includes('/contact')) {
+            clearNavigation();
+            document.getElementById('page-contact').classList.add('visible');
+            document.body.classList.add('overlay-open');
+            document.getElementById('btn-contact').classList.add('active');
+        } else if (normalizedPath.includes('/shop')) {
+            openShop();
+        } else if (normalizedPath.includes('/exhibitions')) {
+            clearNavigation();
+            document.getElementById('page-exhibitions').classList.add('visible');
+            document.getElementById('page-exhibitions').classList.add('active');
+        } else if (normalizedPath.includes('/press')) {
+            clearNavigation();
+            document.getElementById('page-press').classList.add('visible');
+            document.getElementById('page-press').classList.add('active');
+        }
+    }
+}
 // Add this near your other global state variables
 let productSelectionState = {}; // Key will be product handle, Value will be variant ID
         // --- IOS DETECTION ---
@@ -4583,7 +4619,7 @@ function initShopCountdown() {
 document.addEventListener('DOMContentLoaded', () => {
     window.resetButtons();
     initShopCountdown();
-
+handleRouting();
     const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
     if (addBtn) {
         addBtn.addEventListener('click', addToCart);
@@ -4689,50 +4725,6 @@ function hidePreloader() {
         document.body.classList.add('site-loaded');
     }
 }
-// --- CENTRALIZED ROUTING ENGINE ---
-function handleRouting() {
-    const path = sessionStorage.getItem('redirect_path');
-    const hash = window.location.hash;
-
-    // Helper to determine which page to open
-    const openPageByPath = (target) => {
-        if (target.includes('/about/')) openAbout();
-        else if (target.includes('/gallery/')) openWorks();
-        else if (target.includes('/sketches/')) openSketches();
-        else if (target.includes('/contact/')) btnContact.click();
-        else if (target.includes('/shop/')) openShop();
-        else if (target.includes('/exhibitions/')) btnExhibitions.click();
-        else if (target.includes('/press/')) btnPress.click();
-        else if (target.includes('/paint/')) clearNavigation();
-    };
-
-    // 1. Handle 404 Redirects
-    if (path) {
-        sessionStorage.removeItem('redirect_path'); // Clear it immediately
-        openPageByPath(path);
-        return; // Prioritize this
-    }
-
-    // 2. Handle Hash URLs (Legacy support)
-    if (hash) {
-        openPageByPath(hash.replace('#', '/'));
-        window.history.replaceState(null, '', hash.replace('#', '/')); // Clean URL
-    }
-}
-
-// Update your existing DOMContentLoaded listener:
-window.addEventListener('DOMContentLoaded', () => {
-    window.resetButtons();
-    initShopCountdown();
-    
-    // Execute routing
-    handleRouting();
-
-    const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
-    if (addBtn) {
-        addBtn.addEventListener('click', addToCart);
-    }
-});
 </script>
 </body>
 </html>
