@@ -1,6 +1,7 @@
+<!DOCTYPE html>
 <script>
-  // Save the intended path so index.html can see it
-  sessionStorage.redirect = location.pathname;
-  // Send them home
+  // Save the path the user tried to access
+  sessionStorage.setItem('redirect_path', location.pathname);
+  // Send them to the home page
   location.replace("/");
 </script>
