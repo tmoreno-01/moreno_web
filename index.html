@@ -2322,39 +2322,44 @@ body.dark-mode .buy-btn:hover .btn-loading-img {
 </div>
     <script>
 function handleRouting() {
-    // Check session storage first, then fallback to current browser URL
-    const path = sessionStorage.getItem('redirect_path') || window.location.pathname;
+    // 1. Get the path from localStorage
+    const savedPath = localStorage.getItem('redirect_path');
+    
+    // 2. Clear it immediately so it doesn't run on every refresh
+    localStorage.removeItem('redirect_path');
+
+    // 3. Determine the path to use
+    const path = savedPath || window.location.pathname;
     
     console.log("Routing attempting to load path:", path); 
 
-    if (path) {
-        sessionStorage.removeItem('redirect_path'); 
+    if (!path || path === "/" || path === "/index.html") return;
 
-        // Normalize path to remove potential trailing slash
-        const normalizedPath = path.replace(/\/$/, ""); 
+    // Normalize: remove trailing slashes
+    const normalizedPath = path.replace(/\/$/, ""); 
 
-        if (normalizedPath.includes('/about')) {
-            openAbout();
-        } else if (normalizedPath.includes('/gallery')) {
-            openWorks();
-        } else if (normalizedPath.includes('/sketches')) {
-            openSketches();
-        } else if (normalizedPath.includes('/contact')) {
-            clearNavigation();
-            document.getElementById('page-contact').classList.add('visible');
-            document.body.classList.add('overlay-open');
-            document.getElementById('btn-contact').classList.add('active');
-        } else if (normalizedPath.includes('/shop')) {
-            openShop();
-        } else if (normalizedPath.includes('/exhibitions')) {
-            clearNavigation();
-            document.getElementById('page-exhibitions').classList.add('visible');
-            document.getElementById('page-exhibitions').classList.add('active');
-        } else if (normalizedPath.includes('/press')) {
-            clearNavigation();
-            document.getElementById('page-press').classList.add('visible');
-            document.getElementById('page-press').classList.add('active');
-        }
+    // Handle routes
+    if (normalizedPath.includes('/about')) {
+        openAbout();
+    } else if (normalizedPath.includes('/gallery')) {
+        openWorks();
+    } else if (normalizedPath.includes('/sketches')) {
+        openSketches();
+    } else if (normalizedPath.includes('/contact')) {
+        clearNavigation();
+        document.getElementById('page-contact').classList.add('visible');
+        document.body.classList.add('overlay-open');
+        document.getElementById('btn-contact').classList.add('active');
+    } else if (normalizedPath.includes('/shop')) {
+        openShop();
+    } else if (normalizedPath.includes('/exhibitions')) {
+        clearNavigation();
+        document.getElementById('page-exhibitions').classList.add('visible');
+        document.getElementById('page-exhibitions').classList.add('active');
+    } else if (normalizedPath.includes('/press')) {
+        clearNavigation();
+        document.getElementById('page-press').classList.add('visible');
+        document.getElementById('page-press').classList.add('active');
     }
 }
 // Add this near your other global state variables
