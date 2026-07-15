@@ -2393,13 +2393,18 @@ function handleRouting() {
             openAbout();
         } else if (normalizedPath.includes('/paint')) {
             clearNavigation();
-        } else if (normalizedPath.includes('/gallery')) {
-            openWorks();
-            const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
-            if (gallerySlugMatch) {
-                const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
-                if (target) target.click();
-            }
+   } else if (normalizedPath.includes('/gallery')) {
+    openWorks();
+    const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
+    if (gallerySlugMatch) {
+        // A 50ms delay gives the browser time to paint the openWorks() layout
+        // before attempting to click the artwork element.
+        setTimeout(() => {
+            const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
+            if (target) target.click();
+        }, 50); 
+    }
+}
         } else if (normalizedPath.includes('/sketches')) {
             openSketches();
         } else if (normalizedPath.includes('/contact')) {
