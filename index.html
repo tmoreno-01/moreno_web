@@ -2417,10 +2417,19 @@ function handleRouting() {
     if (gallerySlugMatch) {
         // A 50ms delay gives the browser time to paint the openWorks() layout
         // before attempting to click the artwork element.
-        setTimeout(() => {
-            const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
-            if (target) target.click();
-        }, 50); 
+    const slug = gallerySlugMatch[1];
+
+const waitForArtwork = () => {
+    const target = document.querySelector(`[data-slug="${slug}"]`);
+
+    if (target) {
+        target.click();
+    } else {
+        requestAnimationFrame(waitForArtwork);
+    }
+};
+
+waitForArtwork();
     }
         } else if (normalizedPath.includes('/sketches')) {
             openSketches();
