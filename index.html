@@ -30,7 +30,7 @@
 <link rel="preload" href="/logo.webp" as="image">
 
 <!-- Third Party Libraries -->
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
+<!-- model-viewer is lazy-loaded on demand via loadModelViewer() -- see main script block -->
     <style>
 #page-works:not(.visible) .works-container {
     pointer-events: none !important;
@@ -2351,6 +2351,23 @@ body.dark-mode .cart-item {
     </div>
 </div>
     <script>
+// --- LAZY-LOAD MODEL-VIEWER (only when a .glb is actually shown) ---
+let modelViewerPromise = null;
+function loadModelViewer() {
+    if (customElements.get('model-viewer')) return Promise.resolve();
+    if (!modelViewerPromise) {
+        modelViewerPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.type = 'module';
+            s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js';
+            s.onload = () => customElements.whenDefined('model-viewer').then(resolve);
+            s.onerror = reject;
+            document.head.appendChild(s);
+        });
+    }
+    return modelViewerPromise;
+}
+
 function handleRouting() {
     // Check for a ?redirect= param set by 404.html first, then fallback to the current browser URL
     const params = new URLSearchParams(window.location.search);
@@ -2697,26 +2714,27 @@ isPaintingActive = false;
 
     // Check if it already exists
     if (!document.getElementById('duck-viewer')) {
-        const mv = document.createElement('model-viewer');
-        mv.id = 'duck-viewer';
-        mv.src = '/artwork/3d/duck/source/duck_animation.glb';
-        mv.setAttribute('alt', 'A 3D duck animation');
-        mv.setAttribute('auto-rotate', '');
-        mv.setAttribute('camera-controls', '');
-        mv.setAttribute('shadow-intensity', '1');
-        mv.setAttribute('autoplay', '');
-mv.setAttribute('interaction-prompt', 'none');
+        loadModelViewer().then(() => {
+            const mv = document.createElement('model-viewer');
+            mv.id = 'duck-viewer';
+            mv.src = '/artwork/3d/duck/source/duck_animation.glb';
+            mv.setAttribute('alt', 'A 3D duck animation');
+            mv.setAttribute('auto-rotate', '');
+            mv.setAttribute('camera-controls', '');
+            mv.setAttribute('shadow-intensity', '1');
+            mv.setAttribute('autoplay', '');
+            mv.setAttribute('interaction-prompt', 'none');
 
-        
-        // Add listeners to debug the failure
-        mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
-        mv.addEventListener('error', (e) => console.error('Duck model failed to load:', e.detail));
+            // Add listeners to debug the failure
+            mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
+            mv.addEventListener('error', (e) => console.error('Duck model failed to load:', e.detail));
 
-        mv.style.width = '100vw';
-        mv.style.height = '100vh';
-        mv.style.setProperty('--poster-color', 'transparent');
-        
-        content.appendChild(mv);
+            mv.style.width = '100vw';
+            mv.style.height = '100vh';
+            mv.style.setProperty('--poster-color', 'transparent');
+
+            content.appendChild(mv);
+        });
     }
 
     overlay.classList.add('visible');
@@ -2950,7 +2968,9 @@ isPaintingActive = false;
                 fsBtn.style.display = 'none'; // Hide button for 3D
                 
                 lbModel.src = null;
-                requestAnimationFrame(() => { lbModel.src = src; });
+                loadModelViewer().then(() => {
+                    requestAnimationFrame(() => { lbModel.src = src; });
+                });
             } else {
                 lbModel.style.display = 'none';
                 lbModel.src = null;
