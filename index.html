@@ -1979,8 +1979,8 @@ body.dark-mode .cart-item {
 
     <div id="page-press" class="page-overlay none-page">
         <div class="overlay-content">
-            <img loading="lazy" decoding="async" src="random/none_horizontal.webp" class="none-desktop" alt="None">
-            <img loading="lazy" decoding="async" src="random/none_vertical.webp" class="none-mobile" alt="None">
+            <img loading="lazy" decoding="async" src="/random/none_horizontal.webp" class="none-desktop" alt="None">
+            <img loading="lazy" decoding="async" src="/random/none_vertical.webp" class="none-mobile" alt="None">
         </div>
     </div>
 
@@ -2406,6 +2406,8 @@ function handleRouting() {
 
         // Normalize path to remove potential trailing slash
         const normalizedPath = path.replace(/\/$/, ""); 
+console.log("PATH:", normalizedPath);
+console.log("SLUG:", gallerySlugMatch?.[1]);
 
         if (normalizedPath.includes('/about')) {
             openAbout();
