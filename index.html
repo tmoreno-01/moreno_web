@@ -24,17 +24,13 @@
 <link rel="icon" type="image/webp" href="/favicon.webp">
 <link rel="apple-touch-icon" href="/favicon.webp">
 
-<!-- Preconnect to external origins actually used (speeds up the connection when they ARE needed) -->
-<link rel="preconnect" href="https://shop.tyronemoreno.com" crossorigin>
-<link rel="dns-prefetch" href="https://ajax.googleapis.com">
-
 <!-- Main Image Preloads -->
 <link rel="preload" href="/frace.webp" as="image">
 <link rel="preload" href="/logo_small.webp" as="image">
 <link rel="preload" href="/logo.webp" as="image">
 
 <!-- Third Party Libraries -->
-<!-- model-viewer is lazy-loaded on demand via loadModelViewer() -- see main script block -->
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
 #page-works:not(.visible) .works-container {
     pointer-events: none !important;
@@ -1823,7 +1819,7 @@ body.dark-mode .cart-item {
             <a href="/gallery/" class="dropbtn" id="btn-gallery" style="cursor:pointer">
                 <div class="gallery-wrapper">
                     <span id="btn-gallery-text">Gallery</span>
-                    <img src="/random/galleryglitch.webp" id="btn-gallery-img" class="gallery-glitch-img">
+                    <img src="random/galleryglitch.webp" id="btn-gallery-img" class="gallery-glitch-img">
                 </div>
 
             </a>
@@ -1921,25 +1917,25 @@ body.dark-mode .cart-item {
             <div class="about-container">
    <div class="about-image">
     <div class="slider-arrow left-arrow" onclick="prevAboutImage()"></div>
-    <img loading="lazy" decoding="async" id="about-img-1" class="active" src="/me/aboutme_001.webp" alt="Tyrone Moreno">
-    <img loading="lazy" decoding="async" id="about-img-2" src="/me/aboutme_002.webp" alt="Tyrone Moreno">
+    <img id="about-img-1" class="active" src="/me/aboutme_001.webp" alt="Tyrone Moreno">
+    <img id="about-img-2" src="/me/aboutme_002.webp" alt="Tyrone Moreno">
     <div class="slider-arrow right-arrow" onclick="nextAboutImage()"></div>
 </div>
                 <div class="about-text">
                     
-                    <img loading="lazy" decoding="async" src="/random/symbols_01.webp" class="art-symbol sym-1" alt="Symbol 1">
-<img loading="lazy" decoding="async" src="/random/symbols_02.webp" class="art-symbol sym-2" alt="Symbol 2">
-<img loading="lazy" decoding="async" src="/random/symbols_03.webp" class="art-symbol sym-3" alt="Symbol 3">
-<img loading="lazy" decoding="async" src="/random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5">
-<img loading="lazy" decoding="async" src="/random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6">
+                    <img src="/random/symbols_01.webp" class="art-symbol sym-1" alt="Symbol 1">
+<img src="/random/symbols_02.webp" class="art-symbol sym-2" alt="Symbol 2">
+<img src="/random/symbols_03.webp" class="art-symbol sym-3" alt="Symbol 3">
+<img src="/random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5">
+<img src="/random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6">
                     
-                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img loading="lazy" decoding="async" src="/random/artistcrossed.webp" alt="Artist" class="inline-artist">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
-                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img loading="lazy" decoding="async" src="/random/human_01.webp" alt="human" class="inline-human">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
+                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img src="/random/artistcrossed.webp" alt="Artist" class="inline-artist">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
+                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img src="/random/human_01.webp" alt="human" class="inline-human">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
                     
                     <div class="frace-cabbage-wrapper">
-                      <img loading="lazy" decoding="async" src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;">
-                        <img loading="lazy" decoding="async" src="/random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage">
+                      <img src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;">
+                        <img src="random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage">
                     </div>
                 </div>
             </div>
@@ -1972,15 +1968,15 @@ body.dark-mode .cart-item {
 
     <div id="page-exhibitions" class="page-overlay none-page">
         <div class="overlay-content">
-            <img loading="lazy" decoding="async" src="/random/none_horizontal.webp" class="none-desktop" alt="None">
-            <img loading="lazy" decoding="async" src="/random/none_vertical.webp" class="none-mobile" alt="None">
+            <img src="/random/none_horizontal.webp" class="none-desktop" alt="None">
+            <img src="/random/none_vertical.webp" class="none-mobile" alt="None">
         </div>
     </div>
 
     <div id="page-press" class="page-overlay none-page">
         <div class="overlay-content">
-            <img loading="lazy" decoding="async" src="/random/none_horizontal.webp" class="none-desktop" alt="None">
-            <img loading="lazy" decoding="async" src="/random/none_vertical.webp" class="none-mobile" alt="None">
+            <img src="/random/none_horizontal.webp" class="none-desktop" alt="None">
+            <img src="/random/none_vertical.webp" class="none-mobile" alt="None">
         </div>
     </div>
 
@@ -1990,63 +1986,63 @@ body.dark-mode .cart-item {
      <div class="works-grid mode-collage">
     <!-- 2. Rubik -->
 <div class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it'); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');">
-        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
+        <div class="work-image"><img src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
         <div class="work-caption"><span>An Unsolved Constant</span><span>2026</span></div>
     </div>
     <!-- 1. No time 4 overthinking -->
     <div class="work-item" data-slug="no-time-4-overthinking" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp'); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');">
-        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
     </div>
 
 
     <!-- 3. Splinter -->
     <div class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/splinter/');">
-        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
         <div class="work-caption"><span>Splinter</span><span>2026</span></div>
     </div>
 
     <!-- 4. Seven of Hearts (Sliced Grid) -->
     <div class="work-item" id="art-sevenofhearts" data-slug="seven-of-hearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp'); window.history.pushState(null, '', '/gallery/seven-of-hearts/');">
         <div class="work-image no-shadow">
-            <img loading="lazy" decoding="async" class="single-fallback" src="/artwork/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
+            <img class="single-fallback" src="/artwork/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
             <div class="sliced-container">
-                    <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
-                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
+                    <img src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
+                <img src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
+                <img src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
+                <img src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
+                <img src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
+                <img src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
+                <img src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
+                <img src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
+                <img src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
+                <img src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
+                <img src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
+                <img src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
+                <img src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
+                <img src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
+                <img src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
+                <img src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
+                <img src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
+                <img src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
+                <img src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
+                <img src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
+                <img src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
+                <img src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
+                <img src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
+                <img src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
+                <img src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
+                <img src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
+                <img src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
+                <img src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
+                <img src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
+                <img src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
+                <img src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
+                <img src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
+                <img src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
+                <img src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
+                <img src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
+                <img src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
             </div>
         </div>
         <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
@@ -2054,103 +2050,103 @@ body.dark-mode .cart-item {
 
     <!-- 5. Dairy Pirates -->
     <div class="work-item" data-slug="dairy-pirates" onclick="openLightbox('/artwork/small/dairypirates_small.jpg', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/dairy-pirates/');">
-        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/dairypirates_small_thumbnail.webp" alt="Dairy Pirates"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/dairypirates_small_thumbnail.jpg" alt="Dairy Pirates"></div>
         <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
     </div>
 
     <!-- 6. From the Chest -->
     <div class="work-item" data-slug="from-the-chest" onclick="openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/from-the-chest/');">
-        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/fromthechest_small_thumbnail.webp" alt="From the Chest"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/fromthechest_small_thumbnail.jpg" alt="From the Chest"></div>
         <div class="work-caption"><span>From the Chest</span><span>2026</span></div>
     </div>
 
     <!-- 7. Soul of an Old Telephone Box -->
     <div class="work-item" data-slug="soul-of-an-old-telephone-box" onclick="openLightbox('/artwork/small/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/soulofatelephone_smallback.jpg'); window.history.pushState(null, '', '/gallery/soul-of-an-old-telephone-box/');">
-        <div class="work-image"><img src="/artwork/thumbnails/soulofatelephone_small_thumbnail.webp" alt="Soul of an Old Telephone Box" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/soulofatelephone_small_thumbnail.jpg" alt="Soul of an Old Telephone Box" loading="lazy"></div>
         <div class="work-caption"><span>Soul of an Old Telephone Box</span><span>2026</span></div>
     </div>
 
     <!-- 8. BFEC -->
     <div class="work-item" data-slug="bfec" onclick="openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/bfec/');">
-        <div class="work-image"><img src="/artwork/thumbnails/bfec_small_thumbnail.webp" alt="BFEC" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/bfec_small_thumbnail.jpg" alt="BFEC" loading="lazy"></div>
         <div class="work-caption"><span>BFEC</span><span>2026</span></div>
     </div>
 
     <!-- 9. Liminal some Time -->
     <div class="work-item" data-slug="liminal-some-time" onclick="openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg'); window.history.pushState(null, '', '/gallery/liminal-some-time/');">
-        <div class="work-image"><img src="/artwork/thumbnails/liminalsometime_small_thumbnail.webp" alt="Liminal some Time" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/liminalsometime_small_thumbnail.jpg" alt="Liminal some Time" loading="lazy"></div>
         <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
     </div>
 
     <!-- 10. Nice day off, Peanut butter luck -->
     <div class="work-item" data-slug="nice-day-off-peanut-butter-luck" onclick="openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/nice-day-off-peanut-butter-luck/');">
-        <div class="work-image"><img src="/artwork/thumbnails/nicedayoff_small_thumbnail.webp" alt="Nice day off, Peanut butter luck" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/nicedayoff_small_thumbnail.jpg" alt="Nice day off, Peanut butter luck" loading="lazy"></div>
         <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
     </div>
 
     <!-- 11. AB+ -->
     <div class="work-item" data-slug="ab-plus" onclick="openLightbox('/artwork/small/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/ab-plus/');">
-        <div class="work-image"><img src="/artwork/thumbnails/ab_small_thumbnail.webp" alt="AB+" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/ab_small_thumbnail.jpg" alt="AB+" loading="lazy"></div>
         <div class="work-caption"><span>AB+</span><span>2026</span></div>
     </div>
 
     <!-- 12. Midsummer -->
     <div class="work-item" data-slug="midsummer" onclick="openLightbox('/artwork/small/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/midsummer/');">
-        <div class="work-image"><img src="/artwork/thumbnails/midsummer_small_thumbnail.webp" alt="Midsummer" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/midsummer_small_thumbnail.jpg" alt="Midsummer" loading="lazy"></div>
         <div class="work-caption"><span>Midsummer</span><span>2026</span></div>
     </div>
 
     <!-- 13. Seize the Lighthouse -->
     <div class="work-item" data-slug="seize-the-lighthouse" onclick="openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/seize-the-lighthouse/');">
-        <div class="work-image"><img src="/artwork/thumbnails/seizethelighthouse_small_thumbnail.webp" alt="Seize the Lighthouse" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/seizethelighthouse_small_thumbnail.jpg" alt="Seize the Lighthouse" loading="lazy"></div>
         <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
     </div>
 
     <!-- 14. Pedestrian Crossing -->
     <div class="work-item" data-slug="pedestrian-crossing" onclick="openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/pedestrian-crossing/');">
-        <div class="work-image"><img src="/artwork/thumbnails/pedestriancrossing_small_thumbnail.webp" alt="Pedestrian Crossing" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/pedestriancrossing_small_thumbnail.jpg" alt="Pedestrian Crossing" loading="lazy"></div>
         <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
     </div>
 
     <!-- 15. Is the Grass Greener? -->
     <div class="work-item" data-slug="is-the-grass-greener" onclick="openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/is-the-grass-greener/');">
-        <div class="work-image"><img src="/artwork/thumbnails/isthegrassgreener_square_small_thumbnail.webp" alt="Is the Grass Greener?" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/isthegrassgreener_square_small_thumbnail.jpg" alt="Is the Grass Greener?" loading="lazy"></div>
         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
     </div>
 
     <!-- 16. Give ur Mum some flowers -->
     <div class="work-item" data-slug="give-ur-mum-some-flowers" onclick="openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/give-ur-mum-some-flowers/');">
-        <div class="work-image"><img src="/artwork/thumbnails/mumflowers_small_thumbnail.webp" alt="Give ur Mum some flowers" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/mumflowers_small_thumbnail.jpg" alt="Give ur Mum some flowers" loading="lazy"></div>
         <div class="work-caption"><span>Give ur Mum some flowers</span><span>2026</span></div>
     </div>
 
     <!-- 17. Zennor -->
     <div class="work-item" data-slug="zennor" onclick="openLightbox('/artwork/small/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', ''); window.history.pushState(null, '', '/gallery/zennor/');">
-        <div class="work-image"><img src="/artwork/thumbnails/zennor_small_thumbnail.webp" alt="Zennor" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/zennor_small_thumbnail.jpg" alt="Zennor" loading="lazy"></div>
         <div class="work-caption"><span>Zennor</span><span>2025</span></div>
     </div>
 
     <!-- 18. Something about next week -->
     <div class="work-item" data-slug="something-about-next-week" onclick="openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', ''); window.history.pushState(null, '', '/gallery/something-about-next-week/');">
-        <div class="work-image"><img src="/artwork/thumbnails/somethingaboutnextweek_small_thumbnail.webp" alt="Something about next week" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/somethingaboutnextweek_small_thumbnail.jpg" alt="Something about next week" loading="lazy"></div>
         <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
     </div>
 
     <!-- 19. Mealticket -->
     <div class="work-item" data-slug="mealticket" onclick="openLightbox('/artwork/small/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', ''); window.history.pushState(null, '', '/gallery/mealticket/');">
-        <div class="work-image"><img src="/artwork/thumbnails/mealticket_small_thumbnail.webp" alt="Mealticket" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/mealticket_small_thumbnail.jpg" alt="Mealticket" loading="lazy"></div>
         <div class="work-caption"><span>Mealticket</span><span>2025</span></div>
     </div>
 
     <!-- 20. Mayonnaise on the Roof -->
     <div class="work-item" data-slug="mayonnaise-on-the-roof" onclick="openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', ''); window.history.pushState(null, '', '/gallery/mayonnaise-on-the-roof/');">
-        <div class="work-image"><img src="/artwork/thumbnails/001_small_thumbnail.webp" alt="Mayonnaise on the Roof" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/001_small_thumbnail.jpg" alt="Mayonnaise on the Roof" loading="lazy"></div>
         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
     </div>
 
     <!-- 21. Notitle -->
     <div class="work-item" data-slug="notitle" onclick="openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', ''); window.history.pushState(null, '', '/gallery/notitle/');">
-        <div class="work-image"><img src="/artwork/thumbnails/notitle_small_thumbnail.webp" alt="Notitle" loading="lazy"></div>
+        <div class="work-image"><img src="/artwork/thumbnails/notitle_small_thumbnail.jpg" alt="Notitle" loading="lazy"></div>
         <div class="work-caption"><span>Notitle</span><span>2023</span></div>
     </div>
 </div>
@@ -2218,8 +2214,8 @@ body.dark-mode .cart-item {
         <div class="form-container">
             
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; gap: 10px;">
-    <img loading="lazy" decoding="async" src="/random/enquiryform.webp" alt="Enquiry Form" class="enquiry-title-img" style="margin-bottom: 0; max-width: 60%;">
-    <img loading="lazy" decoding="async" src="/frace.webp" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
+    <img src="/random/enquiryform.webp" alt="Enquiry Form" class="enquiry-title-img" style="margin-bottom: 0; max-width: 60%;">
+    <img src="/frace.webp" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
 </div>
             
             <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
@@ -2247,7 +2243,7 @@ body.dark-mode .cart-item {
 
                 <div class="button-row">
                     <button type="submit" class="submit-btn" id="submitButton">SEND ENQUIRY</button>
-                    <img loading="lazy" decoding="async" src="/random/symbols_04.webp" class="art-symbol sym-4" alt="Symbol 4">
+                    <img src="/random/symbols_04.webp" class="art-symbol sym-4" alt="Symbol 4">
                 </div>
             </form>
 
@@ -2266,7 +2262,7 @@ body.dark-mode .cart-item {
             <div class="lightbox-left">
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
-                <img loading="lazy" decoding="async" id="lb-img" src="" alt="Artwork">
+                <img id="lb-img" src="" alt="Artwork">
 <model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1" interaction-prompt="none"></model-viewer>
                 
                 <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
@@ -2296,7 +2292,7 @@ body.dark-mode .cart-item {
         <div class="product-layout">
            <div class="product-left">
     <!-- Main Display Image -->
-    <img loading="lazy" decoding="async" id="prod-img" src="" alt="Product Main" style="margin-bottom: 10px;">
+    <img id="prod-img" src="" alt="Product Main" style="margin-bottom: 10px;">
     
     <!-- Carousel Strip -->
     <div id="prod-carousel" style="display: flex; gap: 10px; overflow-x: auto; cursor: pointer;">
@@ -2355,41 +2351,6 @@ body.dark-mode .cart-item {
     </div>
 </div>
     <script>
-function prioritizeTopGalleryImages() {
-    // Select the first 3 images within the Works Grid
-    const topImages = document.querySelectorAll('#page-works .work-item .work-image img');
-    
-    // Loop through the first 3 (or fewer if there are less than 3 total)
-    for (let i = 0; i < Math.min(3, topImages.length); i++) {
-        const img = topImages[i];
-        
-        // Remove lazy loading
-        img.removeAttribute('loading');
-        
-        // Force eager loading
-        img.loading = 'eager';
-        
-        // Tell the browser this is high priority
-        img.setAttribute('fetchpriority', 'high');
-    }
-}
-// --- LAZY-LOAD MODEL-VIEWER (only when a .glb is actually shown) ---
-let modelViewerPromise = null;
-function loadModelViewer() {
-    if (customElements.get('model-viewer')) return Promise.resolve();
-    if (!modelViewerPromise) {
-        modelViewerPromise = new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.type = 'module';
-            s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js';
-            s.onload = () => customElements.whenDefined('model-viewer').then(resolve);
-            s.onerror = reject;
-            document.head.appendChild(s);
-        });
-    }
-    return modelViewerPromise;
-}
-
 function handleRouting() {
     // Check for a ?redirect= param set by 404.html first, then fallback to the current browser URL
     const params = new URLSearchParams(window.location.search);
@@ -2411,26 +2372,13 @@ function handleRouting() {
             openAbout();
         } else if (normalizedPath.includes('/paint')) {
             clearNavigation();
-   } else if (normalizedPath.includes('/gallery')) {
-    openWorks();
-    const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
-    if (gallerySlugMatch) {
-        // A 50ms delay gives the browser time to paint the openWorks() layout
-        // before attempting to click the artwork element.
-    const slug = gallerySlugMatch[1];
-
-const waitForArtwork = () => {
-    const target = document.querySelector(`[data-slug="${slug}"]`);
-
-    if (target) {
-        target.click();
-    } else {
-        requestAnimationFrame(waitForArtwork);
-    }
-};
-
-waitForArtwork();
-    }
+        } else if (normalizedPath.includes('/gallery')) {
+            openWorks();
+            const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
+            if (gallerySlugMatch) {
+                const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
+                if (target) target.click();
+            }
         } else if (normalizedPath.includes('/sketches')) {
             openSketches();
         } else if (normalizedPath.includes('/contact')) {
@@ -2541,7 +2489,6 @@ let isPaintingActive = true; // Add this line here
             }
 
     updateGalleryLayout();
-prioritizeTopGalleryImages();
             initDragSystem();
             initSliceDragSystem();  
             updateDragCapabilities();
@@ -2750,27 +2697,26 @@ isPaintingActive = false;
 
     // Check if it already exists
     if (!document.getElementById('duck-viewer')) {
-        loadModelViewer().then(() => {
-            const mv = document.createElement('model-viewer');
-            mv.id = 'duck-viewer';
-            mv.src = '/artwork/3d/duck/source/duck_animation.glb';
-            mv.setAttribute('alt', 'A 3D duck animation');
-            mv.setAttribute('auto-rotate', '');
-            mv.setAttribute('camera-controls', '');
-            mv.setAttribute('shadow-intensity', '1');
-            mv.setAttribute('autoplay', '');
-            mv.setAttribute('interaction-prompt', 'none');
+        const mv = document.createElement('model-viewer');
+        mv.id = 'duck-viewer';
+        mv.src = '/artwork/3d/duck/source/duck_animation.glb';
+        mv.setAttribute('alt', 'A 3D duck animation');
+        mv.setAttribute('auto-rotate', '');
+        mv.setAttribute('camera-controls', '');
+        mv.setAttribute('shadow-intensity', '1');
+        mv.setAttribute('autoplay', '');
+mv.setAttribute('interaction-prompt', 'none');
 
-            // Add listeners to debug the failure
-            mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
-            mv.addEventListener('error', (e) => console.error('Duck model failed to load:', e.detail));
+        
+        // Add listeners to debug the failure
+        mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
+        mv.addEventListener('error', (e) => console.error('Duck model failed to load:', e.detail));
 
-            mv.style.width = '100vw';
-            mv.style.height = '100vh';
-            mv.style.setProperty('--poster-color', 'transparent');
-
-            content.appendChild(mv);
-        });
+        mv.style.width = '100vw';
+        mv.style.height = '100vh';
+        mv.style.setProperty('--poster-color', 'transparent');
+        
+        content.appendChild(mv);
     }
 
     overlay.classList.add('visible');
@@ -3004,9 +2950,7 @@ isPaintingActive = false;
                 fsBtn.style.display = 'none'; // Hide button for 3D
                 
                 lbModel.src = null;
-                loadModelViewer().then(() => {
-                    requestAnimationFrame(() => { lbModel.src = src; });
-                });
+                requestAnimationFrame(() => { lbModel.src = src; });
             } else {
                 lbModel.style.display = 'none';
                 lbModel.src = null;
@@ -4318,7 +4262,7 @@ if (isShopLoaded) return; // Stop if we already loaded the products
             item.className = 'shop-item';
             item.href = '#';
            item.innerHTML = `
-            <img src="${img}" alt="${prod.title}" loading="lazy" decoding="async">
+            <img src="${img}" alt="${prod.title}">
             <h3>${prod.title}</h3>
             <p>From £${formattedPrice} GBP</p> 
         `;
@@ -4411,7 +4355,7 @@ function renderCart() {
         const itemEl = document.createElement('div');
         itemEl.className = 'cart-item';
         itemEl.innerHTML = `
-            <img src="${item.img}" alt="${item.title}" loading="lazy" decoding="async">
+            <img src="${item.img}" alt="${item.title}">
             <div class="cart-item-details">
                 <h4>${item.title}</h4>
                 <p>Option: ${item.option}</p>
