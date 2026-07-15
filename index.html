@@ -2355,6 +2355,24 @@ body.dark-mode .cart-item {
     </div>
 </div>
     <script>
+function prioritizeTopGalleryImages() {
+    // Select the first 3 images within the Works Grid
+    const topImages = document.querySelectorAll('#page-works .work-item .work-image img');
+    
+    // Loop through the first 3 (or fewer if there are less than 3 total)
+    for (let i = 0; i < Math.min(3, topImages.length); i++) {
+        const img = topImages[i];
+        
+        // Remove lazy loading
+        img.removeAttribute('loading');
+        
+        // Force eager loading
+        img.loading = 'eager';
+        
+        // Tell the browser this is high priority
+        img.setAttribute('fetchpriority', 'high');
+    }
+}
 // --- LAZY-LOAD MODEL-VIEWER (only when a .glb is actually shown) ---
 let modelViewerPromise = null;
 function loadModelViewer() {
@@ -2514,6 +2532,7 @@ let isPaintingActive = true; // Add this line here
             }
 
     updateGalleryLayout();
+prioritizeTopGalleryImages();
             initDragSystem();
             initSliceDragSystem();  
             updateDragCapabilities();
