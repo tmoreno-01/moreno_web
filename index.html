@@ -24,6 +24,10 @@
 <link rel="icon" type="image/webp" href="/favicon.webp">
 <link rel="apple-touch-icon" href="/favicon.webp">
 
+<!-- Preconnect to external origins actually used (speeds up the connection when they ARE needed) -->
+<link rel="preconnect" href="https://shop.tyronemoreno.com" crossorigin>
+<link rel="dns-prefetch" href="https://ajax.googleapis.com">
+
 <!-- Main Image Preloads -->
 <link rel="preload" href="/frace.webp" as="image">
 <link rel="preload" href="/logo_small.webp" as="image">
@@ -1917,25 +1921,25 @@ body.dark-mode .cart-item {
             <div class="about-container">
    <div class="about-image">
     <div class="slider-arrow left-arrow" onclick="prevAboutImage()"></div>
-    <img id="about-img-1" class="active" src="/me/aboutme_001.webp" alt="Tyrone Moreno">
-    <img id="about-img-2" src="/me/aboutme_002.webp" alt="Tyrone Moreno">
+    <img loading="lazy" decoding="async" id="about-img-1" class="active" src="/me/aboutme_001.webp" alt="Tyrone Moreno">
+    <img loading="lazy" decoding="async" id="about-img-2" src="/me/aboutme_002.webp" alt="Tyrone Moreno">
     <div class="slider-arrow right-arrow" onclick="nextAboutImage()"></div>
 </div>
                 <div class="about-text">
                     
-                    <img src="random/symbols_01.webp" class="art-symbol sym-1" alt="Symbol 1">
-<img src="random/symbols_02.webp" class="art-symbol sym-2" alt="Symbol 2">
-<img src="random/symbols_03.webp" class="art-symbol sym-3" alt="Symbol 3">
-<img src="random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5">
-<img src="random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6">
+                    <img loading="lazy" decoding="async" src="random/symbols_01.webp" class="art-symbol sym-1" alt="Symbol 1">
+<img loading="lazy" decoding="async" src="random/symbols_02.webp" class="art-symbol sym-2" alt="Symbol 2">
+<img loading="lazy" decoding="async" src="random/symbols_03.webp" class="art-symbol sym-3" alt="Symbol 3">
+<img loading="lazy" decoding="async" src="random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5">
+<img loading="lazy" decoding="async" src="random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6">
                     
-                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img src="/random/artistcrossed.webp" alt="Artist" class="inline-artist">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
-                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img src="random/human_01.webp" alt="human" class="inline-human">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
+                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img loading="lazy" decoding="async" src="/random/artistcrossed.webp" alt="Artist" class="inline-artist">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
+                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img loading="lazy" decoding="async" src="random/human_01.webp" alt="human" class="inline-human">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
                     
                     <div class="frace-cabbage-wrapper">
-                      <img src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;">
-                        <img src="random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage">
+                      <img loading="lazy" decoding="async" src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;">
+                        <img loading="lazy" decoding="async" src="random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage">
                     </div>
                 </div>
             </div>
@@ -1968,15 +1972,15 @@ body.dark-mode .cart-item {
 
     <div id="page-exhibitions" class="page-overlay none-page">
         <div class="overlay-content">
-            <img src="random/none_horizontal.webp" class="none-desktop" alt="None">
-            <img src="random/none_vertical.webp" class="none-mobile" alt="None">
+            <img loading="lazy" decoding="async" src="random/none_horizontal.webp" class="none-desktop" alt="None">
+            <img loading="lazy" decoding="async" src="random/none_vertical.webp" class="none-mobile" alt="None">
         </div>
     </div>
 
     <div id="page-press" class="page-overlay none-page">
         <div class="overlay-content">
-            <img src="random/none_horizontal.webp" class="none-desktop" alt="None">
-            <img src="random/none_vertical.webp" class="none-mobile" alt="None">
+            <img loading="lazy" decoding="async" src="random/none_horizontal.webp" class="none-desktop" alt="None">
+            <img loading="lazy" decoding="async" src="random/none_vertical.webp" class="none-mobile" alt="None">
         </div>
     </div>
 
@@ -1986,63 +1990,63 @@ body.dark-mode .cart-item {
      <div class="works-grid mode-collage">
     <!-- 2. Rubik -->
 <div class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it'); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');">
-        <div class="work-image"><img src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
+        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
         <div class="work-caption"><span>An Unsolved Constant</span><span>2026</span></div>
     </div>
     <!-- 1. No time 4 overthinking -->
     <div class="work-item" data-slug="no-time-4-overthinking" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp'); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');">
-        <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
+        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
     </div>
 
 
     <!-- 3. Splinter -->
     <div class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/splinter/');">
-        <div class="work-image"><img src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
+        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
         <div class="work-caption"><span>Splinter</span><span>2026</span></div>
     </div>
 
     <!-- 4. Seven of Hearts (Sliced Grid) -->
     <div class="work-item" id="art-sevenofhearts" data-slug="seven-of-hearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp'); window.history.pushState(null, '', '/gallery/seven-of-hearts/');">
         <div class="work-image no-shadow">
-            <img class="single-fallback" src="/artwork/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
+            <img loading="lazy" decoding="async" class="single-fallback" src="/artwork/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
             <div class="sliced-container">
-                    <img src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
-                <img src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
-                <img src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
-                <img src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
-                <img src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
-                <img src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
-                <img src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
-                <img src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
-                <img src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
-                <img src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
-                <img src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
-                <img src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
-                <img src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
-                <img src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
-                <img src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
-                <img src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
-                <img src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
-                <img src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
-                <img src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
-                <img src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
-                <img src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
-                <img src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
-                <img src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
-                <img src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
-                <img src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
-                <img src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
-                <img src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
-                <img src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
-                <img src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
-                <img src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
-                <img src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
-                <img src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
-                <img src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
-                <img src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
-                <img src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
-                <img src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
+                    <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
+                <img loading="lazy" decoding="async" src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
             </div>
         </div>
         <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
@@ -2050,13 +2054,13 @@ body.dark-mode .cart-item {
 
     <!-- 5. Dairy Pirates -->
     <div class="work-item" data-slug="dairy-pirates" onclick="openLightbox('/artwork/small/dairypirates_small.jpg', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/dairy-pirates/');">
-        <div class="work-image"><img src="/artwork/thumbnails/dairypirates_small_thumbnail.jpg" alt="Dairy Pirates"></div>
+        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/dairypirates_small_thumbnail.jpg" alt="Dairy Pirates"></div>
         <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
     </div>
 
     <!-- 6. From the Chest -->
     <div class="work-item" data-slug="from-the-chest" onclick="openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/from-the-chest/');">
-        <div class="work-image"><img src="/artwork/thumbnails/fromthechest_small_thumbnail.jpg" alt="From the Chest"></div>
+        <div class="work-image"><img loading="lazy" decoding="async" src="/artwork/thumbnails/fromthechest_small_thumbnail.jpg" alt="From the Chest"></div>
         <div class="work-caption"><span>From the Chest</span><span>2026</span></div>
     </div>
 
@@ -2214,8 +2218,8 @@ body.dark-mode .cart-item {
         <div class="form-container">
             
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; gap: 10px;">
-    <img src="random/enquiryform.webp" alt="Enquiry Form" class="enquiry-title-img" style="margin-bottom: 0; max-width: 60%;">
-    <img src="/frace.webp" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
+    <img loading="lazy" decoding="async" src="random/enquiryform.webp" alt="Enquiry Form" class="enquiry-title-img" style="margin-bottom: 0; max-width: 60%;">
+    <img loading="lazy" decoding="async" src="/frace.webp" alt="Frace" style="width: 30%; max-width: 100px; opacity: 0.9; mix-blend-mode: var(--frace-blend); filter: var(--logo-filter);">
 </div>
             
             <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
@@ -2243,7 +2247,7 @@ body.dark-mode .cart-item {
 
                 <div class="button-row">
                     <button type="submit" class="submit-btn" id="submitButton">SEND ENQUIRY</button>
-                    <img src="random/symbols_04.webp" class="art-symbol sym-4" alt="Symbol 4">
+                    <img loading="lazy" decoding="async" src="random/symbols_04.webp" class="art-symbol sym-4" alt="Symbol 4">
                 </div>
             </form>
 
@@ -2262,7 +2266,7 @@ body.dark-mode .cart-item {
             <div class="lightbox-left">
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
-                <img id="lb-img" src="" alt="Artwork">
+                <img loading="lazy" decoding="async" id="lb-img" src="" alt="Artwork">
 <model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1" interaction-prompt="none"></model-viewer>
                 
                 <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
@@ -2292,7 +2296,7 @@ body.dark-mode .cart-item {
         <div class="product-layout">
            <div class="product-left">
     <!-- Main Display Image -->
-    <img id="prod-img" src="" alt="Product Main" style="margin-bottom: 10px;">
+    <img loading="lazy" decoding="async" id="prod-img" src="" alt="Product Main" style="margin-bottom: 10px;">
     
     <!-- Carousel Strip -->
     <div id="prod-carousel" style="display: flex; gap: 10px; overflow-x: auto; cursor: pointer;">
@@ -4282,7 +4286,7 @@ if (isShopLoaded) return; // Stop if we already loaded the products
             item.className = 'shop-item';
             item.href = '#';
            item.innerHTML = `
-            <img src="${img}" alt="${prod.title}">
+            <img src="${img}" alt="${prod.title}" loading="lazy" decoding="async">
             <h3>${prod.title}</h3>
             <p>From £${formattedPrice} GBP</p> 
         `;
@@ -4375,7 +4379,7 @@ function renderCart() {
         const itemEl = document.createElement('div');
         itemEl.className = 'cart-item';
         itemEl.innerHTML = `
-            <img src="${item.img}" alt="${item.title}">
+            <img src="${item.img}" alt="${item.title}" loading="lazy" decoding="async">
             <div class="cart-item-details">
                 <h4>${item.title}</h4>
                 <p>Option: ${item.option}</p>
