@@ -2406,8 +2406,6 @@ function handleRouting() {
 
         // Normalize path to remove potential trailing slash
         const normalizedPath = path.replace(/\/$/, ""); 
-console.log("PATH:", normalizedPath);
-console.log("SLUG:", gallerySlugMatch?.[1]);
 
         if (normalizedPath.includes('/about')) {
             openAbout();
