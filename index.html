@@ -30,6 +30,10 @@
 <link rel="preload" href="/logo.webp" as="image">
 
 <!-- Third Party Libraries -->
+<script>
+  window.__initialPathname = location.pathname;
+  window.__initialSearch = location.search;
+</script>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
 #page-works:not(.visible) .works-container {
@@ -2353,9 +2357,9 @@ body.dark-mode .cart-item {
     <script>
 function handleRouting() {
     // Check for a ?redirect= param set by 404.html first, then fallback to the current browser URL
-    const params = new URLSearchParams(window.location.search);
+   const params = new URLSearchParams(window.__initialSearch);
     const redirected = params.get('redirect');
-    const path = redirected || window.location.pathname;
+    const path = redirected || window.__initialPathname;
 
     console.log("Routing attempting to load path:", path);
 
