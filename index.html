@@ -1352,7 +1352,7 @@ min-width: 130px !important;
         padding: 90px 30px 60px 30px !important;
     }
     .shop-grid {
-        grid-template-columns: repeat(2, 1fr); /* Drops from 3 to 2 columns */
+        grid-template-columns: repeat(3, 1fr);
         gap: 30px !important; 
     }
 }
@@ -1362,9 +1362,9 @@ min-width: 130px !important;
     #shop-content {
         padding: 80px 20px 60px 20px !important;
     }
-    .shop-grid {
-        grid-template-columns: 1fr;
-        gap: 40px !important;
+.shop-grid {
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 20px !important; /* Reduced from 40px so the images aren't too small on mobile */
     }
 }
 .shop-item {
