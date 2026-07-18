@@ -4077,6 +4077,7 @@ items.forEach((item) => {
 let currentProductVariants = [];
 
 async function openProduct(handle) {
+window.closeCart();
     const response = await shopifyGraphQL(PRODUCT_QUERY, { handle: handle });
     const product = response.data.productByHandle;
 
@@ -4211,6 +4212,20 @@ priceEl.dataset.basePrice = variantPrice;
     priceEl.dataset.variantId = variant.id;
     priceEl.innerText = `£${variantPrice.toFixed(2)} GBP`;
 
+}
+async function updateMainImage(url) {
+    const mainImg = document.getElementById('prod-img');
+    
+    // Create an off-screen image object
+    const offscreenImg = new Image();
+    offscreenImg.src = url;
+    
+    // Force background decoding
+    await offscreenImg.decode();
+    
+    // Now swap the visible source
+    mainImg.src = url;
+    mainImg.dataset.path = url;
 }
 function renderCarousel(imageArray, title) {
     const carousel = document.getElementById('prod-carousel');
