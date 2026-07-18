@@ -1815,7 +1815,7 @@ body.dark-mode .cart-item {
     </div>
 </div>
 
-   <img src="/logo.webp" alt="Logo" class="top-left-logo" id="btn-home">
+   <img src="/logo.webp" alt="Logo" class="top-left-logo" id="btn-gallery-logo">
     
 <div class="nav-links">
         
@@ -2740,7 +2740,7 @@ btnShop.addEventListener('click', (e) => {
 });
 
    // --- NAVIGATION & HOVER LOGIC ---
-        const btnHome = document.getElementById('btn-home');
+        const btnGalleryLogo = document.getElementById('btn-gallery-logo');
         const btnPaint = document.getElementById('btn-paint');
 const btnSketches = document.getElementById('btn-sketches');
         const btnAbout = document.getElementById('btn-about');
@@ -2841,7 +2841,11 @@ saveLastPage('sketches');
 }
 
         // Updated Handlers to change URLs without reloading
-        btnHome.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/'); clearNavigation(); });
+        btnGalleryLogo.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    window.history.pushState(null, '', '/gallery/'); 
+    openWorks(); 
+});
         btnPaint.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/paint/'); clearNavigation(); });
         
         btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
