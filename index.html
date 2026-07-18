@@ -4152,7 +4152,11 @@ updateProductUI(initialVariant);
     // 3. Trigger a price update calculation based on the restored quantity
     window.updateQty(0); 
 
-    const images = product.images.edges.map(e => e.node.url);
+  // Pass both thumb and highres URLs to the carousel
+    const images = product.images.edges.map(e => ({
+        thumb: e.node.thumb,
+        highres: e.node.highres
+    }));
     renderCarousel(images, product.title);
 
     document.getElementById('page-product').classList.add('visible');
@@ -4213,28 +4217,38 @@ function renderCarousel(imageArray, title) {
     const mainImg = document.getElementById('prod-img');
     carousel.innerHTML = '';
     
-    // Set main image to first in array
-    mainImg.src = imageArray[0];
-    mainImg.dataset.path = imageArray[0];
+    // Set main image to the highres version of the first item
+    if (imageArray.length > 0) {
+        mainImg.src = imageArray[0].highres;
+        mainImg.dataset.path = imageArray[0].highres;
+    }
 
-    imageArray.forEach((src) => {
+    imageArray.forEach((imgData) => {
         const img = document.createElement('img');
-        img.src = src;
+        
+        // Use the tiny, lightning-fast thumbnail for the strip
+        img.src = imgData.thumb; 
         img.style.width = '80px';
         img.style.height = '80px';
         img.style.objectFit = 'cover';
+        img.loading = 'lazy'; // Adds native lazy loading
+        
         img.onclick = () => {
-            mainImg.src = src;
-            mainImg.dataset.path = src;
+            // Swap the main image to the high-res version on click
+            mainImg.src = imgData.highres;
+            mainImg.dataset.path = imgData.highres;
         };
+        
         carousel.appendChild(img);
     });
 }
 // Add this fetch logic
-let isShopLoaded = false; //
+let isShopLoaded = false;
 async function renderShop() {
-if (isShopLoaded) return; // Stop if we already loaded the products
+    if (isShopLoaded) return; // Stop if we already loaded the products
     const grid = document.getElementById('shop-grid');
+    
+    // 1. Updated Query: Fetch both 300px and 600px images
     const PRODUCT_QUERY = `
     query getProducts {
       products(first: 20) {
@@ -4242,7 +4256,14 @@ if (isShopLoaded) return; // Stop if we already loaded the products
           node {
             handle
             title
-            images(first: 1) { edges { node { url } } }
+            images(first: 1) { 
+              edges { 
+                node { 
+                  thumbnail: url(transform: {maxWidth: 300, preferredContentType: WEBP}) 
+                  highres: url(transform: {maxWidth: 600, preferredContentType: WEBP}) 
+                } 
+              } 
+            }
             variants(first: 1) {
               edges { node { price { amount } } }
             }
@@ -4259,17 +4280,26 @@ if (isShopLoaded) return; // Stop if we already loaded the products
 
         products.forEach(edge => {
             const prod = edge.node;
-            const img = prod.images.edges[0]?.node.url || '';
+            const thumbImg = prod.images.edges[0]?.node.thumbnail || '';
+            const highresImg = prod.images.edges[0]?.node.highres || '';
             const price = prod.variants.edges[0]?.node.price.amount || '0.00';
-        const formattedPrice = parseFloat(price).toFixed(2);
+            const formattedPrice = parseFloat(price).toFixed(2);
             const item = document.createElement('a');
             item.className = 'shop-item';
             item.href = '#';
-           item.innerHTML = `
-            <img src="${img}" alt="${prod.title}">
+            
+            // 2. Updated HTML: Browser automatically loads thumbnail on mobile, high-res on desktop
+            item.innerHTML = `
+            <img 
+                src="${thumbImg}" 
+                srcset="${thumbImg} 300w, ${highresImg} 600w"
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                alt="${prod.title}"
+                loading="lazy"
+            >
             <h3>${prod.title}</h3>
             <p>From £${formattedPrice} GBP</p> 
-        `;
+            `;
             
             // Reuses your existing openProduct logic
             item.onclick = (e) => {
@@ -4279,12 +4309,11 @@ if (isShopLoaded) return; // Stop if we already loaded the products
             
             grid.appendChild(item);
         });
-   isShopLoaded = true; // Set the flag to true so it never runs twice
+        isShopLoaded = true; // Set the flag to true so it never runs twice
     } catch (error) {
         console.error("Failed to load shop:", error);
     }
 }
-
 // Add this below your openProduct function
 function closeProduct() {
     const prodPage = document.getElementById('page-product');
@@ -4573,7 +4602,12 @@ const PRODUCT_QUERY = `
       title
       descriptionHtml
       images(first: 10) {
-        edges { node { url } }
+        edges { 
+          node { 
+            thumb: url(transform: {maxWidth: 150, preferredContentType: WEBP}) 
+            highres: url(transform: {maxWidth: 1200, preferredContentType: WEBP}) 
+          } 
+        }
       }
       variants(first: 5) {
         edges {
@@ -4581,8 +4615,8 @@ const PRODUCT_QUERY = `
             id
             title
             price { amount }
-            image { url } 
-availableForSale
+            image { url(transform: {maxWidth: 1200, preferredContentType: WEBP}) } 
+            availableForSale
           }
         }
       }
