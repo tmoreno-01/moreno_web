@@ -4348,10 +4348,20 @@ window.updateQty = function(change) {
 
 
 window.closeProduct = function() {
-    document.getElementById('page-product').classList.remove('visible');
+    const prodPage = document.getElementById('page-product');
+    const mainImg = document.getElementById('prod-img');
+    const carousel = document.getElementById('prod-carousel');
+    
+    // 1. Hide the overlay
+    prodPage.classList.remove('visible');
     document.body.classList.remove('overlay-open');
     
-    // Call the new reset function
+    // 2. CLEAR THE DATA to prevent flash of old content next time
+    mainImg.src = ''; 
+    mainImg.dataset.path = '';
+    carousel.innerHTML = ''; 
+    
+    // 3. Reset buttons
     window.resetButtons();
 };
 
