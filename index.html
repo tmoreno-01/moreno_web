@@ -1798,6 +1798,37 @@ body.dark-mode .cart-item {
     min-height: 0 !important;
     background: transparent !important;
     outline: none !important;
+    transition: opacity 0.3s ease;
+}
+
+/* Small centered loading bar shown while a .glb streams in, instead of a poster that pops */
+.lb-model-loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 21;
+    width: 140px;
+    height: 2px;
+    background: rgba(128,128,128,0.25);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.lb-model-loader-bar {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 40%;
+    background: var(--text-color);
+    border-radius: 2px;
+    animation: lb-loader-sweep 1s ease-in-out infinite;
+}
+
+@keyframes lb-loader-sweep {
+    0%   { left: -40%; }
+    100% { left: 100%; }
 }
 
 /* Mobile/Tablet alignment */
@@ -2280,6 +2311,7 @@ body.dark-mode .cart-item {
                 
                 <img id="lb-img" src="" alt="Artwork">
 <model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1" interaction-prompt="none"></model-viewer>
+<div id="lb-model-loader" class="lb-model-loader" style="display:none;"><div class="lb-model-loader-bar"></div></div>
                 
                 <div id="lb-next" class="slider-arrow right-arrow" onclick="nextLbImage(event)" style="display:none; right: 20px; z-index: 20;"></div>
 <div id="lb-fullscreen-btn" onclick="toggleFullscreen(event)">
@@ -2963,23 +2995,31 @@ isPaintingActive = false;
             const lbImg = document.getElementById('lb-img');
             const lbModel = document.getElementById('lb-model');
             const fsBtn = document.getElementById('lb-fullscreen-btn');
+            const lbLoader = document.getElementById('lb-model-loader');
             
             if (src && src.toLowerCase().endsWith('.glb')) {
                 lbImg.style.display = 'none';
                 lbModel.style.display = 'block';
                 fsBtn.style.display = 'none'; // Hide button for 3D
                 
-                // Show the existing thumbnail instantly instead of a blank box while the model streams in
-                const posterMap = {
-                    '/artwork/3d/rubik/rubikcompress.glb': '/artwork/3d/rubik/rubik_poster.webp'
-                };
-                lbModel.setAttribute('poster', posterMap[src] || '');
+                // Small centered loading bar while the model streams in, hidden once it's ready
+                lbLoader.style.display = 'block';
+                lbModel.style.opacity = '0';
+                
+                if (!lbModel.dataset.loadListenerAttached) {
+                    lbModel.addEventListener('load', () => {
+                        lbLoader.style.display = 'none';
+                        lbModel.style.opacity = '1';
+                    });
+                    lbModel.dataset.loadListenerAttached = 'true';
+                }
                 
                 lbModel.src = null;
                 requestAnimationFrame(() => { lbModel.src = src; });
             } else {
                 lbModel.style.display = 'none';
                 lbModel.src = null;
+                lbLoader.style.display = 'none';
                 lbImg.style.display = 'block';
                 fsBtn.style.display = 'block'; // Show button for Images
                 lbImg.src = src;
