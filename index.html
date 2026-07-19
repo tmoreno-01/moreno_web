@@ -1346,14 +1346,6 @@ min-width: 130px !important;
     width: 100%;
 }
 
-.shop-loading {
-    grid-column: 1 / -1;
-    text-align: center;
-    opacity: 0.6;
-    font-size: 0.9rem;
-    padding: 60px 0;
-}
-
 /* Responsive adjustments for iPads / Tablets */
 @media (max-width: 1024px) {
     #shop-content {
@@ -4340,7 +4332,6 @@ let isShopLoaded = false;
 async function renderShop() {
     if (isShopLoaded) return; // Stop if we already loaded the products
     const grid = document.getElementById('shop-grid');
-    grid.innerHTML = '<p class="shop-loading">Loading...</p>'; // Immediate feedback while the Shopify query resolves
     
     // 1. Updated Query: Fetch both 300px and 600px images
     const PRODUCT_QUERY = `
