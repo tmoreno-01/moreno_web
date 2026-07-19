@@ -34,14 +34,17 @@
   window.__initialPathname = location.pathname;
   window.__initialSearch = location.search;
 </script>
+<link rel="preconnect" href="https://shop.tyronemoreno.com" crossorigin>
+<link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
 #page-works:not(.visible) .works-container {
     pointer-events: none !important;
 }
-/* Hides the default 3D model loading bar */
-model-viewer::part(default-progress-bar) {
-    display: none;
+/* Restyled 3D model loading bar (was fully hidden before, giving zero feedback while it loads) */
+model-viewer {
+    --progress-bar-height: 2px;
+    --progress-bar-color: var(--text-color);
 }
 .work-image.no-shadow {
     box-shadow: none !important;
@@ -1346,6 +1349,14 @@ min-width: 130px !important;
     width: 100%;
 }
 
+.shop-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 0.9rem;
+    padding: 60px 0;
+}
+
 /* Responsive adjustments for iPads / Tablets */
 @media (max-width: 1024px) {
     #shop-content {
@@ -1375,6 +1386,7 @@ min-width: 130px !important;
 .shop-item img {
     width: 100%;
     height: auto;
+    background-color: var(--overlay-bg); /* Visible placeholder tone while the image itself loads */
     display: block;
     transition: transform 0.3s ease;
 }
@@ -2957,6 +2969,12 @@ isPaintingActive = false;
                 lbModel.style.display = 'block';
                 fsBtn.style.display = 'none'; // Hide button for 3D
                 
+                // Show the existing thumbnail instantly instead of a blank box while the model streams in
+                const posterMap = {
+                    '/artwork/3d/rubik/rubikcompress.glb': '/artwork/3d/rubik/rubik_poster.webp'
+                };
+                lbModel.setAttribute('poster', posterMap[src] || '');
+                
                 lbModel.src = null;
                 requestAnimationFrame(() => { lbModel.src = src; });
             } else {
@@ -4266,6 +4284,7 @@ let isShopLoaded = false;
 async function renderShop() {
     if (isShopLoaded) return; // Stop if we already loaded the products
     const grid = document.getElementById('shop-grid');
+    grid.innerHTML = '<p class="shop-loading">Loading...</p>'; // Immediate feedback while the Shopify query resolves
     
     // 1. Updated Query: Fetch both 300px and 600px images
     const PRODUCT_QUERY = `
