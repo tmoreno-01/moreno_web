@@ -90,19 +90,22 @@ model-viewer {
         }
 
         .loader-bar-container {
-            width: 100px;
-            height: 1px;
-            background: var(--text-muted);
-            opacity: 0.3;
+            width: 140px;
+            height: 2px;
+            background: rgba(128,128,128,0.25);
+            border-radius: 2px;
             overflow: hidden;
             position: relative;
         }
 
       .loader-bar {
     position: absolute;
-    top: 0; left: 0; height: 100%; width: 0%;
+    top: 0; left: 0;
+    height: 100%;
+    width: 40%;
     background: var(--text-color);
-    animation: loadingBar 2s cubic-bezier(0.77, 0, 0.175, 1) infinite; /* Now loops forever */
+    border-radius: 2px;
+    animation: lb-loader-sweep 1s ease-in-out infinite;
 }
 #page-duck {
     z-index: 9999; /* Ensure it sits on top */
@@ -123,12 +126,6 @@ model-viewer {
     width: 100%;
     height: 100%;
 }
-        @keyframes loadingBar {
-            0% { width: 0%; left: 0; }
-            50% { width: 100%; left: 0; }
-            100% { width: 100%; left: 100%; }
-        }
-
         @keyframes preloaderPulse {
             0% { opacity: 0.6; }
             100% { opacity: 1; }
@@ -1851,6 +1848,18 @@ body.dark-mode .cart-item {
     </style>
 </head>
 <body>
+<script>
+// Applies saved theme BEFORE first paint, so dark mode users never see a white flash.
+// This is intentionally synchronous and placed before any visible markup.
+(function() {
+    try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    } catch (e) {}
+})();
+</script>
 <!-- New Duck Page -->
 <div id="page-duck" class="page-overlay">
     <div class="overlay-content">
