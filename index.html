@@ -1805,7 +1805,7 @@ body.dark-mode .cart-item {
 .lb-model-loader {
     position: fixed;
     top: 50%;
-    left: 50%;
+    left: 38%; /* Center of the model's actual -24vw to 100vw span, not the full viewport */
     transform: translate(-50%, -50%);
     z-index: 21;
     width: 140px;
@@ -1814,6 +1814,13 @@ body.dark-mode .cart-item {
     border-radius: 2px;
     overflow: hidden;
     pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+    .lb-model-loader {
+        left: 50%; /* Model goes full-width on mobile, so horizontal center is correct here */
+        top: 46%; /* Center of the model's -18vh to 110vh span on mobile */
+    }
 }
 
 .lb-model-loader-bar {
