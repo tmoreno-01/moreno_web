@@ -4892,7 +4892,63 @@ function initShopCountdown() {
         }, 1000);
     }
 }
+// --- BROWSER BACK/FORWARD BUTTON HANDLER ---
+window.addEventListener('popstate', (event) => {
+    // 1. Get the new URL path after the back button is clicked
+    const path = window.location.pathname;
+    const normalizedPath = path.replace(/\/$/, ""); // Remove trailing slash if present
 
+    // 2. Route to the correct view based on the URL
+    if (normalizedPath.endsWith('/about')) {
+        openAbout();
+    } 
+    else if (normalizedPath.endsWith('/sketches')) {
+        openSketches();
+    } 
+    else if (normalizedPath.includes('/gallery')) {
+        openWorks();
+        const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
+        if (gallerySlugMatch) {
+            // If going back to a specific artwork
+            const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
+            if (target) target.click();
+        } else {
+            // If going back to the main gallery from an artwork
+            closeLightbox(); 
+        }
+    } 
+    else if (normalizedPath.includes('/shop')) {
+        openShop();
+        const shopSlugMatch = normalizedPath.match(/\/shop\/([^\/]+)/);
+        if (shopSlugMatch) {
+            // If going back to a specific product
+            openProduct(shopSlugMatch[1]);
+        } else {
+            // If going back to the main shop from a product
+            closeProduct(); 
+        }
+    } 
+    else if (normalizedPath.endsWith('/contact')) {
+        clearNavigation();
+        document.getElementById('page-contact').classList.add('visible');
+        document.body.classList.add('overlay-open');
+        document.getElementById('btn-contact').classList.add('active');
+    } 
+    else if (normalizedPath.endsWith('/exhibitions')) {
+        clearNavigation();
+        document.getElementById('page-exhibitions').classList.add('visible');
+        document.getElementById('page-exhibitions').classList.add('active');
+    } 
+    else if (normalizedPath.endsWith('/press')) {
+        clearNavigation();
+        document.getElementById('page-press').classList.add('visible');
+        document.getElementById('page-press').classList.add('active');
+    } 
+    else {
+        // Default to the home/paint canvas if no specific path matches (e.g. going back to '/')
+        clearNavigation(); 
+    }
+});
 document.addEventListener('DOMContentLoaded', () => {
     window.resetButtons();
     initShopCountdown();
