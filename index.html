@@ -231,13 +231,15 @@ model-viewer {
 /* --- SEVEN OF HEARTS SLICED GRID LOGIC --- */
 
 /* 1. Hide the single image fallback so it doesn't block the grid */
-#art-sevenofhearts .single-fallback {
+#art-sevenofhearts .single-fallback,
+#art-praiseyou .single-fallback {
     display: none !important;
 }
 
 /* 2. Override the global hover-scale logic specifically for this piece */
 /* We reset the transform to the base state so the item doesn't scale as a whole */
-#art-sevenofhearts:has(.work-image:hover) {
+#art-sevenofhearts:has(.work-image:hover),
+#art-praiseyou:has(.work-image:hover) {
     transform: var(--base-transform) !important;
     opacity: 1 !important;
 }
@@ -254,6 +256,47 @@ model-viewer {
     overflow: visible !important;
 }
 
+#art-praiseyou .sliced-container {
+    display: flex !important;
+    align-items: stretch;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    height: clamp(260px, 34vw, 480px);
+    max-width: 100%;
+    position: relative;
+    overflow: visible !important;
+}
+
+#art-praiseyou .sliced-container img {
+    flex: 0 1 auto;
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    /* The three source photos are slightly different physical sizes
+       (600x2109 / 600x2245 / 600x2145). Lock them to one shared aspect
+       ratio and crop with cover so all three decks render at the exact
+       same size instead of the middle one looking bigger. */
+    aspect-ratio: 600 / 2166;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* In collage mode, let the triptych scale with the column width like every
+   other artwork (instead of being capped to a small fixed height), so at
+   higher zoom levels it grows tall and you scroll to see it, matching the
+   rest of the gallery. */
+.works-grid.mode-collage #art-praiseyou .sliced-container {
+    height: auto;
+}
+
+.works-grid.mode-collage #art-praiseyou .sliced-container img {
+    flex: 1 1 0;
+    width: 100%;
+    height: auto;
+}
+
 /* 4. Ensure images fill grid cells and react to hover individually */
 #art-sevenofhearts .sliced-container img {
     display: block !important;
@@ -268,8 +311,20 @@ model-viewer {
     transform: var(--slice-transform, translate(0px, 0px)) !important;
 }
 
+#art-praiseyou .sliced-container img {
+    display: block !important;
+    pointer-events: auto !important;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    z-index: 1;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: var(--slice-transform, translate(0px, 0px)) !important;
+}
+
 /* 5. The Hover Effect: Scale ONLY the slice, matching the calmer feel of other works */
-#art-sevenofhearts .sliced-container img:hover {
+#art-sevenofhearts .sliced-container img:hover,
+#art-praiseyou .sliced-container img:hover {
     transform: var(--slice-transform, translate(0px, 0px)) scale(1.15) !important;
     z-index: 100 !important;
     cursor: pointer;
@@ -277,6 +332,7 @@ model-viewer {
 
 /* Update this block to include both elements */
 #art-sevenofhearts .work-image,
+#art-praiseyou .work-image,
 #art-camera .work-image {
     overflow: visible !important;
     background: transparent !important;
@@ -284,7 +340,9 @@ model-viewer {
 }
 /* Only disable hover interaction when the Lightbox (not the page) is active */
 #lightbox.active ~ * #art-sevenofhearts .sliced-container img,
-body:has(#lightbox.active) #art-sevenofhearts .sliced-container img {
+#lightbox.active ~ * #art-praiseyou .sliced-container img,
+body:has(#lightbox.active) #art-sevenofhearts .sliced-container img,
+body:has(#lightbox.active) #art-praiseyou .sliced-container img {
     pointer-events: none !important;
     transform: none !important; 
 }
@@ -665,16 +723,7 @@ body.site-loaded .copyright {
             align-items: start; 
             transition: gap 1.2s cubic-bezier(0.22, 1, 0.36, 1);
         } 
-/* Force Peanut Butter to the top in Collage Mode */
-        .works-grid.mode-collage #art-peanut-butter {
-            order: -1; 
-        }
-
-
-        /* Ensure standard DOM order in Rows Mode */
-        .works-grid.mode-rows #art-peanut-butter {
-            order: 0; 
-        }
+/* (Removed: old rule that forced Splinter/peanut-butter to the top of Collage Mode) */
 
         /* Collage Mode Setup */
 /* Collage Mode Setup */
@@ -2039,22 +2088,35 @@ body.dark-mode .cart-item {
         <div class="overlay-content">
             <div class="works-container">
      <div class="works-grid mode-collage">
-    <!-- 2. Rubik -->
+    <!-- I like to praise you like I SHOULD (Skateboard Triptych) -->
+    <div class="work-item" id="art-praiseyou" data-slug="i-like-to-praise-you-like-i-should" onclick="openLightbox('/artwork/small/Iliketopraiseyoulikeishould_front.webp', 'I like to praise you like I SHOULD', '2026', 'Mixed media on my old skateboards', 'Dive deep head first<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/Iliketopraiseyoulikeishould_back.webp'); window.history.pushState(null, '', '/gallery/i-like-to-praise-you-like-i-should/');">
+        <div class="work-image no-shadow">
+            <img class="single-fallback" src="/artwork/individual/skateboardmiddle.webp" alt="I like to praise you like I SHOULD" loading="lazy">
+            <div class="sliced-container">
+                <img src="/artwork/individual/skateboardleft.webp" alt="Skateboard Left">
+                <img src="/artwork/individual/skateboardmiddle.webp" alt="Skateboard Middle">
+                <img src="/artwork/individual/skateboardright.webp" alt="Skateboard Right">
+            </div>
+        </div>
+        <div class="work-caption"><span>I like to praise you like I SHOULD</span><span>2026</span></div>
+    </div>
+
+    <!-- 2. Splinter -->
+    <div class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/splinter/');">
+        <div class="work-image"><img src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
+        <div class="work-caption"><span>Splinter</span><span>2026</span></div>
+    </div>
+
+    <!-- 3. Rubik -->
 <div class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it'); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');">
         <div class="work-image"><img src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
         <div class="work-caption"><span>An Unsolved Constant</span><span>2026</span></div>
     </div>
+
     <!-- 1. No time 4 overthinking -->
     <div class="work-item" data-slug="no-time-4-overthinking" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp'); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');">
         <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
-    </div>
-
-
-    <!-- 3. Splinter -->
-    <div class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com'); window.history.pushState(null, '', '/gallery/splinter/');">
-        <div class="work-image"><img src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
-        <div class="work-caption"><span>Splinter</span><span>2026</span></div>
     </div>
 
     <!-- 4. Seven of Hearts (Sliced Grid) -->
@@ -3873,7 +3935,7 @@ function updateDragCapabilities() {
 }
 // --- INDIVIDUAL SLICE DRAGGING FOR SEVEN OF HEARTS ---
 function initSliceDragSystem() {
-    document.querySelectorAll('#art-sevenofhearts .sliced-container img').forEach(slice => {
+    document.querySelectorAll('#art-sevenofhearts .sliced-container img, #art-praiseyou .sliced-container img').forEach(slice => {
         if (!slice.dataset.dragX) slice.dataset.dragX = 0;
         if (!slice.dataset.dragY) slice.dataset.dragY = 0;
 
@@ -4056,7 +4118,7 @@ items.forEach((item) => {
     item.dataset.dragY = 0;
 
     // 👇 ADD THIS FIX FOR THE SEVEN OF HEARTS SLICES 👇
-    if (!isCollageMode && item.id === 'art-sevenofhearts') {
+    if (!isCollageMode && (item.id === 'art-sevenofhearts' || item.id === 'art-praiseyou')) {
         const slices = item.querySelectorAll('.sliced-container img');
         slices.forEach(slice => {
             slice.dataset.dragX = 0;
