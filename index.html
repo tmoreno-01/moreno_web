@@ -1117,7 +1117,7 @@ body.site-loaded .copyright {
     height: auto;
     object-fit: contain; 
     cursor: zoom-in; 
-    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); 
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease; 
     transform-origin: center center;
     min-width: 0; /* Removed fixed 400px constraint */
 contain: content; /* Tells browser to isolate layout/paint for this element */
@@ -1465,7 +1465,7 @@ min-width: 130px !important;
 }
 .back-btn { background: none; border: none; font-size: 1rem; cursor: pointer; margin-bottom: 20px; opacity: 0.6; color: var(--text-color); padding: 0; }
 .product-layout { display: flex; gap: 60px; color: var(--text-color); }
-.product-left { flex: 1.6; min-width: 0; }
+.product-left { flex: 1.6; min-width: 0; position: relative; }
 .product-left img { 
     max-width: 100%; 
     max-height: 80vh; 
@@ -1475,6 +1475,7 @@ min-width: 130px !important;
     margin-left: auto;
     margin-right: auto;
     object-fit: contain;
+    transition: opacity 0.3s ease;
 }
 .product-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .product-right h2 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
@@ -1890,6 +1891,35 @@ body.dark-mode .cart-item {
 @keyframes lb-loader-sweep {
     0%   { left: -40%; }
     100% { left: 100%; }
+}
+
+/* Generic small loading bar (same look as the .glb loader above) used for
+   art lightbox images and the shop product lightbox while a higher-res
+   image streams in. Positioned absolute + centered within its own
+   position:relative parent, rather than fixed like the model loader,
+   since these containers don't have the model's special fixed layout. */
+.img-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    width: 140px;
+    height: 2px;
+    background: rgba(128,128,128,0.25);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.img-loader-bar {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 40%;
+    background: var(--text-color);
+    border-radius: 2px;
+    animation: lb-loader-sweep 1s ease-in-out infinite;
 }
 
 /* Mobile/Tablet alignment */
@@ -2396,6 +2426,7 @@ body.dark-mode .cart-item {
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
                 <img id="lb-img" src="" alt="Artwork">
+<div id="lb-img-loader" class="img-loader" style="display:none;"><div class="img-loader-bar"></div></div>
 <model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1" interaction-prompt="none"></model-viewer>
 <div id="lb-model-loader" class="lb-model-loader" style="display:none;"><div class="lb-model-loader-bar"></div></div>
                 
@@ -2427,6 +2458,7 @@ body.dark-mode .cart-item {
            <div class="product-left">
     <!-- Main Display Image -->
     <img id="prod-img" src="" alt="Product Main" style="margin-bottom: 10px;">
+    <div id="prod-img-loader" class="img-loader" style="display:none;"><div class="img-loader-bar"></div></div>
     
     <!-- Carousel Strip -->
     <div id="prod-carousel" style="display: flex; gap: 10px; overflow-x: auto; cursor: pointer;">
@@ -3116,9 +3148,11 @@ isPaintingActive = false;
             const lbModel = document.getElementById('lb-model');
             const fsBtn = document.getElementById('lb-fullscreen-btn');
             const lbLoader = document.getElementById('lb-model-loader');
+            const lbImgLoader = document.getElementById('lb-img-loader');
             
             if (src && src.toLowerCase().endsWith('.glb')) {
                 lbImg.style.display = 'none';
+                lbImgLoader.style.display = 'none';
                 lbModel.style.display = 'block';
                 fsBtn.style.display = 'none'; // Hide button for 3D
                 
@@ -3142,6 +3176,19 @@ isPaintingActive = false;
                 lbLoader.style.display = 'none';
                 lbImg.style.display = 'block';
                 fsBtn.style.display = 'block'; // Show button for Images
+
+                // Same small loading bar treatment as the .glb model, shown
+                // while the (often high-res) art image loads in, hidden once ready.
+                lbImgLoader.style.display = 'block';
+                lbImg.style.opacity = '0';
+                lbImg.onload = () => {
+                    lbImgLoader.style.display = 'none';
+                    lbImg.style.opacity = '1';
+                };
+                lbImg.onerror = () => {
+                    lbImgLoader.style.display = 'none';
+                    lbImg.style.opacity = '1';
+                };
                 lbImg.src = src;
             }
         }
@@ -4419,15 +4466,33 @@ async function updateMainImage(url) {
     mainImg.src = url;
     mainImg.dataset.path = url;
 }
+function setProductMainImage(url) {
+    // Same small loading bar treatment as the art lightbox / .glb model,
+    // shown while the shop's main product image (loaded at 600px) streams in.
+    const mainImg = document.getElementById('prod-img');
+    const loader = document.getElementById('prod-img-loader');
+
+    loader.style.display = 'block';
+    mainImg.style.opacity = '0';
+    mainImg.onload = () => {
+        loader.style.display = 'none';
+        mainImg.style.opacity = '1';
+    };
+    mainImg.onerror = () => {
+        loader.style.display = 'none';
+        mainImg.style.opacity = '1';
+    };
+    mainImg.src = url;
+    mainImg.dataset.path = url;
+}
+
 function renderCarousel(imageArray, title) {
     const carousel = document.getElementById('prod-carousel');
-    const mainImg = document.getElementById('prod-img');
     carousel.innerHTML = '';
     
     // Set main image to the highres version of the first item
     if (imageArray.length > 0) {
-        mainImg.src = imageArray[0].highres;
-        mainImg.dataset.path = imageArray[0].highres;
+        setProductMainImage(imageArray[0].highres);
     }
 
     imageArray.forEach((imgData) => {
@@ -4442,8 +4507,7 @@ function renderCarousel(imageArray, title) {
         
         img.onclick = () => {
             // Swap the main image to the high-res version on click
-            mainImg.src = imgData.highres;
-            mainImg.dataset.path = imgData.highres;
+            setProductMainImage(imgData.highres);
         };
         
         carousel.appendChild(img);
