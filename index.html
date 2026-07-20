@@ -323,9 +323,15 @@ model-viewer {
 }
 
 /* 5. The Hover Effect: Scale ONLY the slice, matching the calmer feel of other works */
-#art-sevenofhearts .sliced-container img:hover,
-#art-praiseyou .sliced-container img:hover {
+#art-sevenofhearts .sliced-container img:hover {
     transform: var(--slice-transform, translate(0px, 0px)) scale(1.15) !important;
+    z-index: 100 !important;
+    cursor: pointer;
+}
+
+/* Gentler hover scale specifically for the large skateboard triptych */
+#art-praiseyou .sliced-container img:hover {
+    transform: var(--slice-transform, translate(0px, 0px)) scale(1.05) !important;
     z-index: 100 !important;
     cursor: pointer;
 }
