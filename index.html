@@ -2485,28 +2485,47 @@ body.dark-mode .cart-item {
     </div>
 </div>
     <script>
+// --- SEO & META TAG UPDATER ---
+function updatePageMeta(pageTitle, imageUrl = "https://tyronemoreno.com/logo.webp") {
+    // Update Browser Tab Title
+    document.title = pageTitle;
+
+    // Update Open Graph and Twitter Titles
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.content = pageTitle;
+    
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twitterTitle) twitterTitle.content = pageTitle;
+
+    // Update Open Graph and Twitter Images
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    if (ogImage) ogImage.content = imageUrl;
+    
+    const twitterImage = document.querySelector('meta[name="twitter:image"]');
+    if (twitterImage) twitterImage.content = imageUrl;
+}
 function handleRouting() {
-    // Check for a ?redirect= param set by 404.html first, then fallback to the current browser URL
-   const params = new URLSearchParams(window.__initialSearch);
+    const params = new URLSearchParams(window.__initialSearch);
     const redirected = params.get('redirect');
     const path = redirected || window.__initialPathname;
 
     console.log("Routing attempting to load path:", path);
 
     if (path) {
-        // Clean the ?redirect=... param out of the address bar so it doesn't linger
         if (redirected) {
             window.history.replaceState(null, '', redirected || '/');
         }
 
-        // Normalize path to remove potential trailing slash
         const normalizedPath = path.replace(/\/$/, ""); 
 
         if (normalizedPath.includes('/about')) {
+            updatePageMeta("Tyrone Moreno | About"); // <-- ADDED
             openAbout();
         } else if (normalizedPath.includes('/paint')) {
+            updatePageMeta("Tyrone Moreno | Paint"); // <-- ADDED
             clearNavigation();
         } else if (normalizedPath.includes('/gallery')) {
+            updatePageMeta("Tyrone Moreno | Gallery"); // <-- ADDED
             openWorks();
             const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
             if (gallerySlugMatch) {
@@ -2514,26 +2533,34 @@ function handleRouting() {
                 if (target) target.click();
             }
         } else if (normalizedPath.includes('/sketches')) {
+            updatePageMeta("Tyrone Moreno | Sketches"); // <-- ADDED
             openSketches();
         } else if (normalizedPath.includes('/contact')) {
+            updatePageMeta("Tyrone Moreno | Contact"); // <-- ADDED
             clearNavigation();
             document.getElementById('page-contact').classList.add('visible');
             document.body.classList.add('overlay-open');
             document.getElementById('btn-contact').classList.add('active');
         } else if (normalizedPath.includes('/shop')) {
+            updatePageMeta("Tyrone Moreno | Shop"); // <-- ADDED
             openShop();
             const shopSlugMatch = normalizedPath.match(/\/shop\/([^\/]+)/);
             if (shopSlugMatch) {
                 openProduct(shopSlugMatch[1]);
             }
         } else if (normalizedPath.includes('/exhibitions')) {
+            updatePageMeta("Tyrone Moreno | Exhibitions"); // <-- ADDED
             clearNavigation();
             document.getElementById('page-exhibitions').classList.add('visible');
             document.getElementById('page-exhibitions').classList.add('active');
         } else if (normalizedPath.includes('/press')) {
+            updatePageMeta("Tyrone Moreno | Press"); // <-- ADDED
             clearNavigation();
             document.getElementById('page-press').classList.add('visible');
             document.getElementById('page-press').classList.add('active');
+        } else {
+            // Default fallback
+            updatePageMeta("Tyrone Moreno"); 
         }
     }
 }
@@ -2890,34 +2917,37 @@ const pageSketches = document.getElementById('page-sketches');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
 
-        function clearNavigation() {
-            pageAbout.classList.remove('visible');
-            pageWorks.classList.remove('visible');
-pageSketches.classList.remove('visible');
-            pageExhibitions.classList.remove('visible');
-            pagePress.classList.remove('visible');
-            pageContact.classList.remove('visible');
-pageShop.classList.remove('visible'); // ADD THIS LINE
-removeAllLoadingIndicators();
-isPaintingActive = true;
+function clearNavigation() {
+    pageAbout.classList.remove('visible');
+    pageWorks.classList.remove('visible');
+    pageSketches.classList.remove('visible');
+    pageExhibitions.classList.remove('visible');
+    pagePress.classList.remove('visible');
+    pageContact.classList.remove('visible');
+    pageShop.classList.remove('visible'); 
+    removeAllLoadingIndicators();
+    isPaintingActive = true;
             
-            btnAbout.classList.remove('active');
-btnSketches.classList.remove('active');
-            btnGallery.classList.remove('active');
-            btnExhibitions.classList.remove('active');
-            btnPress.classList.remove('active');
-            btnContact.classList.remove('active');
-btnShop.classList.remove('active');
+    btnAbout.classList.remove('active');
+    btnSketches.classList.remove('active');
+    btnGallery.classList.remove('active');
+    btnExhibitions.classList.remove('active');
+    btnPress.classList.remove('active');
+    btnContact.classList.remove('active');
+    btnShop.classList.remove('active');
             
-document.getElementById('page-duck').classList.remove('visible');
-            document.body.classList.remove('overlay-open');
-            closeLightbox();
-            document.body.style.cursor = 'none';
+    document.getElementById('page-duck').classList.remove('visible');
+    document.body.classList.remove('overlay-open');
+    closeLightbox();
+    document.body.style.cursor = 'none';
             
-            if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
+    if (isIOS) document.getElementById('ios-brush-selector').style.display = 'flex';
 
-            updateFooterIcons('paint');
-        }
+    updateFooterIcons('paint');
+
+    // 👇 --- RESET META TAGS TO DEFAULT --- 👇
+    updatePageMeta("Tyrone Moreno", "https://tyronemoreno.com/logo.webp");
+}
 
 
         function openAbout() {
@@ -4257,6 +4287,8 @@ window.closeCart();
     
    document.getElementById('prod-title').innerText = product.title;
 document.getElementById('prod-desc').innerHTML = product.descriptionHtml;
+const highResImageUrl = product.images.edges[0]?.node.highres || "https://tyronemoreno.com/logo.webp";
+    updatePageMeta(`Tyrone Moreno | ${product.title}`, highResImageUrl);
 
 // --- DYNAMIC VARIANT BUTTON GENERATOR ---
 const selectorGroup = document.getElementById('variant-selector-group');
