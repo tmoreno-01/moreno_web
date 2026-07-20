@@ -1445,10 +1445,11 @@ min-width: 130px !important;
     font-size: 13px;
 }
 /* --- PRODUCT DETAIL OVERLAY --- */
-#page-product { z-index: 100000; overflow-y: auto; background: var(--overlay-bg); }
+#page-product { z-index: 100000; overflow-y: auto; overflow-x: hidden; background: var(--overlay-bg); }
 /* 1. Lift the product lightbox higher */
 .product-container { 
     max-width: 1000px; 
+    width: 100%;
     margin: 0 auto; 
     padding: 24px 40px; /* Reduced from 120px to shift content up */
     box-sizing: border-box; 
@@ -1460,14 +1461,19 @@ min-width: 130px !important;
 .product-layout { display: flex; gap: 60px; color: var(--text-color); }
 .product-left { flex: 1.6; min-width: 0; }
 .product-left img { 
-    width: 100%; 
+    max-width: 100%; 
+    max-height: 80vh; 
+    width: auto;
     height: auto; 
     display: block;
+    margin-left: auto;
+    margin-right: auto;
+    object-fit: contain;
 }
 .product-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .product-right h2 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
 .prod-desc { font-size: 0.9rem; line-height: 1.4; opacity: 0.8; }
-.selector-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.selector-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .prod-option-btn { 
     padding: 7px 16px; 
     border: 1px solid var(--text-color); 
@@ -1475,6 +1481,9 @@ min-width: 130px !important;
     color: var(--text-color); 
     cursor: pointer; 
     transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
 }
 .prod-option-btn.active {
     background: var(--text-color);
@@ -1527,6 +1536,7 @@ min-width: 130px !important;
 @media (max-width: 768px) { 
     .product-layout { flex-direction: column; } 
     .product-left { flex: 1; }
+    .product-left img { max-height: 45vh; }
 }
 /* --- SHOPPING CART ELEMENTS & DRAWER --- */
 .quantity-container {
@@ -4252,7 +4262,7 @@ if (currentProductVariants.length === 1 && currentProductVariants[0].node.title 
     productSelectionState[handle].variantId = currentProductVariants[0].node.id;
 } else {
     // Otherwise, show the UI and render buttons
-    selectorGroup.style.display = 'flex';
+    selectorGroup.style.display = 'grid';
     if (optionsLabel) optionsLabel.style.display = 'block';
 
     currentProductVariants.forEach((variantEdge) => {
@@ -4264,10 +4274,17 @@ if (currentProductVariants.length === 1 && currentProductVariants[0].node.title 
             btn.classList.add('active');
         }
         
-        // Show a short label (e.g. "A2 / Print only") instead of the full
-        // Shopify variant title (e.g. "A2 (42x59cm, 17x23") / Print only"),
-        // so option buttons stay compact regardless of how many there are.
-        btn.innerText = variant.title.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+        // Show a short label (e.g. "A2 / Print only" or "30×45cm / Print only")
+        // instead of the full Shopify variant title, which may include a
+        // parenthetical size (e.g. "A2 (42x59cm, 17x23") / Print only") or an
+        // inline inches measurement (e.g. "30×45cm, 12×18" / Print only").
+        // Strip both the parenthetical and the inches segment so only the cm
+        // size shows, keeping option buttons compact and uncluttered.
+        btn.innerText = variant.title
+            .replace(/\s*\([^)]*\)\s*/g, ' ')
+            .replace(/,\s*\d+(?:\.\d+)?\s*[×x]\s*\d+(?:\.\d+)?\s*"\s*/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
         btn.addEventListener('click', function() {
             document.querySelectorAll('.prod-option-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
