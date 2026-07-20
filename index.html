@@ -1206,7 +1206,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
             /* Keep your existing rules here, just update these two: */
             .dropdown-content { padding-top: 10px; gap: 0; }
             .dropdown-content a { padding: 12px 15px; } /* Big touch targets for thumbs */
-            .footer { bottom: 38px; right: 15px; flex-direction: column; align-items: flex-end; gap: 12px; }
+            .footer { bottom: 38px; right: 15px; flex-direction: column-reverse; align-items: flex-end; gap: 12px; }
             .footer a { font-size: 0.55rem; } 
             .ig-icon, .download-icon, .theme-toggle, .layout-toggle, .zoom-toggle { width: 22px; height: 22px; }
             .copyright { bottom: 12px; left: 15px; max-width: calc(100vw - 30px); font-size: 0.4rem; line-height: 1.4; text-align: left; }
@@ -1497,11 +1497,11 @@ min-width: 130px !important;
 }
 .buy-btn {
     width: 100%;
-    padding: 13px;
+    padding: 16px;
     cursor: pointer;
     font-weight: 800;
     letter-spacing: 2px;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     text-transform: uppercase;
     
     /* Sleek Outline Style */
@@ -2456,7 +2456,7 @@ body.dark-mode .cart-item {
     </div>
     
     <button class="buy-btn black" style="border-radius: 4px; text-transform: none;">Add to cart</button>
-    <button id="btn-buy-now" class="buy-btn black" style="border-radius: 4px; text-transform: none; margin-top: 5px;">Buy it now</button>
+    <button id="btn-buy-now" class="buy-btn black" style="border-radius: 4px; text-transform: none; margin-top: 3px;">Buy it now</button>
     
     <div class="shipping-info"><p></p></div>
 </div>
