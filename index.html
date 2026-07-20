@@ -1374,14 +1374,14 @@ min-width: 130px !important;
         max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
     }
 }
-/* --- SHOP PAGE - PERFECT EQUAL SPACING --- */
+/* --- STORE PAGE - PERFECT EQUAL SPACING --- */
 
-#page-shop .overlay-content {
+#page-store .overlay-content {
     padding: 0 !important; /* Strip this so it stops fighting the wrapper below */
     align-items: flex-start !important; /* Let items start from the top naturally */
 }
 
-#shop-content {
+#store-content {
     /* Overrides the inline HTML styles completely */
     width: 100% !important;
     max-width: 1600px !important; /* Widened to 1600px to match your gallery's breathing room */
@@ -1392,10 +1392,10 @@ min-width: 130px !important;
     box-sizing: border-box;
 }
 
-.shop-grid {
+.store-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr); 
-    gap: 40px !important; /* Exactly matches the 40px L/R padding on #shop-content */
+    gap: 40px !important; /* Exactly matches the 40px L/R padding on #store-content */
     margin: 0 !important; 
     padding: 0;
     width: 100%;
@@ -1403,10 +1403,10 @@ min-width: 130px !important;
 
 /* Responsive adjustments for iPads / Tablets */
 @media (max-width: 1024px) {
-    #shop-content {
+    #store-content {
         padding: 90px 30px 60px 30px !important;
     }
-    .shop-grid {
+    .store-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 30px !important; 
     }
@@ -1414,20 +1414,20 @@ min-width: 130px !important;
 
 /* Responsive adjustments for Mobile */
 @media (max-width: 768px) {
-    #shop-content {
+    #store-content {
         padding: 80px 20px 60px 20px !important;
     }
-.shop-grid {
+.store-grid {
         grid-template-columns: repeat(2, 1fr); 
         gap: 20px !important; /* Reduced from 40px so the images aren't too small on mobile */
     }
 }
-.shop-item {
+.store-item {
     text-decoration: none;
     color: var(--text-color);
 }
 
-.shop-item img {
+.store-item img {
     width: 100%;
     height: auto;
     background-color: var(--overlay-bg); /* Visible placeholder tone while the image itself loads */
@@ -1435,17 +1435,17 @@ min-width: 130px !important;
     transition: transform 0.3s ease;
 }
 
-.shop-item:hover img {
+.store-item:hover img {
     transform: scale(1.02);
 }
 
-.shop-item h3 {
+.store-item h3 {
     margin: 12px 0 2px;
     font-size: 15px;
     font-weight: 500;
 }
 
-.shop-item p {
+.store-item p {
     margin: 0;
     opacity: 0.65;
     font-size: 13px;
@@ -1768,8 +1768,8 @@ body.dark-mode .cart-item {
 .buy-btn.black:hover .btn-loading-img {
     filter: var(--loader-invert);
 }
-/* --- SHOP COUNTDOWN TIMER --- */
-#shop-countdown-container {
+/* --- STORE COUNTDOWN TIMER --- */
+#store-countdown-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1789,7 +1789,7 @@ body.dark-mode .cart-item {
     margin-bottom: 35px;
     text-transform: uppercase;
 }
-.shop-countdown {
+.store-countdown {
     display: flex;
     gap: 15px;
     align-items: center;
@@ -1894,7 +1894,7 @@ body.dark-mode .cart-item {
 }
 
 /* Generic small loading bar (same look as the .glb loader above) used for
-   art lightbox images and the shop product lightbox while a higher-res
+   art lightbox images and the store product lightbox while a higher-res
    image streams in. Positioned absolute + centered within its own
    position:relative parent, rather than fixed like the model loader,
    since these containers don't have the model's special fixed layout. */
@@ -1980,7 +1980,7 @@ body.dark-mode .cart-item {
     <a href="/press/" id="btn-press" style="display: none;">Press</a>
 </div>
         </div>
-<a href="#shop" id="btn-shop">Shop</a>
+<a href="#store" id="btn-store">Store</a>
   <a href="/about/" id="btn-about">About</a>
         <a href="/contact/" id="btn-contact">Contact</a>
 <a href="#" id="btn-cart-nav" class="nav-cart hidden" onclick="openCart(); return false;">
@@ -2091,13 +2091,13 @@ body.dark-mode .cart-item {
             </div>
         </div>
     </div>
-<div id="page-shop" class="page-overlay">
+<div id="page-store" class="page-overlay">
     <div class="overlay-content">
         
         <!-- Countdown Container -->
-        <div id="shop-countdown-container">
-            <h2 class="cd-title">Shop Opens In</h2>
-            <div class="shop-countdown">
+        <div id="store-countdown-container">
+            <h2 class="cd-title">Store Opens In</h2>
+            <div class="store-countdown">
                 <div class="cd-item"><span id="cd-days">00</span><span class="cd-label">DAYS</span></div>
                 <div class="cd-separator">:</div>
                 <div class="cd-item"><span id="cd-hours">00</span><span class="cd-label">HRS</span></div>
@@ -2108,9 +2108,9 @@ body.dark-mode .cart-item {
             </div>
         </div>
 
-        <!-- Shop Grid (Hidden until timer hits 0) -->
-        <div id="shop-content" style="width: 100%; max-width: 1200px; padding-top: 60px; display: none;">
-            <div class="shop-grid" id="shop-grid"></div>
+        <!-- Store Grid (Hidden until timer hits 0) -->
+        <div id="store-content" style="width: 100%; max-width: 1200px; padding-top: 60px; display: none;">
+            <div class="store-grid" id="store-grid"></div>
         </div>
         
     </div>
@@ -2573,12 +2573,12 @@ function handleRouting() {
             document.getElementById('page-contact').classList.add('visible');
             document.body.classList.add('overlay-open');
             document.getElementById('btn-contact').classList.add('active');
-        } else if (normalizedPath.includes('/shop')) {
-            updatePageMeta("Tyrone Moreno | Shop"); // <-- ADDED
-            openShop();
-            const shopSlugMatch = normalizedPath.match(/\/shop\/([^\/]+)/);
-            if (shopSlugMatch) {
-                openProduct(shopSlugMatch[1]);
+        } else if (normalizedPath.includes('/store')) {
+            updatePageMeta("Tyrone Moreno | Store"); // <-- ADDED
+            openStore();
+            const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
+            if (storeSlugMatch) {
+                openProduct(storeSlugMatch[1]);
             }
         } else if (normalizedPath.includes('/exhibitions')) {
             updatePageMeta("Tyrone Moreno | Exhibitions"); // <-- ADDED
@@ -2923,13 +2923,13 @@ mv.setAttribute('interaction-prompt', 'none');
     if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
 }
-const btnShop = document.getElementById('btn-shop');
-const pageShop = document.getElementById('page-shop');
+const btnStore = document.getElementById('btn-store');
+const pageStore = document.getElementById('page-store');
 
-btnShop.addEventListener('click', (e) => {
+btnStore.addEventListener('click', (e) => {
     e.preventDefault();
-    window.history.pushState(null, '', '/shop/');
-    openShop();
+    window.history.pushState(null, '', '/store/');
+    openStore();
 });
 
    // --- NAVIGATION & HOVER LOGIC ---
@@ -2956,7 +2956,7 @@ function clearNavigation() {
     pageExhibitions.classList.remove('visible');
     pagePress.classList.remove('visible');
     pageContact.classList.remove('visible');
-    pageShop.classList.remove('visible'); 
+    pageStore.classList.remove('visible'); 
     removeAllLoadingIndicators();
     isPaintingActive = true;
             
@@ -2966,7 +2966,7 @@ function clearNavigation() {
     btnExhibitions.classList.remove('active');
     btnPress.classList.remove('active');
     btnContact.classList.remove('active');
-    btnShop.classList.remove('active');
+    btnStore.classList.remove('active');
             
     document.getElementById('page-duck').classList.remove('visible');
     document.body.classList.remove('overlay-open');
@@ -2994,20 +2994,20 @@ saveLastPage('about');
             if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
             updateFooterIcons('other');
         }
-function openShop() {
+function openStore() {
 isPaintingActive = false;
-    saveLastPage('shop');
-    if (pageShop.classList.contains('visible')) return;
+    saveLastPage('store');
+    if (pageStore.classList.contains('visible')) return;
     clearNavigation();
-    pageShop.classList.add('visible');
-    btnShop.classList.add('active');
+    pageStore.classList.add('visible');
+    btnStore.classList.add('active');
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
     if (isIOS) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
     
-    // FETCH THE SHOP DATA HERE
-    renderShop(); 
+    // FETCH THE STORE DATA HERE
+    renderStore(); 
 }
 
         function openWorks() {
@@ -3751,7 +3751,7 @@ if (e.touches.length === 2 && initialPinchDistance) {
         pageExhibitions.classList.contains('visible') ||
         pagePress.classList.contains('visible') ||
         pageContact.classList.contains('visible') || 
-        pageShop.classList.contains('visible') ||     // Added Shop
+        pageStore.classList.contains('visible') ||     // Added Store
         document.getElementById('lightbox').classList.contains('active')
     ) return;
 
@@ -3875,7 +3875,7 @@ window.addEventListener('mousemove', e => {
         !pageExhibitions.classList.contains('visible') &&
         !pagePress.classList.contains('visible') &&
         !pageContact.classList.contains('visible') && 
-        !pageShop.classList.contains('visible') &&     // Added Shop
+        !pageStore.classList.contains('visible') &&     // Added Store
         !document.getElementById('lightbox').classList.contains('active')
     ) {
         shufflePalette();
@@ -4307,7 +4307,7 @@ let currentProductVariants = [];
 
 async function openProduct(handle) {
 window.closeCart();
-    window.history.pushState(null, '', `/shop/${handle}/`);
+    window.history.pushState(null, '', `/store/${handle}/`);
     const response = await shopifyGraphQL(PRODUCT_QUERY, { handle: handle });
     const product = response.data.productByHandle;
 
@@ -4468,7 +4468,7 @@ async function updateMainImage(url) {
 }
 function setProductMainImage(url) {
     // Same small loading bar treatment as the art lightbox / .glb model,
-    // shown while the shop's main product image (loaded at 600px) streams in.
+    // shown while the store's main product image (loaded at 600px) streams in.
     const mainImg = document.getElementById('prod-img');
     const loader = document.getElementById('prod-img-loader');
 
@@ -4514,10 +4514,10 @@ function renderCarousel(imageArray, title) {
     });
 }
 // Add this fetch logic
-let isShopLoaded = false;
-async function renderShop() {
-    if (isShopLoaded) return; // Stop if we already loaded the products
-    const grid = document.getElementById('shop-grid');
+let isStoreLoaded = false;
+async function renderStore() {
+    if (isStoreLoaded) return; // Stop if we already loaded the products
+    const grid = document.getElementById('store-grid');
     
     // 1. Updated Query: Fetch both 300px and 600px images
     const PRODUCT_QUERY = `
@@ -4556,7 +4556,7 @@ async function renderShop() {
             const price = prod.variants.edges[0]?.node.price.amount || '0.00';
             const formattedPrice = parseFloat(price).toFixed(2);
             const item = document.createElement('a');
-            item.className = 'shop-item';
+            item.className = 'store-item';
             item.href = '#';
             
             // 2. Updated HTML: Browser automatically loads thumbnail on mobile, high-res on desktop
@@ -4580,9 +4580,9 @@ async function renderShop() {
             
             grid.appendChild(item);
         });
-        isShopLoaded = true; // Set the flag to true so it never runs twice
+        isStoreLoaded = true; // Set the flag to true so it never runs twice
     } catch (error) {
-        console.error("Failed to load shop:", error);
+        console.error("Failed to load store:", error);
     }
 }
 // Add this below your openProduct function
@@ -4635,10 +4635,10 @@ window.closeProduct = function() {
     // 3. Reset buttons
     window.resetButtons();
 
-    // 4. If we're still sitting on a specific product URL (e.g. /shop/splinter-print/),
-    // step back to the plain shop URL so it doesn't linger in the address bar.
-    if (window.location.pathname.startsWith('/shop/') && window.location.pathname !== '/shop/') {
-        window.history.pushState(null, '', '/shop/');
+    // 4. If we're still sitting on a specific product URL (e.g. /store/splinter-print/),
+    // step back to the plain store URL so it doesn't linger in the address bar.
+    if (window.location.pathname.startsWith('/store/') && window.location.pathname !== '/store/') {
+        window.history.pushState(null, '', '/store/');
     }
 };
 
@@ -4951,24 +4951,24 @@ function removeAllLoadingIndicators() {
     const loaders = document.querySelectorAll('.btn-loading-img');
     loaders.forEach(img => img.remove());
 }
-// --- SHOP COUNTDOWN LOGIC ---
-function initShopCountdown() {
+// --- STORE COUNTDOWN LOGIC ---
+function initStoreCountdown() {
     // Target: July 12, 2026 at 16:00 GMT 
     // Note: JS months are 0-indexed, so 6 = July
  const targetDate = 0;
    //const targetDate = Date.UTC(2026, 6, 12, 15, 0, 0);
 
-    const countdownContainer = document.getElementById('shop-countdown-container');
-    const shopContent = document.getElementById('shop-content');
+    const countdownContainer = document.getElementById('store-countdown-container');
+    const storeContent = document.getElementById('store-content');
     
     function updateCountdown() {
         const now = new Date().getTime();
         const distance = targetDate - now;
 
-        // If the countdown is over, hide the timer and reveal the shop
+        // If the countdown is over, hide the timer and reveal the store
         if (distance <= 0) {
             if (countdownContainer) countdownContainer.style.display = 'none';
-            if (shopContent) shopContent.style.display = 'block';
+            if (storeContent) storeContent.style.display = 'block';
             return true; 
         }
 
@@ -5019,14 +5019,14 @@ window.addEventListener('popstate', (event) => {
             closeLightbox(); 
         }
     } 
-    else if (normalizedPath.includes('/shop')) {
-        openShop();
-        const shopSlugMatch = normalizedPath.match(/\/shop\/([^\/]+)/);
-        if (shopSlugMatch) {
+    else if (normalizedPath.includes('/store')) {
+        openStore();
+        const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
+        if (storeSlugMatch) {
             // If going back to a specific product
-            openProduct(shopSlugMatch[1]);
+            openProduct(storeSlugMatch[1]);
         } else {
-            // If going back to the main shop from a product
+            // If going back to the main store from a product
             closeProduct(); 
         }
     } 
@@ -5053,7 +5053,7 @@ window.addEventListener('popstate', (event) => {
 });
 document.addEventListener('DOMContentLoaded', () => {
     window.resetButtons();
-    initShopCountdown();
+    initStoreCountdown();
 handleRouting();
     const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
     if (addBtn) {
