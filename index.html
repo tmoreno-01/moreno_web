@@ -2516,6 +2516,10 @@ function handleRouting() {
             document.getElementById('btn-contact').classList.add('active');
         } else if (normalizedPath.includes('/shop')) {
             openShop();
+            const shopSlugMatch = normalizedPath.match(/\/shop\/([^\/]+)/);
+            if (shopSlugMatch) {
+                openProduct(shopSlugMatch[1]);
+            }
         } else if (normalizedPath.includes('/exhibitions')) {
             clearNavigation();
             document.getElementById('page-exhibitions').classList.add('visible');
@@ -4220,6 +4224,7 @@ let currentProductVariants = [];
 
 async function openProduct(handle) {
 window.closeCart();
+    window.history.pushState(null, '', `/shop/${handle}/`);
     const response = await shopifyGraphQL(PRODUCT_QUERY, { handle: handle });
     const product = response.data.productByHandle;
 
@@ -4527,6 +4532,12 @@ window.closeProduct = function() {
     
     // 3. Reset buttons
     window.resetButtons();
+
+    // 4. If we're still sitting on a specific product URL (e.g. /shop/splinter-print/),
+    // step back to the plain shop URL so it doesn't linger in the address bar.
+    if (window.location.pathname.startsWith('/shop/') && window.location.pathname !== '/shop/') {
+        window.history.pushState(null, '', '/shop/');
+    }
 };
 
 window.openCart = function() {
