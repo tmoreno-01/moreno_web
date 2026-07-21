@@ -2208,7 +2208,8 @@ body.dark-mode .cart-item {
 
         <!-- Store Grid (Hidden until timer hits 0) -->
         <div id="store-content" style="width: 100%; max-width: 1200px; padding-top: 60px; display: none;">
-            <div class="store-tabs">
+            <!-- Editions/Apparel tabs hidden for now (no apparel stock yet) — to bring back, remove the style="display:none;" below -->
+            <div class="store-tabs" style="display:none;">
                 <button class="store-tab active" data-collection="prints" onclick="switchStoreTab('prints', this)">Editions</button>
                 <button class="store-tab" data-collection="apparel" onclick="switchStoreTab('apparel', this)">Apparel</button>
             </div>
