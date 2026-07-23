@@ -1967,8 +1967,32 @@ body.dark-mode .cart-item {
 body.time-mode .nav-links,
 body.time-mode .footer,
 body.time-mode .copyright,
-body.time-mode #ios-brush-selector {
+body.time-mode #ios-brush-selector,
+body.adhd-mode .nav-links,
+body.adhd-mode .footer,
+body.adhd-mode .copyright,
+body.adhd-mode #ios-brush-selector {
     display: none !important;
+}
+
+.adhd-field {
+    max-width: 900px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.adhd-word {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    color: var(--text-color);
+    white-space: nowrap;
+    user-select: none;
+    transition: opacity 0.22s ease, font-size 0.22s ease;
+}
+@media (max-width: 768px) {
+    .adhd-field { max-width: 100%; gap: 10px 14px; }
 }
 
 .inline-artist {
@@ -2292,6 +2316,13 @@ body.time-mode #ios-brush-selector {
 
             <p class="time-copy">Based on a global population of roughly <strong>8.1 billion</strong> people and an average of <strong>6.7 hours</strong> of daily screen time each, humanity collectively burns through about <strong>630,000 hours</strong> of screen time every second &mdash; the equivalent of roughly <strong>71 years</strong> of a single human life, every second, somewhere in the world.</p>
         </div>
+    </div>
+</div>
+
+<!-- Hidden adhd page: a living field of words that never resolve into sentences. Not linked anywhere in the nav; reachable only via /adhd -->
+<div id="page-adhd" class="page-overlay">
+    <div class="overlay-content" style="align-items: center;">
+        <div class="adhd-field" id="adhd-field"></div>
     </div>
 </div>
 
@@ -2769,6 +2800,9 @@ function handleRouting() {
         } else if (normalizedPath.includes('/time')) {
             updatePageMeta("Tyrone Moreno | Time");
             openTimePage();
+        } else if (normalizedPath.includes('/adhd')) {
+            updatePageMeta("Tyrone Moreno | ADHD");
+            openAdhdPage();
         } else if (normalizedPath.includes('/exhibitions')) {
             updatePageMeta("Tyrone Moreno | Exhibitions"); // <-- ADDED
             clearNavigation();
@@ -3141,6 +3175,7 @@ const pageSketches = document.getElementById('page-sketches');
         const pageContact = document.getElementById('page-contact');
         const pageTest = document.getElementById('page-test');
         const pageTime = document.getElementById('page-time');
+        const pageAdhd = document.getElementById('page-adhd');
 
 function clearNavigation() {
     pageAbout.classList.remove('visible');
@@ -3152,8 +3187,10 @@ function clearNavigation() {
     pageStore.classList.remove('visible'); 
     pageTest.classList.remove('visible');
     pageTime.classList.remove('visible');
+    pageAdhd.classList.remove('visible');
     testArtActive = false;
     timeActive = false;
+    adhdActive = false;
     removeAllLoadingIndicators();
     isPaintingActive = true;
             
@@ -3168,6 +3205,7 @@ function clearNavigation() {
     document.getElementById('page-duck').classList.remove('visible');
     document.body.classList.remove('overlay-open');
     document.body.classList.remove('time-mode');
+    document.body.classList.remove('adhd-mode');
     closeLightbox();
     document.body.style.cursor = 'none';
             
@@ -3247,6 +3285,21 @@ function openTimePage() {
     timeActive = true;
     timeStart = performance.now();
     requestAnimationFrame(timeFrame);
+}
+function openAdhdPage() {
+    isPaintingActive = false;
+    saveLastPage('adhd');
+    clearNavigation();
+    isPaintingActive = false; // clearNavigation() resets this true, so re-disable painting for /adhd
+    document.body.classList.add('adhd-mode');
+    pageAdhd.classList.add('visible');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('other');
+    if (!adhdInitialized) initAdhdField();
+    adhdActive = true;
+    requestAnimationFrame(adhdTick);
 }
 function openSketches() {
 isPaintingActive = false;
@@ -5339,6 +5392,9 @@ window.addEventListener('popstate', (event) => {
     else if (normalizedPath.endsWith('/time')) {
         openTimePage();
     } 
+    else if (normalizedPath.endsWith('/adhd')) {
+        openAdhdPage();
+    } 
     else if (normalizedPath.endsWith('/contact')) {
         clearNavigation();
         document.getElementById('page-contact').classList.add('visible');
@@ -5466,6 +5522,81 @@ function hidePreloader() {
         preloader.classList.add('loaded');
         document.body.classList.add('site-loaded');
     }
+}
+
+// =================================================================
+// ADHD WORD FIELD ENGINE (hidden /adhd page)
+// A field of words that never resolve into a sentence. Each word
+// independently, quietly swaps itself for another at its own random
+// interval - never all at once - so the field is always shifting
+// but never arriving anywhere. Nothing here is meant to cohere.
+// =================================================================
+const ADHD_WORDS = [
+    "toothpaste", "almost", "supernova", "email", "regret", "cinnamon",
+    "unfinished", "loud", "static", "tuesday", "again", "collapse", "soft",
+    "did I lock the door", "or maybe not", "9:41am", "unread", "spiral",
+    "cardboard", "humming", "forgot why I walked in here", "receipt",
+    "orbit", "itch", "half a sentence", "buffering", "cold coffee",
+    "someone's talking", "focus", "no wait", "moth", "deadline", "static shock",
+    "what was I", "glow", "traffic", "unsent", "seventeen tabs open",
+    "gravity", "chewed pen", "tomorrow", "left it on read", "hum",
+    "was that today", "sunlight through blinds", "overdue", "fizzing",
+    "receipt from 2019", "which drawer", "echo", "half-formed", "static noise",
+    "porch light", "keys", "where", "cricket sound", "unfold", "drifting",
+    "notification", "too loud", "quiet now", "melting", "unlabeled",
+    "one more tab", "flicker", "spilled", "counting ceiling tiles",
+    "somewhere else", "half-asleep", "rewind", "static hiss", "unraveling",
+    "who said that", "loop", "misplaced", "humming fridge", "almost remembered"
+];
+let adhdInitialized = false;
+let adhdActive = false;
+let adhdWordStates = [];
+const ADHD_WORD_COUNT = 60;
+
+function adhdRandomWord() {
+    return ADHD_WORDS[Math.floor(Math.random() * ADHD_WORDS.length)];
+}
+
+function adhdApplyRandomStyle(span) {
+    const size = 0.85 + Math.random() * 1.6;
+    const opacity = 0.3 + Math.random() * 0.7;
+    span.style.fontSize = size.toFixed(2) + 'rem';
+    span.style.opacity = opacity.toFixed(2);
+    span.style.fontWeight = Math.random() < 0.15 ? 'bold' : 'normal';
+    span.style.fontStyle = Math.random() < 0.12 ? 'italic' : 'normal';
+}
+
+function initAdhdField() {
+    const field = document.getElementById('adhd-field');
+    if (!field) return;
+    field.innerHTML = '';
+    adhdWordStates = [];
+    const now = performance.now();
+    for (let i = 0; i < ADHD_WORD_COUNT; i++) {
+        const span = document.createElement('span');
+        span.className = 'adhd-word';
+        span.textContent = adhdRandomWord();
+        adhdApplyRandomStyle(span);
+        field.appendChild(span);
+        adhdWordStates.push({ el: span, nextAt: now + Math.random() * 4000 });
+    }
+    adhdInitialized = true;
+}
+
+function adhdTick(now) {
+    if (!adhdActive) return;
+    adhdWordStates.forEach((w) => {
+        if (now >= w.nextAt) {
+            w.el.style.opacity = 0;
+            setTimeout(() => {
+                if (!adhdActive) return;
+                w.el.textContent = adhdRandomWord();
+                adhdApplyRandomStyle(w.el);
+            }, 200);
+            w.nextAt = now + 500 + Math.random() * 3200;
+        }
+    });
+    requestAnimationFrame(adhdTick);
 }
 
 // =================================================================
