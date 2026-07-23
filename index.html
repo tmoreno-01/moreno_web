@@ -2244,6 +2244,11 @@ body.dark-mode .cart-item {
         <div class="overlay-content">
             <div class="works-container">
      <div class="works-grid mode-collage">
+    <!-- Vanquish -->
+    <div class="work-item" data-slug="vanquish" onclick="openLightbox('/artwork/small/vanquish_front.webp', 'Vanquish', '2026', '38 x 26 cm, Mixed media on cotton paper', '', '/artwork/small/vanquish_back.webp', false); window.history.pushState(null, '', '/gallery/vanquish/');">
+        <div class="work-image"><img src="/artwork/thumbnails/vanquish_front_thumbnail.webp" alt="Vanquish" loading="lazy"></div>
+        <div class="work-caption"><span>Vanquish</span><span>2026</span></div>
+    </div>
     <!-- I like to praise you like I SHOULD (Skateboard Triptych) -->
     <div class="work-item" id="art-praiseyou" data-slug="i-like-to-praise-you-like-i-should" onclick="openLightbox('/artwork/small/praiseyou_front.webp', 'I like to praise you like I SHOULD', '2026', 'Mixed media on my old skateboards', 'Dive deep head first<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/praiseyou_back.webp', false); window.history.pushState(null, '', '/gallery/i-like-to-praise-you-like-i-should/');">
         <div class="work-image no-shadow">
@@ -2422,7 +2427,6 @@ body.dark-mode .cart-item {
         <div class="work-image"><img src="/artwork/thumbnails/notitle_small_thumbnail.webp" alt="Notitle" loading="lazy"></div>
         <div class="work-caption"><span>Notitle</span><span>2023</span></div>
     </div>
-</div>
 
                 </div>
             </div>
@@ -5370,42 +5374,44 @@ function hidePreloader() {
 
 // =================================================================
 // LIVING ARTWORK ENGINE (hidden /test page)
-// A living collage: real torn-paper crops cut straight from your own
-// paintings, perpetually drifting, tumbling and recomposing on a dark
-// gallery wall. Every fragment is an actual crop of actual pixels from
-// your body of work - some wide enough to show real subject matter,
-// some tight in on brushwork and texture - so what's on screen always
-// visibly is your art, not an abstraction of it. Fragments fade in,
-// drift slowly, fade out and get replaced by a new crop from a
-// different (or the same) painting on their own independent staggered
-// clock, so the wall is always mid-change and never repeats the same
-// arrangement twice. Purely Canvas 2D - no WebGL, no shaders, no AI
-// calls, no pointer/touch interaction; it just runs on its own.
+// Three full paintings, drawn one on top of another using blend
+// modes (screen, difference, colour-dodge, overlay) instead of plain
+// transparency, so their colours and forms genuinely combine into
+// something neither painting contains on its own - a face ghosted
+// through a stormy sea, a starry sky bleeding through a golden
+// embrace. Each layer independently drifts and slowly zooms across
+// its own painting like a nature documentary, and periodically
+// ripples through a horizontal liquify warp so nothing ever looks
+// static. Every 15-25 seconds each layer dissolves from its current
+// painting into a freshly-chosen one from a wide pool of real public
+// domain masterworks - portraits, seascapes, mythology, expressionism
+// - so the actual combination of "what's blending with what" never
+// repeats. No AI calls, no WebGL, no pointer interaction, nothing
+// read back from the canvas - just drawImage, composited, forever
+// recombining. Purely Canvas 2D.
 // =================================================================
 let testArtActive = false;
 let testArtInitialized = false;
 
+// Real, public-domain, out-of-copyright masterworks served straight
+// from Wikimedia Commons - centuries dead, free to use. A deliberate
+// mix of portraits, seascape, night sky, myth and expressionism so
+// the blends have real variety to draw on.
 const TEST_ART_PATHS = [
-    '/artwork/small/001_small.jpg',
-    '/artwork/small/ab_small.jpg',
-    '/artwork/small/bfec_small.jpg',
-    '/artwork/small/dairypirates_small.webp',
-    '/artwork/small/fromthechest_small.jpg',
-    '/artwork/small/isthegrassgreener_square_small.jpg',
-    '/artwork/small/liminalsometime_small.jpg',
-    '/artwork/small/mealticket_small.jpg',
-    '/artwork/small/midsummer_small.jpg',
-    '/artwork/small/mumflowers_small.jpg',
-    '/artwork/small/nicedayoff_small.jpg',
-    '/artwork/small/notitle_small.jpg',
-    '/artwork/small/pedestriancrossing_small.jpg',
-    '/artwork/small/praiseyou_front.webp',
-    '/artwork/small/seizethelighthouse_small.jpg',
-    '/artwork/small/sevenofhearts_small.webp',
-    '/artwork/small/somethingaboutnextweek_small.jpg',
-    '/artwork/small/soulofatelephone_small.jpg',
-    '/artwork/small/splinter_small.webp',
-    '/artwork/small/zennor_small.jpg'
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Mona%20Lisa.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Girl%20with%20a%20Pearl%20Earring.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Van%20Eyck%20-%20Arnolfini%20Portrait.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Whistlers%20Mother%20high%20res.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Velazquez-Meninas.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Rembrandt%20van%20Rijn%20-%20Self-Portrait%20-%20Google%20Art%20Project.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Rembrandt%20-%20Self-Portrait%20with%20Velvet%20Beret%20-%20Google%20Art%20Project.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Vincent%20van%20Gogh%20-%20Self-Portrait%20-%20Google%20Art%20Project.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/The%20Laughing%20Cavalier.JPG?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Great%20Wave%20off%20Kanagawa2.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Vincent%20van%20Gogh%20Starry%20Night.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/The%20Scream.jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/La%20nascita%20di%20Venere%20(Botticelli).jpg?width=1400',
+    'https://commons.wikimedia.org/wiki/Special:FilePath/Gustav%20Klimt%20016.jpg?width=1400'
 ];
 
 function startOrResumeTestArt() {
@@ -5429,8 +5435,6 @@ function initTestArtEngine() {
     }
 
     // ---------- sizing ----------
-    // Draw everything in logical CSS-pixel coordinates via setTransform,
-    // while still rendering crisp on retina screens.
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let w = 0, h = 0;
 
@@ -5440,11 +5444,15 @@ function initTestArtEngine() {
         canvas.width = Math.round(w * dpr);
         canvas.height = Math.round(h * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#050308';
+        ctx.fillRect(0, 0, w, h);
     }
     resize();
     window.addEventListener('resize', resize);
 
     // ---------- painting pool ----------
+    // Only ever drawn with drawImage(), never read back with
+    // getImageData, so nothing here depends on a CORS check passing.
     const pool = TEST_ART_PATHS.map((src) => ({ src, img: null, ready: false }));
 
     function shuffle(arr) {
@@ -5462,127 +5470,200 @@ function initTestArtEngine() {
             if (item.img) { resolve(item.img); return; }
             const img = new Image();
             img.onload = () => { item.img = img; item.ready = true; resolve(img); };
-            img.onerror = () => resolve(null);
+            img.onerror = () => { console.warn('[living-artwork] failed to load', item.src); resolve(null); };
             img.src = item.src;
         });
     }
 
-    // ---------- fragment lifecycle ----------
-    const MAX_FRAGMENTS = 20;
-    const FADE_MS = 2500;
-    const BLEND_OPTIONS = ['source-over', 'source-over', 'source-over', 'source-over', 'multiply', 'multiply', 'overlay', 'screen', 'lighten'];
-    const fragments = [];
-
-    // Builds an irregular closed polygon roughly dw x dh, centred on the
-    // origin - a rectangle with jittered, torn-paper edges rather than a
-    // clean cut.
-    function buildTornPath(dw, dh) {
-        const points = [];
-        const segsPerSide = 6;
-        const jitter = Math.min(dw, dh) * 0.07;
-
-        function edge(x0, y0, x1, y1) {
-            for (let s = 0; s <= segsPerSide; s++) {
-                const t = s / segsPerSide;
-                let x = x0 + (x1 - x0) * t;
-                let y = y0 + (y1 - y0) * t;
-                if (s !== 0 && s !== segsPerSide) {
-                    x += (Math.random() - 0.5) * jitter;
-                    y += (Math.random() - 0.5) * jitter;
-                }
-                points.push([x, y]);
-            }
-        }
-
-        const hw = dw / 2, hh = dh / 2;
-        edge(-hw, -hh, hw, -hh);
-        edge(hw, -hh, hw, hh);
-        edge(hw, hh, -hw, hh);
-        edge(-hw, hh, -hw, -hh);
-        return points;
+    function randomReadyIdx(excludeIdx) {
+        const excl = excludeIdx || [];
+        const readyIdx = pool.map((p, i) => i).filter((i) => pool[i].ready && excl.indexOf(i) === -1);
+        if (readyIdx.length === 0) return excl.length ? excl[0] : null;
+        return readyIdx[Math.floor(Math.random() * readyIdx.length)];
     }
 
-    function makeFragment(now) {
-        const readyIdx = pool.map((p, i) => i).filter((i) => pool[i].ready);
-        if (readyIdx.length === 0) return null;
-
-        const idx = readyIdx[Math.floor(Math.random() * readyIdx.length)];
-        const img = pool[idx].img;
-        const iw = img.naturalWidth || img.width;
-        const ih = img.naturalHeight || img.height;
-
-        // Roughly half the time, a big enough crop to show real subject
-        // matter; the rest, a tighter detail crop of brushwork/texture.
-        const bigCrop = Math.random() < 0.55;
-        const cropFrac = bigCrop ? (0.40 + Math.random() * 0.30) : (0.15 + Math.random() * 0.15);
-        const sw = iw * cropFrac;
-        const sh = ih * cropFrac;
-        const sx = Math.random() * (iw - sw);
-        const sy = Math.random() * (ih - sh);
-
-        // Final on-screen size, independent of crop size, so both wide and
-        // tight crops range across the same footprint sizes.
-        const footprint = (0.16 + Math.random() * 0.30) * Math.max(w, h);
-        const cropLong = Math.max(sw, sh);
-        const drawScale = footprint / cropLong;
-        const dw = sw * drawScale;
-        const dh = sh * drawScale;
-
-        const life = 15000 + Math.random() * 18000; // 15-33s total lifespan
-
+    // ---------- one "face" of a layer: a painting mid-Ken-Burns ----------
+    function makeFace(idx) {
         return {
-            img, sx, sy, sw, sh,
-            dw, dh,
-            footprint,
-            x: Math.random() * w,
-            y: Math.random() * h,
-            vx: (Math.random() - 0.5) * 22,   // px/sec
-            vy: (Math.random() - 0.5) * 22,
-            rotation: (Math.random() - 0.5) * 0.5,
-            vr: (Math.random() - 0.5) * 0.10, // rad/sec
-            born: now,
-            life,
-            blend: BLEND_OPTIONS[Math.floor(Math.random() * BLEND_OPTIONS.length)],
-            tornPath: buildTornPath(dw, dh)
+            idx: idx,
+            zoom: 1.04 + Math.random() * 0.1,
+            zoomSpeed: 0.000012 + Math.random() * 0.00002,
+            panPhaseX: Math.random() * 1000,
+            panPhaseY: Math.random() * 1000,
+            panSpeedX: 0.00006 + Math.random() * 0.00007,
+            panSpeedY: 0.00005 + Math.random() * 0.00006,
+            warpSeed: Math.random() * 1000,
+            flip: Math.random() < 0.35
         };
     }
 
-    function updateFragment(f, dt) {
-        f.x += f.vx * dt;
-        f.y += f.vy * dt;
-        f.rotation += f.vr * dt;
-
-        // Wrap around softly instead of popping, so drifting off one edge
-        // just brings the fragment back in from the opposite side.
-        const margin = f.footprint;
-        if (f.x < -margin) f.x = w + margin;
-        if (f.x > w + margin) f.x = -margin;
-        if (f.y < -margin) f.y = h + margin;
-        if (f.y > h + margin) f.y = -margin;
+    function coverRect(img, face, now) {
+        const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+        const zoom = Math.min(1.55, face.zoom + now * face.zoomSpeed);
+        const scale = Math.max(w / iw, h / ih) * zoom;
+        const dw = iw * scale, dh = ih * scale;
+        const panX = 0.5 + Math.sin(now * face.panSpeedX + face.panPhaseX) * 0.42;
+        const panY = 0.5 + Math.sin(now * face.panSpeedY + face.panPhaseY) * 0.42;
+        const dx = -(dw - w) * panX;
+        const dy = -(dh - h) * panY;
+        return { dx, dy, dw, dh };
     }
 
-    function drawFragment(f, now) {
-        const age = now - f.born;
-        let alpha;
-        if (age < FADE_MS) alpha = age / FADE_MS;
-        else if (age > f.life - FADE_MS) alpha = Math.max(0, (f.life - age) / FADE_MS);
-        else alpha = 1;
-        if (alpha <= 0.001) return;
-
+    // Draws one face with a gentle horizontal liquify ripple: the
+    // image is sliced into thin clipped bands, each nudged sideways
+    // by a different, slowly evolving amount, so the whole painting
+    // seems to be rippling like it's underwater rather than sitting
+    // static on screen.
+    const STRIPS = 34;
+    function drawFace(img, face, now, alpha, blend) {
+        const rect = coverRect(img, face, now);
         ctx.save();
-        ctx.globalAlpha = alpha * 0.92;
-        ctx.globalCompositeOperation = f.blend;
-        ctx.translate(f.x, f.y);
-        ctx.rotate(f.rotation);
+        ctx.globalCompositeOperation = blend;
+        ctx.globalAlpha = alpha;
+        if (face.flip) { ctx.translate(w, 0); ctx.scale(-1, 1); }
+        const stripH = h / STRIPS + 1;
+        for (let s = 0; s < STRIPS; s++) {
+            const sy = s * (h / STRIPS);
+            const off = Math.sin(s * 0.35 + face.warpSeed + now * 0.00022) * 22
+                + Math.sin(s * 0.13 + face.warpSeed * 1.7 - now * 0.00013) * 10;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, sy, w, stripH);
+            ctx.clip();
+            ctx.drawImage(img, rect.dx + off, rect.dy, rect.dw, rect.dh);
+            ctx.restore();
+        }
+        ctx.restore();
+    }
 
-        ctx.beginPath();
-        const pts = f.tornPath;
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-        ctx.closePath();
-        ctx.clip();
+    // ---------- the three blending layers ----------
+    const BLENDS = ['screen', 'difference', 'color-dodge', 'overlay', 'exclusion', 'lighten'];
+    function pickBlend(exclude) {
+        let b;
+        do { b = BLENDS[Math.floor(Math.random() * BLENDS.length)]; } while (b === exclude);
+        return b;
+    }
 
-        ctx.drawImage(f.img, f.sx, f.sy, f.sw, f.sh, -f.dw / 2, -f.dh / 2, f.dw, f.dh);
+    function makeLayer(idx, alpha, blend) {
+        return {
+            curr: makeFace(idx),
+            next: null,
+            swapT: 0,
+            swapDur: 4500 + Math.random() * 2500,
+            timer: Math.random() * -6000,
+            holdDur: 15000 + Math.random() * 11000,
+            alpha: alpha,
+            blend: blend
+        };
+    }
+
+    let layers = null;
+    let layersSeeded = false;
+
+    function seedLayers() {
+        const a = randomReadyIdx();
+        const b = randomReadyIdx(a === null ? [] : [a]);
+        const c = randomReadyIdx([a, b].filter((x) => x !== null));
+        layers = [
+            makeLayer(a !== null ? a : 0, 1, 'source-over'),
+            makeLayer(b !== null ? b : (a !== null ? a : 0), 0.62, pickBlend('source-over')),
+            makeLayer(c !== null ? c : (a !== null ? a : 0), 0.5, pickBlend('source-over'))
+        ];
+        layersSeeded = true;
+    }
+
+    function advanceLayer(layer, now, dt) {
+        layer.timer += dt;
+        if (layer.next === null && layer.timer > layer.holdDur) {
+            const nextIdx = randomReadyIdx([layer.curr.idx]);
+            if (nextIdx !== null) {
+                layer.next = makeFace(nextIdx);
+                layer.swapT = 0;
+            } else {
+                layer.timer = 0;
+            }
+        }
+        if (layer.next !== null) {
+            layer.swapT += dt / layer.swapDur;
+            if (layer.swapT >= 1) {
+                layer.curr = layer.next;
+                layer.next = null;
+                layer.swapT = 0;
+                layer.timer = 0;
+                layer.holdDur = 15000 + Math.random() * 11000;
+                layer.blend = pickBlend(layer.blend);
+            }
+        }
+    }
+
+    // ---------- reconfiguration: a periodic soft flash + forced
+    // re-pick on the accent layers, so the overall palette turns a
+    // corner every so often rather than drifting forever ----------
+    let nextReconfigAt = 9000 + Math.random() * 6000;
+    let flashAlpha = 0;
+    function maybeReconfigure(now) {
+        if (now < nextReconfigAt) return;
+        nextReconfigAt = now + 22000 + Math.random() * 16000;
+        flashAlpha = 0.28;
+        if (layers) {
+            for (let i = 1; i < layers.length; i++) {
+                if (layers[i].next === null) layers[i].timer = layers[i].holdDur - 400;
+            }
+        }
+    }
+
+    // ---------- finishing passes ----------
+    function chromaticSplit(now) {
+        const off = 1.4 + Math.sin(now * 0.0005) * 1;
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = 0.22;
+        ctx.filter = 'hue-rotate(110deg)';
+        ctx.drawImage(canvas, off * dpr, 0, canvas.width, canvas.height, 0, 0, w, h);
+        ctx.filter = 'hue-rotate(-110deg)';
+        ctx.drawImage(canvas, -off * dpr, 0, canvas.width, canvas.height, 0, 0, w, h);
+        ctx.restore();
+        ctx.filter = 'none';
+    }
+
+    let vignetteGrad = null;
+    function drawVignette() {
+        if (!vignetteGrad || vignetteGrad._w !== w || vignetteGrad._h !== h) {
+            const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.85);
+            g.addColorStop(0, 'rgba(0,0,0,0)');
+            g.addColorStop(1, 'rgba(0,0,0,0.45)');
+            g._w = w; g._h = h;
+            vignetteGrad = g;
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = vignetteGrad;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+    }
+
+    // ---------- fallback: pure noise field (only if no painting ever loads) ----------
+    let plasmaSeed = Math.random() * 1000;
+    function drawNoiseFallback(now) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = 'rgba(5,3,8,0.08)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.globalCompositeOperation = 'lighter';
+        const cols = 30;
+        const cellW = w / cols;
+        for (let i = 0; i < cols; i++) {
+            const x = i * cellW + cellW / 2;
+            const y = h / 2 + (Math.sin(i * 0.4 + now * 0.0005 + plasmaSeed) + Math.cos(i * 0.27 - now * 0.00035 + plasmaSeed * 1.7)) * h * 0.3;
+            const hue = (i / cols) * 360 + now * 0.015;
+            const r = 120 + Math.sin(hue * 0.0175) * 60;
+            const g = 100 + Math.sin(hue * 0.0175 + 2.1) * 60;
+            const b = 160 + Math.sin(hue * 0.0175 + 4.2) * 60;
+            ctx.fillStyle = 'rgba(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ',0.4)';
+            ctx.beginPath();
+            ctx.arc(x, y, cellW, 0, Math.PI * 2);
+            ctx.fill();
+        }
         ctx.restore();
     }
 
@@ -5590,41 +5671,85 @@ function initTestArtEngine() {
     let lastTs = null;
     window.testArtFrame = function (ts) {
         if (!testArtActive) return;
-        if (lastTs === null) lastTs = ts;
-        const dt = Math.min(0.1, Math.max(0, (ts - lastTs) / 1000));
-        lastTs = ts;
         const now = performance.now();
+        const dt = lastTs === null ? 16.7 : Math.min(48, now - lastTs);
+        lastTs = now;
 
-        // Retire dead fragments, keep the wall topped up with new ones.
-        for (let i = fragments.length - 1; i >= 0; i--) {
-            if (now - fragments[i].born > fragments[i].life) fragments.splice(i, 1);
+        const anyReady = pool.some((p) => p.ready);
+        if (!anyReady) {
+            drawNoiseFallback(now);
+            drawVignette();
+            requestAnimationFrame(testArtFrame);
+            return;
         }
-        while (fragments.length < MAX_FRAGMENTS) {
-            const f = makeFragment(now);
-            if (!f) break; // no images ready yet
-            fragments.push(f);
+
+        if (!layersSeeded) seedLayers();
+        maybeReconfigure(now);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#050308';
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        for (let i = 0; i < layers.length; i++) {
+            const layer = layers[i];
+            advanceLayer(layer, now, dt);
+            const currItem = pool[layer.curr.idx];
+            if (!currItem || !currItem.ready) continue;
+
+            if (layer.next !== null) {
+                const nextItem = pool[layer.next.idx];
+                const t = Math.min(1, layer.swapT);
+                drawFace(currItem.img, layer.curr, now, layer.alpha * (1 - t), layer.blend);
+                if (nextItem && nextItem.ready) {
+                    drawFace(nextItem.img, layer.next, now, layer.alpha * t, layer.blend);
+                }
+            } else {
+                drawFace(currItem.img, layer.curr, now, layer.alpha, layer.blend);
+            }
         }
 
-        ctx.clearRect(0, 0, w, h);
-
-        fragments.forEach((f) => updateFragment(f, dt));
-        // Larger crops read as "further back" - draw them first so smaller,
-        // tighter detail crops layer on top.
-        fragments.slice().sort((a, b) => b.footprint - a.footprint).forEach((f) => drawFragment(f, now));
+        chromaticSplit(now);
+        if (flashAlpha > 0.01) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = 'rgba(255,255,255,' + flashAlpha.toFixed(3) + ')';
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+            flashAlpha *= 0.9;
+        }
+        drawVignette();
 
         requestAnimationFrame(testArtFrame);
     };
 
     // ---------- startup ----------
-    const FIRST_BATCH = 5;
+    const FIRST_BATCH = 6;
     Promise.all(loadOrder.slice(0, FIRST_BATCH).map(loadPoolImage)).then(() => {
         if (loadingEl) {
             loadingEl.style.opacity = '0';
             setTimeout(() => { if (loadingEl) loadingEl.remove(); }, 800);
         }
-        loadOrder.slice(FIRST_BATCH).forEach((idx) => loadPoolImage(idx)); // quietly warm the rest
+        loadOrder.slice(FIRST_BATCH).forEach((idx) => loadPoolImage(idx));
         requestAnimationFrame(testArtFrame);
     });
+
+    // Even if every single painting fails, still start the loop so
+    // the noise fallback kicks in rather than leaving a dead canvas.
+    setTimeout(() => { if (testArtActive) requestAnimationFrame(testArtFrame); }, 3000);
+
+    setTimeout(function checkLoaded() {
+        const readyCount = pool.filter((p) => p.ready).length;
+        if (readyCount === 0) {
+            if (loadingEl) {
+                loadingEl.style.opacity = '0';
+                setTimeout(() => { if (loadingEl) loadingEl.remove(); }, 800);
+            }
+            pool.forEach((_, i) => loadPoolImage(i));
+            setTimeout(checkLoaded, 6000);
+        }
+    }, 8000);
 }
 </script>
 </body>
