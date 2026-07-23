@@ -36,6 +36,9 @@
 </script>
 <link rel="preconnect" href="https://store.tyronemoreno.com" crossorigin>
 <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&family=Bungee&family=Caveat:wght@700&family=Rubik+Mono+One&family=Playfair+Display:ital@1&family=Amatic+SC:wght@700&family=Righteous&family=VT323&family=Shadows+Into+Light&family=Anton&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
 #page-works:not(.visible) .works-container {
@@ -1976,7 +1979,7 @@ body.adhd-mode #ios-brush-selector {
 }
 
 .adhd-field {
-    max-width: 900px;
+    max-width: 1300px;
     display: flex;
     flex-wrap: wrap;
     gap: 14px 20px;
@@ -1990,6 +1993,48 @@ body.adhd-mode #ios-brush-selector {
     white-space: nowrap;
     user-select: none;
     transition: opacity 0.22s ease, font-size 0.22s ease;
+}
+.adhd-letter.adhd-flicker-active {
+    opacity: 0.55;
+    transform: scale(1.08);
+}
+.adhd-word.adhd-jitter {
+    animation: adhdJitter var(--jdur, 200ms) infinite alternate ease-in-out;
+}
+@keyframes adhdJitter {
+    from { transform: translateX(0); }
+    to   { transform: translateX(var(--jx, 1px)); }
+}
+.adhd-word.adhd-drift {
+    animation: adhdDrift var(--ddur, 4000ms) ease-in-out infinite alternate;
+}
+@keyframes adhdDrift {
+    from { transform: translateX(0); }
+    to   { transform: translateX(var(--dx, 30px)); }
+}
+.adhd-word.adhd-dart {
+    transition: transform 0.32s cubic-bezier(.34, 1.56, .64, 1), opacity 0.22s ease, font-size 0.22s ease !important;
+    z-index: 8;
+    position: relative;
+}
+.adhd-word.adhd-hyperfocus {
+    transform: scale(1.3) !important;
+    opacity: 1 !important;
+    filter: brightness(1.2);
+    z-index: 5;
+    position: relative;
+    transition: transform 0.35s cubic-bezier(.19,1,.22,1), filter 0.35s ease, opacity 0.2s ease !important;
+}
+@keyframes adhdFieldJolt {
+    0%   { transform: translateX(0) rotate(0deg); }
+    15%  { transform: translateX(-5px) rotate(-0.4deg); }
+    35%  { transform: translateX(4px) rotate(0.35deg); }
+    55%  { transform: translateX(-3px) rotate(-0.25deg); }
+    75%  { transform: translateX(2px) rotate(0.2deg); }
+    100% { transform: translateX(0) rotate(0deg); }
+}
+.adhd-field.adhd-jolt {
+    animation: adhdFieldJolt 340ms ease-in-out;
 }
 @media (max-width: 768px) {
     .adhd-field { max-width: 100%; gap: 10px 14px; }
@@ -3191,6 +3236,7 @@ function clearNavigation() {
     testArtActive = false;
     timeActive = false;
     adhdActive = false;
+    adhdStopWikiFeed();
     removeAllLoadingIndicators();
     isPaintingActive = true;
             
@@ -3299,6 +3345,7 @@ function openAdhdPage() {
     updateFooterIcons('other');
     if (!adhdInitialized) initAdhdField();
     adhdActive = true;
+    adhdStartWikiFeed();
     requestAnimationFrame(adhdTick);
 }
 function openSketches() {
@@ -5534,27 +5581,121 @@ function hidePreloader() {
 const ADHD_WORDS = [
     "toothpaste", "almost", "supernova", "email", "regret", "cinnamon",
     "unfinished", "loud", "static", "tuesday", "again", "collapse", "soft",
-    "did I lock the door", "or maybe not", "9:41am", "unread", "spiral",
-    "cardboard", "humming", "forgot why I walked in here", "receipt",
+    "lock the door?", "or maybe not", "9:41am", "unread", "spiral",
+    "cardboard", "humming", "forgot why", "receipt",
     "orbit", "itch", "half a sentence", "buffering", "cold coffee",
     "someone's talking", "focus", "no wait", "moth", "deadline", "static shock",
     "what was I", "glow", "traffic", "unsent", "seventeen tabs open",
-    "gravity", "chewed pen", "tomorrow", "left it on read", "hum",
-    "was that today", "sunlight through blinds", "overdue", "fizzing",
+    "gravity", "chewed pen", "tomorrow", "left on read", "hum",
+    "was that today", "sunlight, blinds", "overdue", "fizzing",
     "receipt from 2019", "which drawer", "echo", "half-formed", "static noise",
     "porch light", "keys", "where", "cricket sound", "unfold", "drifting",
     "notification", "too loud", "quiet now", "melting", "unlabeled",
-    "one more tab", "flicker", "spilled", "counting ceiling tiles",
+    "one more tab", "flicker", "spilled", "ceiling tiles",
     "somewhere else", "half-asleep", "rewind", "static hiss", "unraveling",
-    "who said that", "loop", "misplaced", "humming fridge", "almost remembered"
+    "who said that", "loop", "misplaced", "humming fridge", "almost remembered",
+    "wait what", "seventeen thoughts", "shiny thing", "start over",
+    "half a plan", "why the kitchen?", "ringing ears", "too many windows",
+    "ctrl z", "unbrushed", "one sock", "clock says nothing", "restless leg",
+    "distracted by birds", "cold tea", "open box, later", "scroll scroll scroll",
+    "wrong tab", "day 4 again", "hyperfocus", "now bored",
+    "urge to reorganize", "forgot the word", "tip of tongue",
+    "three unfinished projects", "shiny new idea", "old idea, shiny",
+    "everything at once", "nothing at all", "buzzing", "underline this",
+    "sticky note graveyard", "nineteen browser tabs", "phone in hand",
+    "shower thought", "snoozed four times", "almost on time",
+    "same paragraph again", "oven on? probably",
+    "too many ideas", "loud head",
+    "half-drawn doodle", "unfinished sentence", "static in bones",
+    "forgot at six", "this again", "why this app"
 ];
+
+// A handful of wild, mismatched fonts used only on the occasional
+// letter INSIDE a word - the word stays readable, but a letter or
+// two in it will suddenly be in a totally different typeface, like
+// the word glitched for a split second while you were reading it.
+const ADHD_GLITCH_FONTS = [
+    "'Permanent Marker', cursive",
+    "'Special Elite', 'Courier New', monospace",
+    "'Bungee', sans-serif",
+    "'Caveat', cursive",
+    "'Rubik Mono One', monospace",
+    "'Playfair Display', serif",
+    "'Amatic SC', sans-serif",
+    "'Righteous', sans-serif",
+    "'VT323', monospace",
+    "'Shadows Into Light', cursive",
+    "'Anton', sans-serif",
+    "'UnifrakturMaguntia', cursive"
+];
+
 let adhdInitialized = false;
 let adhdActive = false;
 let adhdWordStates = [];
-const ADHD_WORD_COUNT = 60;
+const ADHD_WORD_COUNT = 450;
+
+// ---------- live data: Wikipedia "recent changes" feed ----------
+// A real-time stream of totally unrelated edits happening across
+// Wikipedia right now - somebody, somewhere, mid-thought, editing an
+// article about something nobody in this conversation was thinking
+// about. That's the vibe: real, live, arriving uninvited, gone again.
+// Only ever polled while the /adhd page is actually open, so it can't
+// cost anything on the rest of the site.
+let adhdLiveTitles = [];
+let adhdWikiPollId = null;
+
+async function adhdFetchWikiChanges() {
+    try {
+        const res = await fetch('https://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rcnamespace=0&rclimit=25&rcprop=title&format=json&origin=*');
+        if (!res.ok) return;
+        const data = await res.json();
+        const titles = (data && data.query && data.query.recentchanges || [])
+            .map((c) => c.title)
+            .filter((t) => t && t.length < 40); // keep the field readable, skip huge titles
+        if (!titles.length) return;
+        adhdLiveTitles = adhdLiveTitles.concat(titles).slice(-120); // rolling window
+    } catch (e) {
+        // offline / blocked / rate-limited - the field just keeps using
+        // the static word list, no big deal
+    }
+}
+
+function adhdStartWikiFeed() {
+    if (adhdWikiPollId !== null) return;
+    adhdFetchWikiChanges();
+    adhdWikiPollId = setInterval(adhdFetchWikiChanges, 5000);
+}
+
+function adhdStopWikiFeed() {
+    if (adhdWikiPollId !== null) {
+        clearInterval(adhdWikiPollId);
+        adhdWikiPollId = null;
+    }
+}
 
 function adhdRandomWord() {
+    if (adhdLiveTitles.length && Math.random() < 0.3) {
+        return adhdLiveTitles[Math.floor(Math.random() * adhdLiveTitles.length)];
+    }
     return ADHD_WORDS[Math.floor(Math.random() * ADHD_WORDS.length)];
+}
+function adhdRandomGlitchFont() {
+    return ADHD_GLITCH_FONTS[Math.floor(Math.random() * ADHD_GLITCH_FONTS.length)];
+}
+
+// Not every word should pulse at the same rate - pick a pace per
+// word so the field has calm ones sitting still alongside twitchy
+// ones, instead of one uniform flicker speed. Deliberately bimodal:
+// mostly either quite slow or quite fast, with a rare "frozen" word
+// that just... stays, like it got stuck - and a rare manic one that
+// can barely hold a thought for half a second.
+function adhdPickSpeed() {
+    const r = Math.random();
+    if (r < 0.18) return { min: 150,  span: 500  };   // manic / twitching
+    if (r < 0.38) return { min: 450,  span: 1100 };   // fast
+    if (r < 0.60) return { min: 1000, span: 2400 };   // medium
+    if (r < 0.85) return { min: 2200, span: 5200 };   // slow / calm
+    return { min: 5500, span: 10000 };                 // frozen - stuck on one thought
 }
 
 function adhdApplyRandomStyle(span) {
@@ -5564,6 +5705,173 @@ function adhdApplyRandomStyle(span) {
     span.style.opacity = opacity.toFixed(2);
     span.style.fontWeight = Math.random() < 0.15 ? 'bold' : 'normal';
     span.style.fontStyle = Math.random() < 0.12 ? 'italic' : 'normal';
+
+    // restless movement: most words sit still, but a slice get a
+    // barely-there tremor and a smaller slice get a slow, larger
+    // drift that carries them sideways along the line like they're
+    // sliding out of place mid-sentence. Re-rolled every render.
+    span.classList.remove('adhd-jitter', 'adhd-drift');
+    const moveRoll = Math.random();
+    if (moveRoll < 0.05) {
+        span.classList.add('adhd-drift');
+        const amp = 16 + Math.random() * 46; // 16-62px
+        span.style.setProperty('--dx', (Math.random() < 0.5 ? -amp : amp).toFixed(0) + 'px');
+        span.style.setProperty('--ddur', (2200 + Math.random() * 4200).toFixed(0) + 'ms');
+        span.style.animationDelay = '-' + Math.floor(Math.random() * 3000) + 'ms';
+    } else if (moveRoll < 0.09) {
+        span.classList.add('adhd-jitter');
+        span.style.setProperty('--jx', (Math.random() * 1.6 - 0.8).toFixed(1) + 'px');
+        span.style.setProperty('--jdur', (200 + Math.random() * 300).toFixed(0) + 'ms');
+        span.style.animationDelay = '-' + Math.floor(Math.random() * 300) + 'ms';
+    }
+}
+
+// Renders a word letter-by-letter. Every alphabetic character gets
+// its own span (with the true letter stashed in data-char) so it can
+// be individually mangled later by the flicker system - the word
+// itself stays correct in the DOM/dataset, only the visible glyph
+// misfires for a moment. Occasionally a letter also gets wrapped in a
+// random display font (with a slight tilt/weight change) so the
+// glitch lives inside the word itself rather than as separate
+// floating letters.
+function adhdRenderWord(el, word) {
+    el.textContent = '';
+    const letters = [];
+    for (const ch of word) {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        if (/[a-zA-Z]/.test(ch)) {
+            span.className = 'adhd-letter';
+            span.dataset.char = ch;
+            if (Math.random() < 0.16) {
+                span.style.fontFamily = adhdRandomGlitchFont();
+                span.style.fontWeight = Math.random() < 0.5 ? '700' : '400';
+                if (Math.random() < 0.5) {
+                    span.style.display = 'inline-block';
+                    span.style.transform = 'rotate(' + (Math.random() * 18 - 9).toFixed(1) + 'deg)';
+                }
+            }
+            letters.push(span);
+        }
+        el.appendChild(span);
+    }
+    return letters;
+}
+
+// ---------- letter-level flicker: words misspell themselves ----------
+// Independent of the slower full-word swaps above, this randomly
+// grabs single letters across whatever words are on screen and
+// swaps them for a wrong letter for a fraction of a second, so
+// "focus" might flash as "focKs" mid-read then correct itself.
+// Fires at an irregular, unpredictable rate - never a steady tick -
+// which is the point.
+const ADHD_FLICKER_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+function adhdFlickerReplacement(original) {
+    let repl;
+    do {
+        repl = ADHD_FLICKER_ALPHABET[Math.floor(Math.random() * ADHD_FLICKER_ALPHABET.length)];
+    } while (repl === original.toLowerCase());
+    return original === original.toUpperCase() ? repl.toUpperCase() : repl;
+}
+
+// A real flicker, not a single swap: the letter stutters through
+// wrong letters in quick succession before landing back on itself -
+// and most of the time its font jumps to something completely
+// mismatched mid-stutter too, so it's not just the wrong letter, it's
+// the wrong letter in the wrong typeface for a split second.
+function adhdFlickerLetter(letter) {
+    const original = letter.dataset.char;
+    if (!original) return;
+    letter.classList.add('adhd-flicker-active');
+    const originalFont = letter.style.fontFamily || '';
+    const useFontGlitch = Math.random() < 0.7;
+    const stutters = 1 + Math.floor(Math.random() * 4);
+    let step = 0;
+    (function stutterStep() {
+        step++;
+        if (step > stutters) {
+            letter.textContent = original;
+            if (useFontGlitch) letter.style.fontFamily = originalFont;
+            letter.classList.remove('adhd-flicker-active');
+            return;
+        }
+        letter.textContent = adhdFlickerReplacement(original);
+        if (useFontGlitch) letter.style.fontFamily = adhdRandomGlitchFont();
+        setTimeout(stutterStep, 55 + Math.random() * 95);
+    })();
+}
+
+// ---------- global "energy" wave ----------
+// A slow, semi-random oscillation between calm and manic that drives
+// how much of the field is flickering at any given moment. Not a
+// clean sine wave alone (that would read as a metronome) - it's a
+// sine wave with noise layered on top, so the field drifts toward
+// a chaotic patch, sits there a while, then drifts calmer, without
+// ever settling into a predictable rhythm.
+const adhdEnergySeed = Math.random() * 1000;
+function adhdEnergyLevel(now) {
+    const wave = Math.sin(now * 0.00021 + adhdEnergySeed) * 0.5 + 0.5; // 0..1
+    return Math.max(0, Math.min(1, wave * 0.65 + Math.random() * 0.35));
+}
+
+// ---------- hyperfocus: the flip side of the chaos ----------
+// Every so often, one word locks in - scales up, sharpens, holds -
+// like attention briefly snapping onto a single thought before
+// letting go again. Contrast makes the surrounding chaos read better.
+let adhdNextHyperfocusAt = 0;
+function adhdMaybeHyperfocus(now) {
+    if (now < adhdNextHyperfocusAt) return;
+    adhdNextHyperfocusAt = now + 4500 + Math.random() * 9000;
+    if (!adhdWordStates.length) return;
+    const w = adhdWordStates[Math.floor(Math.random() * adhdWordStates.length)];
+    w.el.classList.add('adhd-hyperfocus');
+    const holdFor = 700 + Math.random() * 1500;
+    setTimeout(() => { w.el.classList.remove('adhd-hyperfocus'); }, holdFor);
+}
+
+// ---------- jolt: the whole field flinches ----------
+// A rare, brief full-field shake - a startle, a sudden interruption -
+// happening on its own unpredictable schedule.
+let adhdNextJoltAt = 0;
+function adhdMaybeJolt(now) {
+    if (now < adhdNextJoltAt) return;
+    adhdNextJoltAt = now + 10000 + Math.random() * 16000;
+    const field = document.getElementById('adhd-field');
+    if (!field) return;
+    field.classList.remove('adhd-jolt');
+    void field.offsetWidth; // force reflow so the animation restarts cleanly
+    field.classList.add('adhd-jolt');
+    setTimeout(() => field.classList.remove('adhd-jolt'), 380);
+}
+
+// ---------- dart: words suddenly lurch out of place ----------
+// Way more drastic than the restless jitter/drift above - every so
+// often a handful of words just snap sideways, up, down, tilted,
+// like the field flinched, then settle back into the line. Fires on
+// its own unpredictable schedule, independent of everything else.
+let adhdNextDartAt = 0;
+function adhdMaybeDart(now) {
+    if (now < adhdNextDartAt) return;
+    adhdNextDartAt = now + 220 + Math.random() * 900;
+    if (!adhdWordStates.length) return;
+    const bursts = 1 + Math.floor(Math.random() * 3);
+    for (let n = 0; n < bursts; n++) {
+        const w = adhdWordStates[Math.floor(Math.random() * adhdWordStates.length)];
+        if (w.el.classList.contains('adhd-dart')) continue;
+        // a running animation (jitter/drift) would otherwise win over
+        // our inline transform, so drop them for this word - they get
+        // re-rolled next time it swaps anyway
+        w.el.classList.remove('adhd-jitter', 'adhd-drift');
+        w.el.classList.add('adhd-dart');
+        const dx = (Math.random() * 90 - 45).toFixed(1);
+        const dy = (Math.random() * 55 - 27).toFixed(1);
+        const rot = (Math.random() * 16 - 8).toFixed(1);
+        w.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg)';
+        setTimeout(() => {
+            w.el.style.transform = '';
+            setTimeout(() => { w.el.classList.remove('adhd-dart'); }, 340);
+        }, 180 + Math.random() * 260);
+    }
 }
 
 function initAdhdField() {
@@ -5572,28 +5880,52 @@ function initAdhdField() {
     field.innerHTML = '';
     adhdWordStates = [];
     const now = performance.now();
+
     for (let i = 0; i < ADHD_WORD_COUNT; i++) {
         const span = document.createElement('span');
         span.className = 'adhd-word';
-        span.textContent = adhdRandomWord();
+        const letters = adhdRenderWord(span, adhdRandomWord());
         adhdApplyRandomStyle(span);
         field.appendChild(span);
-        adhdWordStates.push({ el: span, nextAt: now + Math.random() * 4000 });
+        const speed = adhdPickSpeed();
+        adhdWordStates.push({ el: span, letters, speed, nextAt: now + Math.random() * speed.span });
     }
+
     adhdInitialized = true;
 }
 
 function adhdTick(now) {
     if (!adhdActive) return;
+    adhdMaybeHyperfocus(now);
+    adhdMaybeJolt(now);
+    adhdMaybeDart(now);
+
+    // continuous per-letter chaos: every visible letter gets a fresh
+    // roll every frame, so flickering is a constant, obvious presence
+    // across the field rather than an occasional rare event. The
+    // "energy" wave scales how much of the field is misfiring at once.
+    const energy = adhdEnergyLevel(now);
+    const flickerChance = 0.0011 + energy * 0.0048;
+
     adhdWordStates.forEach((w) => {
+        for (let i = 0; i < w.letters.length; i++) {
+            const letter = w.letters[i];
+            if (letter.classList.contains('adhd-flicker-active')) continue;
+            if (Math.random() < flickerChance) adhdFlickerLetter(letter);
+        }
+
         if (now >= w.nextAt) {
+            // vary how fast each word snaps away vs fades away - some
+            // are gone instantly, others linger a beat
+            const fadeMs = 60 + Math.random() * 480;
+            w.el.style.transitionDuration = (fadeMs / 1000).toFixed(2) + 's';
             w.el.style.opacity = 0;
             setTimeout(() => {
                 if (!adhdActive) return;
-                w.el.textContent = adhdRandomWord();
+                w.letters = adhdRenderWord(w.el, adhdRandomWord());
                 adhdApplyRandomStyle(w.el);
-            }, 200);
-            w.nextAt = now + 500 + Math.random() * 3200;
+            }, Math.max(80, fadeMs * 0.85));
+            w.nextAt = now + w.speed.min + Math.random() * w.speed.span;
         }
     });
     requestAnimationFrame(adhdTick);
