@@ -1926,6 +1926,51 @@ body.dark-mode .cart-item {
     .cd-separator { font-size: 2.2rem; margin-bottom: 20px; }
     .cd-title { font-size: 1rem; }
 }
+
+/* --- TIME PAGE (hidden /time) --- */
+.time-page-inner { max-width: 640px; margin: 0 auto; text-align: center; }
+.time-eyebrow {
+    font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
+    opacity: 0.55; font-weight: bold; margin-bottom: 22px;
+}
+.time-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-color); margin-right: 8px; vertical-align: 1px;
+    animation: timePulse 1.6s ease-in-out infinite;
+}
+@keyframes timePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.time-intro { font-size: 1rem; line-height: 1.6; opacity: 0.75; margin: 0 0 50px; }
+.time-intro strong { opacity: 1; }
+.time-counter {
+    display: flex; justify-content: center; align-items: center; gap: 18px;
+    color: var(--text-color); flex-wrap: wrap; margin-bottom: 30px;
+}
+.time-item { display: flex; flex-direction: column; align-items: center; min-width: 90px; }
+.time-item span:first-child {
+    font-size: 3.4rem; font-weight: bold; line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.time-sep { font-size: 3rem; font-weight: bold; line-height: 1; opacity: 0.2; margin-bottom: 22px; }
+.time-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; margin-top: 12px; }
+.time-ticker { font-size: 0.8rem; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 30px; font-variant-numeric: tabular-nums; }
+.time-copy { font-size: 0.85rem; line-height: 1.7; opacity: 0.55; max-width: 520px; margin: 0 auto; }
+.time-copy strong { opacity: 0.85; }
+@media (max-width: 768px) {
+    .time-item span:first-child { font-size: 2.1rem; }
+    .time-sep { font-size: 1.8rem; margin-bottom: 14px; }
+    .time-item { min-width: 62px; }
+    .time-counter { gap: 8px; }
+    .time-intro { margin-bottom: 34px; }
+}
+
+/* When /time is open, strip the site chrome down to just the logo */
+body.time-mode .nav-links,
+body.time-mode .footer,
+body.time-mode .copyright,
+body.time-mode #ios-brush-selector {
+    display: none !important;
+}
+
 .inline-artist {
     height: 2.4em; /* Scales perfectly with the paragraph text */
     width: auto; 
@@ -2224,6 +2269,30 @@ body.dark-mode .cart-item {
     <canvas id="test-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: default;"></canvas>
     <div id="test-loading" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); font-family: 'Helvetica','Arial',sans-serif; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; background: #000; transition: opacity 0.8s ease; z-index: 2;">Waking the studio&hellip;</div>
     <div style="position: absolute; bottom: 18px; left: 18px; color: rgba(255,255,255,0.35); font-family: 'Helvetica','Arial',sans-serif; font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; z-index: 2; pointer-events: none;">Living Study &mdash; Test Build</div>
+</div>
+
+<!-- Hidden time page: live global screen-time accrual counter. Not linked anywhere in the nav; reachable only via /time -->
+<div id="page-time" class="page-overlay">
+    <div class="overlay-content" style="align-items: center;">
+        <div class="time-page-inner">
+            <div class="time-eyebrow"><span class="time-dot"></span>Global Screen-Time Accrual &mdash; Live</div>
+            <p class="time-intro">Roughly how much screen time <strong>humanity &mdash; all 8.1 billion of us</strong> &mdash; has burned through since you opened this page, recalculated every frame.</p>
+
+            <div class="time-counter">
+                <div class="time-item"><span id="t-decades">0</span><span class="time-label">Decades</span></div>
+                <div class="time-sep">:</div>
+                <div class="time-item"><span id="t-years">0</span><span class="time-label">Years</span></div>
+                <div class="time-sep">:</div>
+                <div class="time-item"><span id="t-months">0</span><span class="time-label">Months</span></div>
+                <div class="time-sep">:</div>
+                <div class="time-item"><span id="t-weeks">0</span><span class="time-label">Weeks</span></div>
+            </div>
+
+            <div class="time-ticker" id="t-ticker">+0 hours of human screen time / second</div>
+
+            <p class="time-copy">Based on a global population of roughly <strong>8.1 billion</strong> people and an average of <strong>6.7 hours</strong> of daily screen time each, humanity collectively burns through about <strong>630,000 hours</strong> of screen time every second &mdash; the equivalent of roughly <strong>71 years</strong> of a single human life, every second, somewhere in the world.</p>
+        </div>
+    </div>
 </div>
 
     <div id="page-exhibitions" class="page-overlay none-page">
@@ -2697,6 +2766,9 @@ function handleRouting() {
         } else if (normalizedPath.includes('/test')) {
             updatePageMeta("Tyrone Moreno | Test");
             openTestArt();
+        } else if (normalizedPath.includes('/time')) {
+            updatePageMeta("Tyrone Moreno | Time");
+            openTimePage();
         } else if (normalizedPath.includes('/exhibitions')) {
             updatePageMeta("Tyrone Moreno | Exhibitions"); // <-- ADDED
             clearNavigation();
@@ -3068,6 +3140,7 @@ const pageSketches = document.getElementById('page-sketches');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
         const pageTest = document.getElementById('page-test');
+        const pageTime = document.getElementById('page-time');
 
 function clearNavigation() {
     pageAbout.classList.remove('visible');
@@ -3078,7 +3151,9 @@ function clearNavigation() {
     pageContact.classList.remove('visible');
     pageStore.classList.remove('visible'); 
     pageTest.classList.remove('visible');
+    pageTime.classList.remove('visible');
     testArtActive = false;
+    timeActive = false;
     removeAllLoadingIndicators();
     isPaintingActive = true;
             
@@ -3092,6 +3167,7 @@ function clearNavigation() {
             
     document.getElementById('page-duck').classList.remove('visible');
     document.body.classList.remove('overlay-open');
+    document.body.classList.remove('time-mode');
     closeLightbox();
     document.body.style.cursor = 'none';
             
@@ -3154,6 +3230,23 @@ function openTestArt() {
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
     startOrResumeTestArt();
+}
+function openTimePage() {
+    isPaintingActive = false;
+    saveLastPage('time');
+    clearNavigation();
+    isPaintingActive = false; // clearNavigation() resets this true, so re-disable painting for /time
+    document.body.classList.add('time-mode');
+    pageTime.classList.add('visible');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('other');
+    document.getElementById('t-ticker').textContent =
+        '+' + Math.round(timeRatePerSec).toLocaleString() + ' hours of human screen time / second';
+    timeActive = true;
+    timeStart = performance.now();
+    requestAnimationFrame(timeFrame);
 }
 function openSketches() {
 isPaintingActive = false;
@@ -5243,6 +5336,9 @@ window.addEventListener('popstate', (event) => {
     else if (normalizedPath.endsWith('/test')) {
         openTestArt();
     } 
+    else if (normalizedPath.endsWith('/time')) {
+        openTimePage();
+    } 
     else if (normalizedPath.endsWith('/contact')) {
         clearNavigation();
         document.getElementById('page-contact').classList.add('visible');
@@ -5390,6 +5486,36 @@ function hidePreloader() {
 // read back from the canvas - just drawImage, composited, forever
 // recombining. Purely Canvas 2D.
 // =================================================================
+// ---------- TIME ENGINE (hidden /time page) ----------
+let timeActive = false;
+let timeStart = null;
+const timeRatePerSec = (8.1e9 * 6.7) / 86400; // ~627,708 hours of global screen time per second
+
+function timeFrame(now) {
+    if (!timeActive) return;
+    const elapsedSec = (now - timeStart) / 1000;
+    const totalHours = elapsedSec * timeRatePerSec;
+    const totalDays = totalHours / 24;
+
+    const YEAR_DAYS = 365.25;
+    const MONTH_DAYS = YEAR_DAYS / 12; // ~30.4375
+    const WEEK_DAYS = 7;
+
+    // Each unit is its own running total (not a decomposed remainder),
+    // so every column keeps climbing independently and never resets.
+    const decades = Math.floor(totalDays / (YEAR_DAYS * 10));
+    const years = Math.floor(totalDays / YEAR_DAYS);
+    const months = Math.floor(totalDays / MONTH_DAYS);
+    const weeks = Math.floor(totalDays / WEEK_DAYS);
+
+    document.getElementById('t-decades').textContent = decades.toLocaleString();
+    document.getElementById('t-years').textContent = years.toLocaleString();
+    document.getElementById('t-months').textContent = months.toLocaleString();
+    document.getElementById('t-weeks').textContent = weeks.toLocaleString();
+
+    requestAnimationFrame(timeFrame);
+}
+
 let testArtActive = false;
 let testArtInitialized = false;
 
