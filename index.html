@@ -3522,6 +3522,8 @@ const pageMotion = document.getElementById('page-motion');
         const pageAdhd = document.getElementById('page-adhd');
 
 function clearNavigation() {
+    /* Stop hidden motion decoders/render loops before changing sections. */
+    if (typeof window.pauseMotionPage === 'function') window.pauseMotionPage();
     pageAbout.classList.remove('visible');
     pageWorks.classList.remove('visible');
     pageSketches.classList.remove('visible');
@@ -3665,7 +3667,11 @@ saveLastPage('sketches');
 function openMotion() {
 isPaintingActive = false;
 saveLastPage('motion');
-    if (pageMotion.classList.contains('visible')) return;
+    if (pageMotion.classList.contains('visible')) {
+        if (typeof window.ensureMotionPageLoaded === 'function') window.ensureMotionPageLoaded();
+        else window.__motionOpenRequested = true;
+        return;
+    }
     clearNavigation();
     pageMotion.classList.add('visible');
     btnMotion.classList.add('active');
@@ -3674,6 +3680,10 @@ saveLastPage('motion');
     document.body.style.cursor = 'default';
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other'); // No zoom/layout toggles needed for a fixed video grid
+
+    /* Motion media is deliberately initialized only when this page is opened. */
+    if (typeof window.ensureMotionPageLoaded === 'function') window.ensureMotionPageLoaded();
+    else window.__motionOpenRequested = true;
 }
 
         // Updated Handlers to change URLs without reloading
@@ -5880,6 +5890,9 @@ window.addEventListener('resize', () => {
 
     let motionVideoList = [];
     let motionViewerIndex = 0;
+    let motionLoadPromise = null;
+    let motionLoopers = [];
+    let motionObserver = null;
     let viewerSource = '';
     let viewerSession = 0;
     let viewerCloseTimer = 0;
@@ -5890,8 +5903,8 @@ window.addEventListener('resize', () => {
             '<div class="work-item motion-item">' +
                 '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
                     '<div class="motion-video-stack">' +
-                        '<video class="motion-video-layer is-active" src="' + src + '" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>' +
-                        '<video class="motion-video-layer" muted playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback></video>' +
+                        '<video class="motion-video-layer is-active" muted playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback></video>' +
+                        '<video class="motion-video-layer" muted playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback></video>' +
                     '</div>' +
                     '<button class="motion-fullscreen-btn" type="button" aria-label="View fullscreen" onclick="openMotionViewer(event, ' + index + ')">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -6463,7 +6476,23 @@ window.addEventListener('resize', () => {
         }
     }
 
-    fetchFolderListing().then(buildGrid).catch(() => buildGrid(MOTION_FALLBACK));
+    function ensureMotionPageLoaded() {
+        if (motionVideoList.length && grid.children.length) return Promise.resolve(motionVideoList);
+        if (motionLoadPromise) return motionLoadPromise;
+
+        motionLoadPromise = fetchFolderListing()
+            .then((filenames) => {
+                buildGrid(filenames);
+                return motionVideoList;
+            })
+            .catch(() => {
+                buildGrid(MOTION_FALLBACK);
+                return motionVideoList;
+            });
+        return motionLoadPromise;
+    }
+
+    window.ensureMotionPageLoaded = ensureMotionPageLoaded;
 
     function bindReliableTap(element, action, excludedSelector) {
         let lastActivation = -1000;
@@ -6498,24 +6527,32 @@ window.addEventListener('resize', () => {
 
     function initMotionItems() {
         const motionItems = Array.from(grid.querySelectorAll('.motion-item'));
-        const loopers = [];
+        if (motionObserver) motionObserver.disconnect();
+        motionLoopers.forEach((looper) => looper.pause());
+        motionLoopers = [];
+
         function stopAllExcept(exceptLooper) {
-            loopers.forEach((looper) => {
-                if (looper !== exceptLooper) looper.stop(true);
+            motionLoopers.forEach((looper) => {
+                if (looper !== exceptLooper && looper.source) looper.stop(true);
             });
         }
 
-        const observer = new IntersectionObserver((entries) => {
+        function ensureCardSource(looper, src) {
+            if (!looper.source) looper.setSource(bestSource(src));
+        }
+
+        motionObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (!entry.isIntersecting) return;
-                observer.unobserve(entry.target);
+                motionObserver.unobserve(entry.target);
                 const src = entry.target.dataset.motionSrc;
                 const looper = entry.target.motionLooper;
                 if (!src || !looper) return;
+                ensureCardSource(looper, src);
                 if (touchCapable) looper.preparePreview();
                 primeSource(src).then((resolved) => looper.upgradeSource(resolved));
             });
-        }, { rootMargin: '700px 0px' });
+        }, { rootMargin: '350px 0px' });
 
         motionItems.forEach((item, index) => {
             const workImage = item.querySelector('.work-image');
@@ -6528,19 +6565,20 @@ window.addEventListener('resize', () => {
                 muted: true,
                 onMetadata: (video) => setCardAspect(item, video)
             });
-            looper.setSource(bestSource(src));
             item.motionLooper = looper;
-            loopers.push(looper);
-            observer.observe(item);
+            motionLoopers.push(looper);
+            motionObserver.observe(item);
 
             const play = () => {
                 stopAllExcept(looper);
+                ensureCardSource(looper, src);
                 looper.play();
                 primeSource(src).then((resolved) => looper.upgradeSource(resolved));
             };
             const stop = () => looper.stop(true);
             const toggle = () => {
                 stopAllExcept(looper);
+                ensureCardSource(looper, src);
                 looper.toggle();
                 primeSource(src).then((resolved) => looper.upgradeSource(resolved));
             };
@@ -6692,6 +6730,22 @@ window.addEventListener('resize', () => {
             viewerLooper.toggle();
         }
     });
+
+    window.pauseMotionPage = function () {
+        motionLoopers.forEach((looper) => looper.pause());
+        if (viewer.classList.contains('active')) closeViewer();
+    };
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) window.pauseMotionPage();
+    });
+
+    /* handleRouting() runs earlier in this document, so direct visits to
+       /motion/ leave this flag for the deferred module to consume. */
+    if (window.__motionOpenRequested || document.getElementById('page-motion').classList.contains('visible')) {
+        window.__motionOpenRequested = false;
+        ensureMotionPageLoaded();
+    }
 
     window.addEventListener('beforeunload', () => {
         RESOLVED_SOURCES.forEach((url) => {
