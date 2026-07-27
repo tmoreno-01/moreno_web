@@ -1566,6 +1566,19 @@ min-width: 130px !important;
 }
 .motion-item.is-playing .motion-poster { opacity: 0; }
 
+/* Desktop hover-out handoff: keep the exact canvas frame fully opaque while
+   the frozen poster blob is being created and decoded. This prevents the card
+   background from flashing between the live MP4 and the stopped frame. */
+.motion-item.is-freezing .motion-poster {
+    opacity: 0 !important;
+    transition: none !important;
+}
+.motion-item.is-freezing .motion-video-stack {
+    opacity: 1 !important;
+    transition: none !important;
+}
+
+
 /* This appears only when a checked-in poster is missing or still loading.
    The old serial MP4 decoder is retained purely as a safety fallback. */
 .motion-item.poster-loading .work-image::before {
@@ -6883,6 +6896,7 @@ window.addEventListener('resize', () => {
     class IOSThumbnailPlayer {
         constructor(video, item, onMetadata) {
             this.videos = [video];
+            this.activeIndex = 0;
             this.video = video;
             this.item = item;
             this.parent = video.parentElement;
@@ -6892,6 +6906,11 @@ window.addEventListener('resize', () => {
             this.generation = 0;
             this.isIOSLeanThumbnail = true;
             this.freezeObjectURL = item.dataset.freezeObjectUrl || '';
+            this.loopRaf = 0;
+            this.swapStarting = false;
+            this.swapToken = 0;
+            this.primed = [false, false];
+            this.priming = [null, null];
 
             this.canvas = this.parent.querySelector('.motion-transition-canvas');
             if (!this.canvas) {
@@ -6901,10 +6920,16 @@ window.addEventListener('resize', () => {
                 this.parent.appendChild(this.canvas);
             }
             this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+            this.configureVideo(video, true);
+        }
 
+        get activeVideo() { return this.videos[this.activeIndex]; }
+        get standbyVideo() { return this.videos[1 - this.activeIndex] || null; }
+
+        configureVideo(video, active = false) {
             video.controls = false;
             video.removeAttribute('controls');
-            video.loop = true;
+            video.loop = false;
             video.muted = true;
             video.defaultMuted = true;
             video.volume = 0;
@@ -6914,26 +6939,49 @@ window.addEventListener('resize', () => {
             video.disableRemotePlayback = true;
             video.setAttribute('playsinline', '');
             video.setAttribute('webkit-playsinline', '');
-            video.style.opacity = '0';
+            video.setAttribute('disablepictureinpicture', '');
+            video.setAttribute('disableremoteplayback', '');
+            video.style.opacity = active ? '1' : '0';
             video.style.pointerEvents = 'none';
+            video.classList.toggle('is-active', active);
 
             video.addEventListener('loadedmetadata', () => {
                 if (this.onMetadata) this.onMetadata(video);
+            });
+            video.addEventListener('ended', () => {
+                if (this.playing && video === this.activeVideo) {
+                    this.beginSeamlessSwap(this.generation, true);
+                }
             });
         }
 
         setSource(src) {
             if (!src) return;
+            if (this.source && this.source !== src) this.releaseSource();
             this.source = src;
         }
 
-        ensureSource(preload = 'auto') {
-            if (!this.source) return;
-            this.video.preload = preload;
-            if (this.video.getAttribute('src') !== this.source) {
-                this.video.setAttribute('src', this.source);
-                this.video.load();
+        ensureVideoSource(video, preload = 'auto') {
+            if (!video || !this.source) return;
+            video.preload = preload;
+            if (video.getAttribute('src') !== this.source) {
+                video.setAttribute('src', this.source);
+                video.load();
             }
+        }
+
+        ensureSource(preload = 'auto') {
+            this.ensureVideoSource(this.activeVideo, preload);
+        }
+
+        ensureStandby() {
+            if (this.videos.length > 1) return this.standbyVideo;
+            const standby = createMotionVideoLayer(false);
+            this.configureVideo(standby, false);
+            this.parent.insertBefore(standby, this.canvas);
+            this.videos.push(standby);
+            this.ensureVideoSource(standby, 'auto');
+            return standby;
         }
 
         prepare() {
@@ -6958,8 +7006,8 @@ window.addEventListener('resize', () => {
         }
 
         captureCurrentFrame() {
-            const video = this.video;
-            if (!this.ctx || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+            const video = this.activeVideo;
+            if (!video || !this.ctx || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
             const size = this.resizeCanvas();
             const scale = Math.max(size.width / video.videoWidth, size.height / video.videoHeight) * 1.08;
             const drawWidth = video.videoWidth * scale;
@@ -7019,14 +7067,138 @@ window.addEventListener('resize', () => {
             } catch (_) {}
         }
 
-        releaseSource() {
+        async seekToStart(video, timeoutMs = 850) {
+            if (!video) return false;
+            this.ensureVideoSource(video, 'auto');
+            await waitForMetadata(video, 1500);
+            video.pause();
+            return waitForSeek(video, safeStart(video), timeoutMs);
+        }
+
+        async primeIndex(index, generation = this.generation) {
+            if (this.primed[index]) return true;
+            if (this.priming[index]) return this.priming[index];
+            const video = this.videos[index];
+            if (!video) return false;
+
+            this.priming[index] = (async () => {
+                await this.seekToStart(video, 900);
+                if (!this.playing || generation !== this.generation) return false;
+                video.muted = true;
+                video.defaultMuted = true;
+                video.volume = 0;
+                try {
+                    const warmPlay = video.play();
+                    if (warmPlay && typeof warmPlay.then === 'function') await warmPlay;
+                    await waitForPaintedFrame(video, 700);
+                } catch (_) {}
+                video.pause();
+                await waitForSeek(video, safeStart(video), 700);
+                if (!this.playing || generation !== this.generation) return false;
+                this.primed[index] = video.readyState >= 2;
+                video.style.opacity = '0';
+                video.classList.remove('is-active');
+                return this.primed[index];
+            })().finally(() => {
+                this.priming[index] = null;
+            });
+            return this.priming[index];
+        }
+
+        startLoopMonitor(generation) {
+            cancelAnimationFrame(this.loopRaf);
+            const tick = () => {
+                if (!this.playing || generation !== this.generation) return;
+                const active = this.activeVideo;
+                if (active && Number.isFinite(active.duration) && active.duration > 0) {
+                    const remaining = active.duration - active.currentTime;
+                    const launchLead = Math.max(0.095, Math.min(0.16, active.duration * 0.16));
+                    if ((active.ended || remaining <= launchLead) && !this.swapStarting) {
+                        this.beginSeamlessSwap(generation, active.ended);
+                    }
+                }
+                this.loopRaf = requestAnimationFrame(tick);
+            };
+            this.loopRaf = requestAnimationFrame(tick);
+        }
+
+        async beginSeamlessSwap(generation, urgent = false) {
+            if (this.swapStarting || !this.playing || generation !== this.generation) return;
+            this.swapStarting = true;
+            const token = ++this.swapToken;
+            const fromIndex = this.activeIndex;
+            const toIndex = 1 - fromIndex;
+            const from = this.videos[fromIndex];
+            const to = this.ensureStandby();
+
             try {
-                this.video.pause();
-                this.video.removeAttribute('src');
-                this.video.load();
-            } catch (_) {}
-            this.video.style.opacity = '0';
-            this.video.classList.remove('is-active');
+                if (!this.primed[toIndex]) await this.primeIndex(toIndex, generation);
+                if (!this.playing || generation !== this.generation || token !== this.swapToken || fromIndex !== this.activeIndex) return;
+
+                await waitForSeek(to, safeStart(to), 650);
+                if (!this.playing || generation !== this.generation || token !== this.swapToken) return;
+
+                to.muted = true;
+                to.defaultMuted = true;
+                to.volume = 0;
+                to.style.opacity = '0';
+                to.classList.remove('is-active');
+                const nextPlay = to.play();
+                if (nextPlay && typeof nextPlay.then === 'function') await nextPlay;
+                const painted = await waitForPaintedFrame(to, urgent ? 420 : 650);
+                if (!painted || !this.playing || generation !== this.generation || token !== this.swapToken || fromIndex !== this.activeIndex) return;
+
+                /* The standby decoder is already painting at frame zero. Keep
+                   the outgoing layer visible until the same animation frame in
+                   which the incoming layer becomes visible, so Safari never
+                   exposes the card background at the MP4 boundary. */
+                to.style.transition = 'none';
+                from.style.transition = 'none';
+                to.style.opacity = '1';
+                to.classList.add('is-active');
+                from.style.opacity = '0';
+                from.classList.remove('is-active');
+                this.activeIndex = toIndex;
+                this.video = to;
+                this.primed[toIndex] = false;
+
+                from.pause();
+                this.primed[fromIndex] = false;
+                this.swapStarting = false;
+                this.primeIndex(fromIndex, generation);
+            } catch (_) {
+                /* Native loop is only a last-resort fallback. It is enabled
+                   without hiding the current layer, so even a failed standby
+                   launch cannot produce a black/background flash. */
+                if (this.playing && generation === this.generation && fromIndex === this.activeIndex) {
+                    try {
+                        from.loop = true;
+                        if (from.paused) from.play().catch(() => {});
+                    } catch (_) {}
+                }
+            } finally {
+                if (token === this.swapToken) this.swapStarting = false;
+            }
+        }
+
+        releaseSource() {
+            cancelAnimationFrame(this.loopRaf);
+            this.loopRaf = 0;
+            this.swapStarting = false;
+            this.swapToken++;
+            this.primed = [false, false];
+            this.priming = [null, null];
+            this.videos.forEach((video, index) => {
+                try {
+                    video.pause();
+                    video.loop = false;
+                    video.removeAttribute('src');
+                    video.load();
+                } catch (_) {}
+                video.style.opacity = '0';
+                video.classList.remove('is-active');
+                if (index > 0) video.preload = 'none';
+            });
         }
 
         async play() {
@@ -7034,24 +7206,30 @@ window.addEventListener('resize', () => {
             if (this.playing) return true;
             this.playing = true;
             const generation = ++this.generation;
-            this.ensureSource('auto');
-            this.video.loop = true;
-            this.video.muted = true;
-            this.video.defaultMuted = true;
-            this.video.volume = 0;
-            this.video.style.opacity = '1';
-            this.video.classList.add('is-active');
-            /* Keep the poster/frozen canvas visible beneath the transparent
-               video until Safari confirms a real painted frame. */
+            this.activeIndex = Math.min(this.activeIndex, this.videos.length - 1);
+            const active = this.activeVideo;
+            this.ensureVideoSource(active, 'auto');
+            active.loop = false;
+            active.muted = true;
+            active.defaultMuted = true;
+            active.volume = 0;
+            active.style.opacity = '1';
+            active.classList.add('is-active');
             this.parent.classList.add('has-frame');
 
             try {
-                const promise = this.video.play();
+                if (active.ended || (Number.isFinite(active.duration) && active.currentTime >= active.duration - 0.02)) {
+                    active.currentTime = safeStart(active);
+                }
+                const promise = active.play();
                 if (promise && typeof promise.then === 'function') await promise;
-                const painted = await waitForPaintedFrame(this.video, 1050);
+                const painted = await waitForPaintedFrame(active, 1050);
                 if (!painted || generation !== this.generation || !this.playing) throw new Error('No painted frame');
                 this.clearCanvas();
                 this.item.classList.add('is-playing');
+                this.ensureStandby();
+                this.primeIndex(1 - this.activeIndex, generation);
+                this.startLoopMonitor(generation);
                 return true;
             } catch (_) {
                 if (generation === this.generation) {
@@ -7066,6 +7244,10 @@ window.addEventListener('resize', () => {
 
         freezeAndUnload() {
             const generation = ++this.generation;
+            cancelAnimationFrame(this.loopRaf);
+            this.loopRaf = 0;
+            this.swapToken++;
+            this.swapStarting = false;
             const captured = this.captureCurrentFrame();
             this.playing = false;
             this.item.classList.remove('is-playing');
@@ -7079,13 +7261,8 @@ window.addEventListener('resize', () => {
             return captured;
         }
 
-        pause() {
-            return this.freezeAndUnload();
-        }
-
-        stop() {
-            return this.freezeAndUnload();
-        }
+        pause() { return this.freezeAndUnload(); }
+        stop() { return this.freezeAndUnload(); }
 
         toggle() {
             if (this.playing) {
@@ -7327,38 +7504,78 @@ window.addEventListener('resize', () => {
         });
     }
 
+    function revealMotionPosterImmediately(item, stack) {
+        if (!item) return;
+        const poster = item.querySelector('.motion-poster');
+        if (poster) {
+            poster.style.transition = 'none';
+            poster.style.opacity = '1';
+        }
+        item.classList.remove('is-freezing');
+        item.classList.remove('is-playing');
+        if (stack) stack.classList.remove('has-frame');
+        requestAnimationFrame(() => {
+            if (!poster) return;
+            poster.style.removeProperty('opacity');
+            requestAnimationFrame(() => poster.style.removeProperty('transition'));
+        });
+    }
+
     function commitDesktopFreezeToPoster(item, looper, stack) {
         if (!item || !looper || looper.isIOSLeanThumbnail || !looper.canvas) return false;
         const poster = item.querySelector('.motion-poster');
         const canvas = looper.canvas;
-        if (!poster || !canvas.width || !canvas.height || typeof canvas.toBlob !== 'function') return false;
+        if (!poster || typeof canvas.toBlob !== 'function') return false;
 
-        /* Draw the exact paused frame once more before converting it. The video
-           remains decoded until this synchronous draw completes. */
+        /* Draw synchronously before testing the canvas dimensions. A very quick
+           hover can end before the normal render loop has sized the canvas; the
+           previous ordering treated that as a failed freeze and exposed the
+           card background for a frame. */
         try {
             if (looper.activeVideo && looper.activeVideo.readyState >= 2) {
                 looper.drawVideo(looper.activeVideo, 1, true);
-                looper.showCanvas();
             }
+            if (looper.lastGoodFrame) looper.showCanvas();
         } catch (_) {}
+        if (!canvas.width || !canvas.height || !looper.lastGoodFrame) return false;
 
         const generation = (item.motionFreezeGeneration || 0) + 1;
         item.motionFreezeGeneration = generation;
+        item.classList.add('is-freezing');
         if (stack) stack.classList.add('has-frame');
 
         const finish = (blob) => {
             if (!blob || item.motionFreezeGeneration !== generation || looper.playing) {
-                if (stack && !looper.playing) stack.classList.remove('has-frame');
+                /* Keep the already-drawn canvas visible on failure. It is a
+                   valid exact freeze frame and is safer than revealing the
+                   card background while a newer hover is taking over. */
                 return;
             }
             const url = URL.createObjectURL(blob);
             const previous = item.dataset.freezeObjectUrl || '';
-            poster.onload = () => {
+            const completeHandoff = () => {
                 if (item.motionFreezeGeneration !== generation || looper.playing) return;
-                if (stack) stack.classList.remove('has-frame');
+
+                /* The blob poster is decoded now. Reveal it with transitions
+                   disabled, then remove the canvas stack one frame later. */
+                poster.style.transition = 'none';
+                poster.style.opacity = '1';
+                item.classList.remove('is-freezing');
+                item.classList.remove('is-playing');
+                requestAnimationFrame(() => {
+                    if (item.motionFreezeGeneration !== generation || looper.playing) return;
+                    if (stack) stack.classList.remove('has-frame');
+                    if (typeof looper.hideCanvas === 'function') looper.hideCanvas();
+                    poster.style.removeProperty('opacity');
+                    requestAnimationFrame(() => poster.style.removeProperty('transition'));
+                });
                 if (previous.startsWith('blob:') && previous !== url) {
                     try { URL.revokeObjectURL(previous); } catch (_) {}
                 }
+            };
+            poster.onload = completeHandoff;
+            poster.onerror = () => {
+                /* Canvas remains visible; no background flash. */
             };
             poster.src = url;
             item.dataset.freezeObjectUrl = url;
@@ -7371,14 +7588,11 @@ window.addEventListener('resize', () => {
             canvas.toBlob((blob) => {
                 if (blob) finish(blob);
                 else {
-                    try { canvas.toBlob(finish, 'image/jpeg', 0.8); } catch (_) {
-                        if (stack) stack.classList.remove('has-frame');
-                    }
+                    try { canvas.toBlob(finish, 'image/jpeg', 0.8); } catch (_) {}
                 }
             }, 'image/webp', 0.78);
             return true;
         } catch (_) {
-            if (stack) stack.classList.remove('has-frame');
             return false;
         }
     }
@@ -7397,6 +7611,13 @@ window.addEventListener('resize', () => {
         prepareStaticMotionPoster(item, index);
 
         const play = async () => {
+            item.motionFreezeGeneration = (item.motionFreezeGeneration || 0) + 1;
+            item.classList.remove('is-freezing');
+            const poster = item.querySelector('.motion-poster');
+            if (poster) {
+                poster.style.removeProperty('opacity');
+                poster.style.removeProperty('transition');
+            }
             const looper = hydrateMotionItem(item, index);
             if (!looper) return;
             stopActiveThumbnail(item);
@@ -7420,15 +7641,21 @@ window.addEventListener('resize', () => {
         const stop = () => {
             const looper = item.motionLooper;
             if (!looper) return;
+            const stack = item.querySelector('.motion-video-stack');
+
+            /* Put the card into an opaque handoff state before pausing. The
+               exact current frame remains visible while the poster blob is
+               created, so moving the pointer away can never reveal the card
+               background between layers. */
+            item.classList.add('is-freezing');
+            if (stack) stack.classList.add('has-frame');
             looper.pause();
             if (activeThumbnailItem === item) setActiveThumbnail(null, null);
             item.classList.remove('is-playing');
-            const stack = item.querySelector('.motion-video-stack');
-            /* Desktop keeps the exact frame where the hover ended, then frees
-               the visible video stack once that frame has become the poster. */
+
             const freezing = !useIOSLeanThumbnails &&
                 commitDesktopFreezeToPoster(item, looper, stack);
-            if (!freezing && stack) stack.classList.remove('has-frame');
+            if (!freezing) revealMotionPosterImmediately(item, stack);
         };
         const toggle = async () => {
             const looper = hydrateMotionItem(item, index);
