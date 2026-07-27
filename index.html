@@ -1510,9 +1510,15 @@ min-width: 130px !important;
     z-index: auto !important;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    /* Motion thumbnails must not resize when the pointer leaves. The old
+       1.015 hover scale exposed the card background around the edges and made
+       the frozen frame appear to jump even when the media handoff was sound. */
+    transition: none !important;
+    opacity: 1 !important;
 }
 #page-motion .work-item:has(.work-image:hover) {
-    transform: scale(1.015) !important;
+    transform: none !important;
+    opacity: 1 !important;
     z-index: 5 !important;
 }
 
@@ -1533,7 +1539,10 @@ min-width: 130px !important;
     max-width: none !important;
     margin: 0;
     box-shadow: none !important;
-    background: rgba(127, 127, 127, 0.12);
+    /* A decoded poster or frozen canvas always owns the visible surface.
+       Keeping this transparent removes the grey pulse Safari/Chrome could
+       briefly composite while switching GPU video layers. */
+    background: transparent;
     aspect-ratio: var(--motion-ratio, 0.5625);
     overflow: hidden;
     border-radius: 6px;
@@ -1565,17 +1574,9 @@ min-width: 130px !important;
     transition: opacity 0.12s linear;
 }
 /* Keep the poster permanently painted underneath the video stack.
-   The stack sits above it (z-index: 2), so the moving MP4 still displays
-   normally, but any one-frame compositor gap reveals the frozen poster
-   instead of the card background. */
-.motion-item.is-playing .motion-poster {
-    opacity: 1;
-    transition: none;
-}
-
-/* Desktop hover-out handoff: the exact canvas frame stays above the poster,
-   while the already-decoded poster remains painted underneath as a permanent
-   safety layer. Never hide both layers during the pause/freeze handoff. */
+   The moving/frozen canvas remains above it, so there is never a frame where
+   the card background can become the visible surface. */
+.motion-item.is-playing .motion-poster,
 .motion-item.is-freezing .motion-poster {
     opacity: 1 !important;
     transition: none !important;
@@ -1583,6 +1584,13 @@ min-width: 130px !important;
 .motion-item.is-freezing .motion-video-stack {
     opacity: 1 !important;
     transition: none !important;
+}
+
+/* A poster made from the transition canvas already contains the same 1.08
+   crop as the live MP4. Do not apply the poster's initial 1.08 transform a
+   second time, which previously caused the visible zoom/jump after hover-out. */
+#page-motion .motion-item.has-frozen-poster .motion-poster {
+    transform: none !important;
 }
 
 
@@ -1623,7 +1631,10 @@ min-width: 130px !important;
    card background. The poster remains underneath as a safety frame while the
    already-painted video/canvas stack is revealed instantly above it. */
 @media (hover: hover) and (pointer: fine) {
-    #page-motion .motion-video-stack {
+    #page-motion .motion-video-stack,
+    #page-motion .motion-poster,
+    #page-motion .motion-video-layer,
+    #page-motion .motion-transition-canvas {
         transition: none !important;
     }
 }
@@ -7342,11 +7353,17 @@ window.addEventListener('resize', () => {
             return;
         }
 
-        if (previousStack) previousStack.classList.remove('has-frame');
-        /* Pause only the one loop that was actually playing. The old code
-           reset every hydrated card on each tap, creating a burst of seeks
-           that could make all Safari video surfaces briefly turn black. */
-        if (previousLooper) previousLooper.pause();
+        /* Desktop can receive the next card's mouseenter before the previous
+           card's mouseleave. Freeze the previous card here as well and never
+           clear its visible stack first, otherwise that event ordering exposes
+           the card background for one compositor frame. */
+        if (previousLooper) {
+            previousItem.classList.add('is-freezing');
+            const captured = captureDesktopFrame(previousItem, previousLooper, previousStack);
+            previousLooper.pause();
+            if (captured) commitDesktopFreezeToPoster(previousItem, previousLooper, previousStack);
+            else revealMotionPosterImmediately(previousItem, previousStack);
+        }
     }
 
     function enforceTouchHydrationLimit(preferredItem = null) {
@@ -7530,11 +7547,22 @@ window.addEventListener('resize', () => {
         item.classList.remove('is-freezing');
         item.classList.remove('is-playing');
         if (stack) stack.classList.remove('has-frame');
-        requestAnimationFrame(() => {
-            if (!poster) return;
-            poster.style.removeProperty('opacity');
-            requestAnimationFrame(() => poster.style.removeProperty('transition'));
-        });
+    }
+
+    function captureDesktopFrame(item, looper, stack) {
+        if (!item || !looper || looper.isIOSLeanThumbnail || !looper.canvas) return false;
+        try {
+            const active = looper.activeVideo;
+            if (active && active.readyState >= 2 && active.videoWidth && active.videoHeight) {
+                looper.drawVideo(active, 1, true);
+            }
+            if (!looper.lastGoodFrame) return false;
+            looper.showCanvas();
+            if (stack) stack.classList.add('has-frame');
+            return true;
+        } catch (_) {
+            return false;
+        }
     }
 
     function commitDesktopFreezeToPoster(item, looper, stack) {
@@ -7543,73 +7571,70 @@ window.addEventListener('resize', () => {
         const canvas = looper.canvas;
         if (!poster || typeof canvas.toBlob !== 'function') return false;
 
-        /* Draw synchronously before testing the canvas dimensions. A very quick
-           hover can end before the normal render loop has sized the canvas; the
-           previous ordering treated that as a failed freeze and exposed the
-           card background for a frame. */
-        try {
-            if (looper.activeVideo && looper.activeVideo.readyState >= 2) {
-                looper.drawVideo(looper.activeVideo, 1, true);
-            }
-            if (looper.lastGoodFrame) looper.showCanvas();
-        } catch (_) {}
-        if (!canvas.width || !canvas.height || !looper.lastGoodFrame) return false;
+        /* The canvas is the visible frozen surface on desktop. Capture it
+           synchronously and KEEP it displayed; the poster conversion below is
+           only a background backup for later dehydration/off-screen cleanup.
+           There is therefore no canvas -> image layer swap on pointerleave. */
+        if (!captureDesktopFrame(item, looper, stack)) return false;
+        if (!canvas.width || !canvas.height) return false;
 
         const generation = (item.motionFreezeGeneration || 0) + 1;
         item.motionFreezeGeneration = generation;
         item.classList.add('is-freezing');
-        if (stack) stack.classList.add('has-frame');
+        item.classList.remove('is-playing');
 
         const finish = (blob) => {
-            if (!blob || item.motionFreezeGeneration !== generation || looper.playing) {
-                /* Keep the already-drawn canvas visible on failure. It is a
-                   valid exact freeze frame and is safer than revealing the
-                   card background while a newer hover is taking over. */
-                return;
-            }
+            if (!blob || item.motionFreezeGeneration !== generation || looper.playing) return;
+
             const url = URL.createObjectURL(blob);
             const previous = item.dataset.freezeObjectUrl || '';
-            const completeHandoff = () => {
-                if (item.motionFreezeGeneration !== generation || looper.playing) return;
+            const probe = new Image();
+            probe.onload = () => {
+                if (item.motionFreezeGeneration !== generation || looper.playing) {
+                    try { URL.revokeObjectURL(url); } catch (_) {}
+                    return;
+                }
 
-                /* The blob poster is decoded now. Reveal it with transitions
-                   disabled, then remove the canvas stack one frame later. */
+                /* Decode away from the visible poster first. Only after the
+                   backup is ready do we replace its source, eliminating the
+                   last race where a rapid re-hover could leave a revoked or
+                   half-decoded image underneath the canvas. */
+                item.classList.add('has-frozen-poster');
                 poster.style.transition = 'none';
                 poster.style.opacity = '1';
+                poster.src = url;
                 item.classList.remove('is-freezing');
-                item.classList.remove('is-playing');
-                requestAnimationFrame(() => {
-                    if (item.motionFreezeGeneration !== generation || looper.playing) return;
-                    if (stack) stack.classList.remove('has-frame');
-                    if (typeof looper.hideCanvas === 'function') looper.hideCanvas();
-                    poster.style.removeProperty('opacity');
-                    requestAnimationFrame(() => poster.style.removeProperty('transition'));
-                });
+                item.dataset.freezeObjectUrl = url;
+                item.dataset.posterReady = 'true';
+                item.classList.remove('poster-loading');
+                item.classList.add('poster-ready');
+
                 if (previous.startsWith('blob:') && previous !== url) {
                     try { URL.revokeObjectURL(previous); } catch (_) {}
                 }
             };
-            poster.onload = completeHandoff;
-            poster.onerror = () => {
-                /* Canvas remains visible; no background flash. */
+            probe.onerror = () => {
+                /* The exact canvas freeze is still visible; keep the previous
+                   poster as the backup and discard only this failed blob. */
+                try { URL.revokeObjectURL(url); } catch (_) {}
+                if (item.motionFreezeGeneration === generation && !looper.playing) {
+                    item.classList.remove('is-freezing');
+                }
             };
-            poster.src = url;
-            item.dataset.freezeObjectUrl = url;
-            item.dataset.posterReady = 'true';
-            item.classList.remove('poster-loading');
-            item.classList.add('poster-ready');
+            probe.src = url;
         };
 
         try {
             canvas.toBlob((blob) => {
                 if (blob) finish(blob);
                 else {
-                    try { canvas.toBlob(finish, 'image/jpeg', 0.8); } catch (_) {}
+                    try { canvas.toBlob(finish, 'image/jpeg', 0.86); } catch (_) {}
                 }
-            }, 'image/webp', 0.78);
+            }, 'image/webp', 0.84);
             return true;
         } catch (_) {
-            return false;
+            item.classList.remove('is-freezing');
+            return true; // the already-painted canvas is still a valid freeze
         }
     }
 
@@ -7659,19 +7684,24 @@ window.addEventListener('resize', () => {
             if (!looper) return;
             const stack = item.querySelector('.motion-video-stack');
 
-            /* Put the card into an opaque handoff state before pausing. The
-               exact current frame remains visible while the poster blob is
-               created, so moving the pointer away can never reveal the card
-               background between layers. */
-            item.classList.add('is-freezing');
-            if (stack) stack.classList.add('has-frame');
+            /* Atomic desktop hover-out: paint the current MP4 frame into the
+               canvas BEFORE pausing the decoder, then leave that same canvas
+               on screen. No opacity swap, source change or poster replacement
+               occurs in the visible path. */
+            if (!useIOSLeanThumbnails) {
+                item.classList.add('is-freezing');
+                const captured = captureDesktopFrame(item, looper, stack);
+                looper.pause();
+                if (activeThumbnailItem === item) setActiveThumbnail(null, null);
+                item.classList.remove('is-playing');
+                if (captured) commitDesktopFreezeToPoster(item, looper, stack);
+                else revealMotionPosterImmediately(item, stack);
+                return;
+            }
+
             looper.pause();
             if (activeThumbnailItem === item) setActiveThumbnail(null, null);
             item.classList.remove('is-playing');
-
-            const freezing = !useIOSLeanThumbnails &&
-                commitDesktopFreezeToPoster(item, looper, stack);
-            if (!freezing) revealMotionPosterImmediately(item, stack);
         };
         const toggle = async () => {
             const looper = hydrateMotionItem(item, index);
