@@ -5864,12 +5864,25 @@ window.addEventListener('resize', () => {
 // --- MOTION PAGE: adaptive aspect-ratio cards and canvas-rendered seamless loops. ---
 (function () {
     const MOTION_FOLDER = '/artwork/motion/';
+    /* GitHub Pages does not expose a browsable directory index. Read the
+       public repository folder through GitHub's Contents API instead, so
+       adding or removing an MP4 in artwork/motion automatically updates the
+       live Motion page without editing this HTML. */
+    const MOTION_GITHUB_API = 'https://api.github.com/repos/tmoreno-01/moreno_web/contents/artwork/motion';
+    const MOTION_INDEX_CACHE_KEY = 'moreno-motion-files-v2';
+    const MOTION_INDEX_CACHE_MS = 2 * 60 * 1000;
+
+    /* Emergency-only fallback. Normal live operation uses the GitHub API or
+       its cached response, so future uploads do not need to be added here. */
     const MOTION_FALLBACK = [
+        '3dglasses.mp4',
         'beanieman_01.mp4',
         'funnymedieval_01.mp4',
         'motionboy_03.mp4',
+        'partytest06.mp4',
         'skulltest_03.mp4',
-        'smokingburn_02.mp4'
+        'smokingburn_02.mp4',
+        'zebra.mp4'
     ];
 
     const grid = document.getElementById('motion-grid');
@@ -5916,28 +5929,68 @@ window.addEventListener('resize', () => {
         );
     }
 
+    function motionFileURL(filename) {
+        /* Encode each filename safely while keeping the same-origin Pages URL,
+           which preserves Safari byte-range loading and the current lazy-load
+           behaviour. */
+        return MOTION_FOLDER + String(filename)
+            .split('/')
+            .map((part) => encodeURIComponent(part))
+            .join('/');
+    }
+
     function buildGrid(filenames) {
-        motionVideoList = filenames.map((filename) => MOTION_FOLDER + filename);
+        motionVideoList = filenames.map(motionFileURL);
         grid.innerHTML = motionVideoList.map(cardHTML).join('');
         initMotionItems();
     }
 
-    function fetchFolderListing() {
-        return fetch(MOTION_FOLDER, { cache: 'no-store' })
-            .then((response) => {
-                if (!response.ok) throw new Error('Folder listing unavailable');
-                return response.text();
-            })
-            .then((html) => {
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                const names = Array.from(doc.querySelectorAll('a'))
-                    .map((anchor) => anchor.getAttribute('href') || '')
-                    .map((href) => decodeURIComponent(href.split('/').pop() || ''))
-                    .filter((name) => /\.(mp4|webm|mov)$/i.test(name));
-                const unique = Array.from(new Set(names)).sort();
-                if (!unique.length) throw new Error('No motion files found');
-                return unique;
-            });
+    function readMotionIndexCache(allowStale) {
+        try {
+            const cached = JSON.parse(localStorage.getItem(MOTION_INDEX_CACHE_KEY) || 'null');
+            if (!cached || !Array.isArray(cached.files) || !cached.files.length) return null;
+            if (!allowStale && Date.now() - Number(cached.savedAt || 0) > MOTION_INDEX_CACHE_MS) return null;
+            return cached.files
+                .filter((name) => /\.mp4$/i.test(name))
+                .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function writeMotionIndexCache(files) {
+        try {
+            localStorage.setItem(MOTION_INDEX_CACHE_KEY, JSON.stringify({
+                savedAt: Date.now(),
+                files
+            }));
+        } catch (_) {}
+    }
+
+    async function fetchFolderListing() {
+        const freshCache = readMotionIndexCache(false);
+        if (freshCache) return freshCache;
+
+        const response = await fetch(MOTION_GITHUB_API, {
+            cache: 'no-store',
+            headers: {
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        });
+        if (!response.ok) throw new Error('GitHub motion folder request failed: ' + response.status);
+
+        const entries = await response.json();
+        if (!Array.isArray(entries)) throw new Error('Unexpected GitHub folder response');
+
+        const files = Array.from(new Set(entries
+            .filter((entry) => entry && entry.type === 'file' && /\.mp4$/i.test(entry.name || ''))
+            .map((entry) => entry.name)))
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+        if (!files.length) throw new Error('No MP4 files found in GitHub motion folder');
+        writeMotionIndexCache(files);
+        return files;
     }
 
     function primeSource(src) {
@@ -6486,7 +6539,9 @@ window.addEventListener('resize', () => {
                 return motionVideoList;
             })
             .catch(() => {
-                buildGrid(MOTION_FALLBACK);
+                /* A stale cached API result is preferable to losing the
+                   gallery during a temporary API/rate-limit/network failure. */
+                buildGrid(readMotionIndexCache(true) || MOTION_FALLBACK);
                 return motionVideoList;
             });
         return motionLoadPromise;
