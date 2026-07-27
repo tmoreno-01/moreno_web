@@ -24,10 +24,8 @@
 <link rel="icon" type="image/webp" href="/favicon.webp">
 <link rel="apple-touch-icon" href="/favicon.webp">
 
-<!-- Main Image Preloads -->
-<link rel="preload" href="/frace.webp" as="image">
-<link rel="preload" href="/logo_small.webp" as="image">
-<link rel="preload" href="/logo.webp" as="image">
+<!-- Images are loaded from their actual markup. Avoid speculative preloads,
+     which produced unused-preload warnings in Safari/Chrome. -->
 
 <!-- Third Party Libraries -->
 <script>
@@ -190,18 +188,31 @@ model-viewer {
         .nav-links {
             display: flex; 
             position: fixed; top: 35px; right: 35px;
-            gap: 30px; z-index: 250; /* Increased to beat artwork hovers */
+            gap: 24px; z-index: 250; /* Increased to beat artwork hovers */
             align-items: flex-start;
+            white-space: nowrap;
         }
 
         .nav-links a, .dropbtn {
             text-decoration: none; color: var(--text-color);
-            font-size: 0.85rem; letter-spacing: 1px;
+            font-size: 0.82rem; letter-spacing: 0.9px;
             text-transform: uppercase; font-weight: bold;
             opacity: 0.65; transition: opacity 0.3s ease, color 0.3s ease;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+        }
+
+        /* Five balanced primary links on tablets/smaller laptops. */
+        @media (min-width: 769px) and (max-width: 1100px) {
+            .nav-links {
+                right: 24px;
+                gap: 16px;
+            }
+            .nav-links a, .dropbtn {
+                font-size: 0.72rem;
+                letter-spacing: 0.55px;
+            }
         }
 
         .nav-links a:hover, .nav-links a.active, .dropbtn.active { opacity: 1; }
@@ -1243,14 +1254,19 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
             .top-left-logo { width: 125px; top: 15px; left: 15px; }
             .nav-links { 
     top: 28px; 
-    right: 15px; 
-    gap: 8px; 
-    max-width: calc(100vw - 150px); 
+    right: 12px; 
+    gap: clamp(4px, 1.45vw, 7px); 
+    max-width: calc(100vw - 145px); 
     justify-content: flex-end; 
     align-items: center; 
     flex-wrap: nowrap; 
 }
-            .nav-links a, .dropbtn { font-size: 0.55rem; letter-spacing: 0; white-space: nowrap; text-align: center; }
+            .nav-links a, .dropbtn {
+                font-size: clamp(0.46rem, 1.9vw, 0.54rem);
+                letter-spacing: -0.05px;
+                white-space: nowrap;
+                text-align: center;
+            }
             /* Keep your existing rules here, just update these two: */
             .dropdown-content { padding-top: 10px; gap: 0; }
             .dropdown-content a { padding: 12px 15px; } /* Big touch targets for thumbs */
@@ -1421,6 +1437,262 @@ min-width: 320px !important;
 min-width: 130px !important;
         max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
     }
+}
+/* --- MOTION PAGE (AI motion / experimental video works) --- */
+#page-motion .overlay-content {
+    padding-top: 88px !important;
+}
+@media (max-width: 768px) {
+    #page-motion .overlay-content { padding-top: 58px !important; }
+}
+
+#page-motion .works-container {
+    padding-left: 1.2vw !important;
+    padding-right: 1.2vw !important;
+}
+#page-motion .works-grid.mode-collage {
+    grid-template-columns: repeat(4, 1fr) !important;
+    grid-auto-flow: row dense !important;
+    gap: 22px !important;
+    width: 100%;
+    margin-top: -16px !important;
+}
+@media (min-width: 1400px) {
+    #page-motion .works-grid.mode-collage {
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 25px !important;
+    }
+}
+@media (max-width: 1024px) {
+    #page-motion .works-grid.mode-collage {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 16px !important;
+        margin-top: -10px !important;
+    }
+    #page-motion .works-container {
+        padding-left: 1vw !important;
+        padding-right: 1vw !important;
+    }
+}
+@media (max-width: 768px) {
+    #page-motion .works-grid.mode-collage {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+        margin-top: -8px !important;
+    }
+    #page-motion .works-container {
+        padding-left: 0.6vw !important;
+        padding-right: 0.6vw !important;
+    }
+}
+
+/* iPad only: add a little breathing room below the fixed navigation.
+   The width/height gates keep the existing iPhone layout unchanged. */
+@supports (-webkit-touch-callout: none) {
+    @media (min-width: 600px) and (min-height: 600px) and (max-width: 1366px) {
+        #page-motion .overlay-content { padding-top: 76px !important; }
+    }
+}
+
+/* Keep motion items straight and make taps immediate/reliable on iOS. */
+#page-motion .work-item {
+    transform: none !important;
+    margin-top: 0 !important;
+    grid-column: auto !important;
+    z-index: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+#page-motion .work-item:has(.work-image:hover) {
+    transform: scale(1.015) !important;
+    z-index: 5 !important;
+}
+
+
+/* Motion cards use each file's real dimensions. Landscape files span two
+   columns, while portrait and square files keep one column. */
+#page-motion .works-grid.mode-collage .motion-item.motion-landscape {
+    grid-column: span 2 !important;
+}
+#page-motion .works-grid.mode-collage .motion-item.motion-square,
+#page-motion .works-grid.mode-collage .motion-item.motion-portrait {
+    grid-column: span 1 !important;
+}
+
+#page-motion .works-grid.mode-collage .motion-item .work-image {
+    position: relative;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0;
+    box-shadow: none !important;
+    background: #000;
+    aspect-ratio: var(--motion-ratio, 0.5625);
+    overflow: hidden;
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Two decoded layers alternate at every loop point. The outgoing layer fades
+   into a start-ready layer, so the visible video never performs an end-to-zero
+   seek and the decoder never visibly stalls. */
+.motion-video-stack {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+}
+.motion-video-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.08);
+    transform-origin: center;
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+.motion-video-layer.is-active { opacity: 1; }
+
+/* --- Per-video fullscreen button, bottom right of each thumbnail --- */
+.motion-fullscreen-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    padding: 6px;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.motion-fullscreen-btn svg { width: 100%; height: 100%; }
+.motion-fullscreen-btn:hover { background: rgba(0, 0, 0, 0.7); }
+#page-motion .work-image:hover .motion-fullscreen-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+@media (hover: none), (pointer: coarse) {
+    .motion-fullscreen-btn {
+        opacity: 0.85;
+        transform: none;
+    }
+}
+
+/* --- MOTION FULLSCREEN VIEWER --- */
+.motion-viewer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-color);
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity 0.3s ease, background-color 0.3s ease, visibility 0.3s;
+}
+.motion-viewer.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* This stage is sized in JS to the video's real aspect ratio. It clips the
+   small overscale below, trimming any baked-in one-pixel/tiny black bars while
+   preserving the artwork's full portrait framing. */
+.motion-video-stage {
+    position: relative;
+    width: min(92vw, 51.75vh);
+    width: min(92vw, 51.75dvh);
+    height: min(92vh, 163.56vw);
+    height: min(92dvh, 163.56vw);
+    max-width: 100vw;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
+    background: #000;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.motion-video-stage .motion-video-layer {
+    transform: scale(1.075);
+}
+.motion-transition-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 5;
+    image-rendering: auto;
+    pointer-events: none;
+    background: transparent;
+}
+
+.motion-freeze-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 6;
+    pointer-events: none;
+}
+
+/* Native media controls are intentionally disabled in this custom viewer.
+   This prevents Safari/Chrome from flashing the bottom loading/progress bar
+   each time a loop changes layers. Tap the video itself to play/pause. */
+.motion-viewer video {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+}
+.motion-viewer video::-webkit-media-controls,
+.motion-viewer video::-webkit-media-controls-panel,
+.motion-viewer video::-webkit-media-controls-enclosure,
+.motion-viewer video::-webkit-media-controls-overlay-play-button,
+.motion-viewer video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+}
+
+.motion-viewer .lightbox-close { position: fixed; top: 30px; right: 40px; }
+.motion-viewer .slider-arrow { position: fixed; top: 50%; }
+.motion-viewer .left-arrow { left: 40px; }
+.motion-viewer .right-arrow { right: 40px; }
+@media (max-width: 768px) {
+    .motion-video-stage {
+        max-width: 96vw;
+        max-height: 96vh;
+        max-height: 96dvh;
+    }
+    .motion-viewer .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
+    .motion-viewer .left-arrow { left: 18px; }
+    .motion-viewer .right-arrow { right: 18px; }
 }
 /* --- STORE PAGE - PERFECT EQUAL SPACING --- */
 
@@ -2178,24 +2450,24 @@ body.adhd-mode #ios-brush-selector {
    <img src="/logo.webp" alt="Logo" class="top-left-logo" id="btn-gallery-logo">
     
 <div class="nav-links">
-        
+
         <div class="dropdown">
             <a href="/gallery/" class="dropbtn" id="btn-gallery" style="cursor:pointer">
                 <div class="gallery-wrapper">
                     <span id="btn-gallery-text">Gallery</span>
                     <img src="/random/galleryglitch.webp" id="btn-gallery-img" class="gallery-glitch-img">
                 </div>
-
             </a>
-          <div class="dropdown-content">
-<a href="/sketches/" id="btn-sketches">Sketches</a>
-    <a href="/paint/" id="btn-paint">Paint</a>
-    <a href="/exhibitions/" id="btn-exhibitions" style="display: none;">Exhibitions</a>
-    <a href="/press/" id="btn-press" style="display: none;">Press</a>
-</div>
+            <div class="dropdown-content">
+                <a href="/sketches/" id="btn-sketches">Sketches</a>
+                <a href="/paint/" id="btn-paint">Paint</a>
+                <a href="/exhibitions/" id="btn-exhibitions" style="display: none;">Exhibitions</a>
+                <a href="/press/" id="btn-press" style="display: none;">Press</a>
+            </div>
         </div>
-<a href="#store" id="btn-store">Store</a>
-  <a href="/about/" id="btn-about">About</a>
+        <a href="/motion/" id="btn-motion">Motion</a>
+        <a href="#store" id="btn-store">Store</a>
+        <a href="/about/" id="btn-about">About</a>
         <a href="/contact/" id="btn-contact">Contact</a>
 <a href="#" id="btn-cart-nav" class="nav-cart hidden" onclick="openCart(); return false;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -2577,6 +2849,29 @@ body.adhd-mode #ios-brush-selector {
             </div>
         </div>
     </div>
+<div id="page-motion" class="page-overlay">
+    <div class="overlay-content">
+        <div class="works-container">
+            <!-- Cards are generated automatically by JS from whatever .mp4 files
+                 are found in /artwork/motion/ — see the MOTION PAGE script near
+                 the bottom of the file. Nothing to hardcode here. -->
+            <div class="works-grid mode-collage" id="motion-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom fullscreen viewer for motion pieces: covers the whole screen and
+     lets you page through every clip in the grid with the arrows / arrow keys. -->
+<div id="motion-viewer" class="motion-viewer">
+    <div class="lightbox-close" id="motion-viewer-close">×</div>
+    <div class="slider-arrow left-arrow" id="motion-viewer-prev"></div>
+    <div class="slider-arrow right-arrow" id="motion-viewer-next"></div>
+    <div id="motion-video-stage" class="motion-video-stage" role="button" aria-label="Play or pause video">
+        <video id="motion-viewer-video-a" class="motion-video-layer is-active" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
+        <video id="motion-viewer-video-b" class="motion-video-layer" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
+        <canvas id="motion-viewer-freeze" class="motion-freeze-frame" aria-hidden="true"></canvas>
+    </div>
+</div>
 <div id="page-sketches" class="page-overlay">
     <div class="overlay-content">
         <div class="works-container">
@@ -2800,7 +3095,6 @@ function handleRouting() {
     const redirected = params.get('redirect');
     const path = redirected || window.__initialPathname;
 
-    console.log("Routing attempting to load path:", path);
 
     if (path) {
         if (redirected) {
@@ -2826,6 +3120,9 @@ function handleRouting() {
         } else if (normalizedPath.includes('/sketches')) {
             updatePageMeta("Tyrone Moreno | Sketches"); // <-- ADDED
             openSketches();
+        } else if (normalizedPath.includes('/motion')) {
+            updatePageMeta("Tyrone Moreno | Motion");
+            openMotion();
         } else if (normalizedPath.includes('/contact')) {
             updatePageMeta("Tyrone Moreno | Contact"); // <-- ADDED
             clearNavigation();
@@ -3205,6 +3502,7 @@ btnStore.addEventListener('click', (e) => {
    // --- NAVIGATION & HOVER LOGIC ---
         const btnGalleryLogo = document.getElementById('btn-gallery-logo');
         const btnPaint = document.getElementById('btn-paint');
+        const btnMotion = document.getElementById('btn-motion');
 const btnSketches = document.getElementById('btn-sketches');
         const btnAbout = document.getElementById('btn-about');
         const btnGallery = document.getElementById('btn-gallery');
@@ -3215,6 +3513,7 @@ const btnSketches = document.getElementById('btn-sketches');
         const pageAbout = document.getElementById('page-about');
         const pageWorks = document.getElementById('page-works');
 const pageSketches = document.getElementById('page-sketches');
+const pageMotion = document.getElementById('page-motion');
         const pageExhibitions = document.getElementById('page-exhibitions');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
@@ -3226,6 +3525,8 @@ function clearNavigation() {
     pageAbout.classList.remove('visible');
     pageWorks.classList.remove('visible');
     pageSketches.classList.remove('visible');
+    pageMotion.classList.remove('visible');
+    btnMotion.classList.remove('active');
     pageExhibitions.classList.remove('visible');
     pagePress.classList.remove('visible');
     pageContact.classList.remove('visible');
@@ -3361,6 +3662,19 @@ saveLastPage('sketches');
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('gallery'); // Triggers the layout and zoom toggles to appear
 }
+function openMotion() {
+isPaintingActive = false;
+saveLastPage('motion');
+    if (pageMotion.classList.contains('visible')) return;
+    clearNavigation();
+    pageMotion.classList.add('visible');
+    btnMotion.classList.add('active');
+    btnGallery.classList.add('active'); // Keep gallery root active
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('other'); // No zoom/layout toggles needed for a fixed video grid
+}
 
         // Updated Handlers to change URLs without reloading
         btnGalleryLogo.addEventListener('click', (e) => { 
@@ -3372,6 +3686,7 @@ saveLastPage('sketches');
         
         btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
 btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/sketches/'); openSketches(); });
+btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/motion/'); openMotion(); });
         btnGallery.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/gallery/'); openWorks(); });
         btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/gallery/'); openWorks(); }});
         btnGallery.addEventListener('touchend', (e) => {
@@ -4101,6 +4416,7 @@ if (e.touches.length === 2 && initialPinchDistance) {
         pageAbout.classList.contains('visible') || 
         pageWorks.classList.contains('visible') || 
         pageSketches.classList.contains('visible') || // Added Sketches
+        pageMotion.classList.contains('visible') || // Added Motion
         pageExhibitions.classList.contains('visible') ||
         pagePress.classList.contains('visible') ||
         pageContact.classList.contains('visible') || 
@@ -4225,6 +4541,7 @@ window.addEventListener('mousemove', e => {
         !pageAbout.classList.contains('visible') && 
         !pageWorks.classList.contains('visible') && 
         !pageSketches.classList.contains('visible') && // Added Sketches
+        !pageMotion.classList.contains('visible') && // Added Motion
         !pageExhibitions.classList.contains('visible') &&
         !pagePress.classList.contains('visible') &&
         !pageContact.classList.contains('visible') && 
@@ -4537,8 +4854,12 @@ function initCollageData() {
 function updateGalleryLayout() {
     if (!collageDataInitialized) initCollageData();
     
-    const grids = document.querySelectorAll('.works-grid');
-    const items = document.querySelectorAll('.work-item');
+    // The Motion page grid is always forced into collage mode via its own
+    // CSS (#page-motion .works-grid.mode-collage) and must never be flipped
+    // to rows mode by the Sketches page's rows/collage toggle — excluding
+    // it here is what keeps the two pages' layouts independent.
+    const grids = Array.from(document.querySelectorAll('.works-grid')).filter(g => !g.closest('#page-motion'));
+    const items = Array.from(document.querySelectorAll('.work-item')).filter(i => !i.closest('#page-motion'));
 
     let columnsCss = '1fr';
     let dampener = 1;
@@ -5410,6 +5731,9 @@ window.addEventListener('popstate', (event) => {
     else if (normalizedPath.endsWith('/sketches')) {
         openSketches();
     } 
+    else if (normalizedPath.endsWith('/motion')) {
+        openMotion();
+    } 
     else if (normalizedPath.includes('/gallery')) {
         openWorks();
         const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
@@ -5526,6 +5850,856 @@ window.addEventListener('resize', () => {
     clearTimeout(window.resizeTimer);
     window.resizeTimer = setTimeout(updateGalleryQuality, 250);
 });
+
+// --- MOTION PAGE: adaptive aspect-ratio cards and canvas-rendered seamless loops. ---
+(function () {
+    const MOTION_FOLDER = '/artwork/motion/';
+    const MOTION_FALLBACK = [
+        'beanieman_01.mp4',
+        'funnymedieval_01.mp4',
+        'motionboy_03.mp4',
+        'skulltest_03.mp4',
+        'smokingburn_02.mp4'
+    ];
+
+    const grid = document.getElementById('motion-grid');
+    const viewer = document.getElementById('motion-viewer');
+    const viewerStage = document.getElementById('motion-video-stage');
+    const viewerVideos = [
+        document.getElementById('motion-viewer-video-a'),
+        document.getElementById('motion-viewer-video-b')
+    ];
+    if (!grid || !viewer || !viewerStage || viewerVideos.some((video) => !video)) return;
+
+    const SOURCE_CACHE = new Map();
+    const RESOLVED_SOURCES = new Map();
+    const touchCapable = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const isIOS = /iP(?:hone|ad|od)/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const VIEWER_FADE_CLEANUP_MS = 360;
+
+    let motionVideoList = [];
+    let motionViewerIndex = 0;
+    let viewerSource = '';
+    let viewerSession = 0;
+    let viewerCloseTimer = 0;
+    const viewerFreeze = document.getElementById('motion-viewer-freeze');
+
+    function cardHTML(src, index) {
+        return (
+            '<div class="work-item motion-item">' +
+                '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
+                    '<div class="motion-video-stack">' +
+                        '<video class="motion-video-layer is-active" src="' + src + '" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>' +
+                        '<video class="motion-video-layer" muted playsinline webkit-playsinline preload="metadata" disablepictureinpicture disableremoteplayback></video>' +
+                    '</div>' +
+                    '<button class="motion-fullscreen-btn" type="button" aria-label="View fullscreen" onclick="openMotionViewer(event, ' + index + ')">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                            '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>' +
+                        '</svg>' +
+                    '</button>' +
+                '</div>' +
+            '</div>'
+        );
+    }
+
+    function buildGrid(filenames) {
+        motionVideoList = filenames.map((filename) => MOTION_FOLDER + filename);
+        grid.innerHTML = motionVideoList.map(cardHTML).join('');
+        initMotionItems();
+    }
+
+    function fetchFolderListing() {
+        return fetch(MOTION_FOLDER, { cache: 'no-store' })
+            .then((response) => {
+                if (!response.ok) throw new Error('Folder listing unavailable');
+                return response.text();
+            })
+            .then((html) => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const names = Array.from(doc.querySelectorAll('a'))
+                    .map((anchor) => anchor.getAttribute('href') || '')
+                    .map((href) => decodeURIComponent(href.split('/').pop() || ''))
+                    .filter((name) => /\.(mp4|webm|mov)$/i.test(name));
+                const unique = Array.from(new Set(names)).sort();
+                if (!unique.length) throw new Error('No motion files found');
+                return unique;
+            });
+    }
+
+    function primeSource(src) {
+        /* iOS Safari is substantially more reliable when media remains on its
+           original HTTP URL. Large Blob URLs can consume extra memory, bypass
+           byte-range behaviour and leave video/canvas surfaces black. */
+        if (isIOS) return Promise.resolve(src);
+        if (RESOLVED_SOURCES.has(src)) return Promise.resolve(RESOLVED_SOURCES.get(src));
+        if (SOURCE_CACHE.has(src)) return SOURCE_CACHE.get(src);
+
+        const request = fetch(src, { cache: 'force-cache' })
+            .then((response) => {
+                if (!response.ok) throw new Error('Video preload failed');
+                return response.blob();
+            })
+            .then((blob) => {
+                const objectURL = URL.createObjectURL(blob);
+                RESOLVED_SOURCES.set(src, objectURL);
+                return objectURL;
+            })
+            .catch(() => src);
+
+        SOURCE_CACHE.set(src, request);
+        return request;
+    }
+
+    function bestSource(src) {
+        return RESOLVED_SOURCES.get(src) || src;
+    }
+
+    function safeStart(video) {
+        try {
+            if (video.seekable && video.seekable.length) {
+                return Math.max(0, video.seekable.start(0) + 0.001);
+            }
+        } catch (_) {}
+        return 0.001;
+    }
+
+    function waitForMetadata(video, timeoutMs = 1800) {
+        if (video.readyState >= 1 && video.videoWidth && video.videoHeight) {
+            return Promise.resolve(video);
+        }
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                video.removeEventListener('loadedmetadata', finish);
+                resolve(video);
+            };
+            const timer = setTimeout(finish, timeoutMs);
+            video.addEventListener('loadedmetadata', finish, { once: true });
+        });
+    }
+
+    function waitForSeek(video, target, timeoutMs = 900) {
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                video.removeEventListener('seeked', finish);
+                resolve(video.readyState >= 2);
+            };
+            const timer = setTimeout(finish, timeoutMs);
+            video.addEventListener('seeked', finish, { once: true });
+            try {
+                if (Math.abs(video.currentTime - target) < 0.002) {
+                    finish();
+                } else {
+                    video.currentTime = target;
+                }
+            } catch (_) {
+                finish();
+            }
+        });
+    }
+
+    function waitForPaintedFrame(video, timeoutMs = 900) {
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = (ok) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                video.removeEventListener('playing', onPlaying);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                resolve(ok);
+            };
+            const onPlaying = () => requestAnimationFrame(() => finish(video.readyState >= 2));
+            const onTimeUpdate = () => finish(video.readyState >= 2);
+            const timer = setTimeout(() => finish(video.readyState >= 2), timeoutMs);
+            video.addEventListener('playing', onPlaying, { once: true });
+            video.addEventListener('timeupdate', onTimeUpdate, { once: true });
+            if (typeof video.requestVideoFrameCallback === 'function') {
+                video.requestVideoFrameCallback(() => finish(true));
+            }
+        });
+    }
+
+    function setCardAspect(item, video) {
+        if (!item || !video.videoWidth || !video.videoHeight) return;
+        const ratio = video.videoWidth / video.videoHeight;
+        const workImage = item.querySelector('.work-image');
+        if (workImage) workImage.style.aspectRatio = video.videoWidth + ' / ' + video.videoHeight;
+        item.style.setProperty('--motion-ratio', String(ratio));
+        item.classList.toggle('motion-landscape', ratio >= 1.2);
+        item.classList.toggle('motion-square', ratio >= 0.82 && ratio < 1.2);
+        item.classList.toggle('motion-portrait', ratio < 0.82);
+    }
+
+    class CanvasLoopPlayer {
+        constructor(videos, options = {}) {
+            this.videos = videos;
+            this.muted = options.muted !== false;
+            this.onMetadata = options.onMetadata || null;
+            this.source = '';
+            this.activeIndex = 0;
+            this.playing = false;
+            this.generation = 0;
+            this.rafId = 0;
+            this.crossfade = null;
+            this.crossfadeStarting = false;
+            this.primed = [false, false];
+            this.priming = [null, null];
+            this.parent = videos[0].parentElement;
+            this.canvas = this.parent.querySelector('.motion-transition-canvas');
+            if (!this.canvas) {
+                this.canvas = document.createElement('canvas');
+                this.canvas.className = 'motion-transition-canvas';
+                this.canvas.setAttribute('aria-hidden', 'true');
+                this.parent.appendChild(this.canvas);
+            }
+            this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+            /* Match the canvas crop exactly to the CSS transform on the native
+               video layers. A mismatch here caused the visible iOS tap zoom-out. */
+            this.scale = this.parent.classList.contains('motion-video-stage') ? 1.075 : 1.08;
+            this.lastGoodFrame = false;
+            this.isTouchThumbnail = touchCapable && !this.parent.classList.contains('motion-video-stage');
+
+            videos.forEach((video, index) => {
+                video.controls = false;
+                video.removeAttribute('controls');
+                video.loop = false;
+                video.playsInline = true;
+                video.disablePictureInPicture = true;
+                video.disableRemotePlayback = true;
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                video.setAttribute('disablepictureinpicture', '');
+                video.setAttribute('disableremoteplayback', '');
+                video.defaultPlaybackRate = 1;
+                video.playbackRate = 1;
+                video.preservesPitch = true;
+                video.muted = true;
+                video.defaultMuted = true;
+                video.volume = 0;
+                /* Critical iOS fallback: the active native video stays visible
+                   until drawImage() has successfully produced a canvas frame. */
+                video.style.opacity = index === 0 ? '1' : '0';
+                video.style.pointerEvents = 'none';
+                video.classList.toggle('is-active', index === 0);
+
+                video.addEventListener('ratechange', () => {
+                    if (video.playbackRate !== 1) video.playbackRate = 1;
+                    if (video.defaultPlaybackRate !== 1) video.defaultPlaybackRate = 1;
+                });
+                video.addEventListener('loadedmetadata', () => {
+                    if (this.onMetadata) this.onMetadata(video);
+                });
+                video.addEventListener('loadeddata', () => {
+                    if (!this.playing && index === this.activeIndex && !this.lastGoodFrame) {
+                        video.style.opacity = '1';
+                        video.classList.add('is-active');
+                    }
+                });
+            });
+        }
+
+        get activeVideo() { return this.videos[this.activeIndex]; }
+        get standbyVideo() { return this.videos[1 - this.activeIndex]; }
+
+        resizeCanvas() {
+            const cssWidth = Math.max(1, Math.round(this.parent.clientWidth));
+            const cssHeight = Math.max(1, Math.round(this.parent.clientHeight));
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const width = Math.max(1, Math.round(cssWidth * dpr));
+            const height = Math.max(1, Math.round(cssHeight * dpr));
+            if (this.canvas.width !== width || this.canvas.height !== height) {
+                this.canvas.width = width;
+                this.canvas.height = height;
+            }
+            this.canvas.style.width = cssWidth + 'px';
+            this.canvas.style.height = cssHeight + 'px';
+            this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return { width: cssWidth, height: cssHeight };
+        }
+
+        drawVideo(video, alpha = 1, replace = false) {
+            if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+            const size = this.resizeCanvas();
+            const scale = Math.max(size.width / video.videoWidth, size.height / video.videoHeight) * this.scale;
+            const drawWidth = video.videoWidth * scale;
+            const drawHeight = video.videoHeight * scale;
+            const x = (size.width - drawWidth) / 2;
+            const y = (size.height - drawHeight) / 2;
+            try {
+                this.ctx.save();
+                this.ctx.globalAlpha = alpha;
+                this.ctx.globalCompositeOperation = replace ? 'copy' : 'source-over';
+                this.ctx.drawImage(video, x, y, drawWidth, drawHeight);
+                this.ctx.restore();
+                this.lastGoodFrame = true;
+                return true;
+            } catch (_) {
+                try { this.ctx.restore(); } catch (_) {}
+                return false;
+            }
+        }
+
+        showCanvas() {
+            if (this.lastGoodFrame) this.canvas.style.display = 'block';
+        }
+
+        hideCanvas() {
+            this.canvas.style.display = 'none';
+        }
+
+        showDirectVideo(index = this.activeIndex) {
+            this.hideCanvas();
+            this.videos.forEach((video, videoIndex) => {
+                const active = videoIndex === index;
+                video.style.opacity = active ? '1' : '0';
+                video.classList.toggle('is-active', active);
+            });
+        }
+
+        ensureVideoSource(video) {
+            if (!video.getAttribute('src') && this.source) {
+                video.setAttribute('src', this.source);
+                video.load();
+            }
+        }
+
+        setSource(src) {
+            this.stop(false);
+            this.source = src;
+            this.activeIndex = 0;
+            this.crossfade = null;
+            this.crossfadeStarting = false;
+            this.primed = [false, false];
+            this.priming = [null, null];
+            this.lastGoodFrame = false;
+            this.hideCanvas();
+            this.videos.forEach((video, index) => {
+                const shouldLoadNow = !this.isTouchThumbnail || index === 0;
+                if (shouldLoadNow) {
+                    if (video.getAttribute('src') !== src) video.setAttribute('src', src);
+                    video.preload = index === 0 ? 'auto' : 'metadata';
+                    video.load();
+                } else {
+                    video.pause();
+                    video.removeAttribute('src');
+                    video.preload = 'metadata';
+                }
+                video.defaultPlaybackRate = 1;
+                video.playbackRate = 1;
+                video.muted = true;
+                video.defaultMuted = true;
+                video.volume = 0;
+                video.style.opacity = index === 0 ? '1' : '0';
+                video.classList.toggle('is-active', index === 0);
+            });
+        }
+
+        upgradeSource(src) {
+            if (!src || this.playing || this.source === src) return;
+            this.setSource(src);
+        }
+
+        async seekToStart(video) {
+            this.ensureVideoSource(video);
+            await waitForMetadata(video);
+            video.pause();
+            video.defaultPlaybackRate = 1;
+            video.playbackRate = 1;
+            return waitForSeek(video, safeStart(video));
+        }
+
+        async prime(index, generation = this.generation) {
+            if (this.primed[index]) return true;
+            if (this.priming[index]) return this.priming[index];
+            const video = this.videos[index];
+            this.priming[index] = (async () => {
+                await this.seekToStart(video);
+                if (generation !== this.generation) return false;
+                video.muted = true;
+                video.defaultMuted = true;
+                video.volume = 0;
+                video.defaultPlaybackRate = 1;
+                video.playbackRate = 1;
+                try {
+                    await video.play();
+                    await waitForPaintedFrame(video, 750);
+                } catch (_) {}
+                video.pause();
+                await waitForSeek(video, safeStart(video), 650);
+                if (generation !== this.generation) return false;
+                this.primed[index] = video.readyState >= 2;
+                return this.primed[index];
+            })().finally(() => {
+                this.priming[index] = null;
+            });
+            return this.priming[index];
+        }
+
+        async preparePreview() {
+            if (this.playing || !this.source) return;
+            const generation = this.generation;
+            const active = this.activeVideo;
+            this.ensureVideoSource(active);
+            active.style.opacity = '1';
+            active.classList.add('is-active');
+            try {
+                await waitForMetadata(active, 1600);
+                if (generation !== this.generation || this.playing) return;
+                if (Math.abs(active.currentTime - safeStart(active)) > 0.004) {
+                    await waitForSeek(active, safeStart(active), 900);
+                }
+                /* A muted one-frame warm-up makes Safari produce a thumbnail
+                   surface. It is best-effort; Low Power Mode may reject it. */
+                const previewPlay = active.play();
+                if (previewPlay && typeof previewPlay.then === 'function') await previewPlay;
+                await waitForPaintedFrame(active, 750);
+                active.pause();
+                if (generation !== this.generation || this.playing) return;
+                active.style.opacity = '1';
+                active.classList.add('is-active');
+            } catch (_) {
+                active.pause();
+                this.showDirectVideo(this.activeIndex);
+            }
+        }
+
+        overlapSeconds(video) {
+            const duration = Number.isFinite(video.duration) ? video.duration : 5;
+            return Math.max(0.045, Math.min(0.075, duration * 0.012));
+        }
+
+        async play() {
+            if (!this.source || this.playing) return;
+            this.playing = true;
+            const generation = ++this.generation;
+            const active = this.activeVideo;
+
+            this.ensureVideoSource(active);
+            active.muted = this.muted;
+            active.defaultMuted = this.muted;
+            active.volume = 1;
+            active.defaultPlaybackRate = 1;
+            active.playbackRate = 1;
+            active.style.opacity = '1';
+            active.classList.add('is-active');
+
+            /* Call play synchronously from the tap/hover activation path.
+               Awaiting a seek first can lose iOS's transient user activation. */
+            let playPromise;
+            try {
+                if (active.ended || (Number.isFinite(active.duration) &&
+                    active.currentTime >= active.duration - 0.02)) {
+                    active.currentTime = safeStart(active);
+                }
+                playPromise = active.play();
+                if (playPromise && typeof playPromise.then === 'function') await playPromise;
+                await waitForPaintedFrame(active, 1200);
+            } catch (_) {
+                if (generation === this.generation) {
+                    this.playing = false;
+                    this.showDirectVideo(this.activeIndex);
+                }
+                return;
+            }
+            if (!this.playing || generation !== this.generation) return;
+
+            if (this.drawVideo(active, 1, true)) this.showCanvas();
+            else this.showDirectVideo(this.activeIndex);
+            this.startRenderLoop(generation);
+            this.prime(1 - this.activeIndex, generation);
+        }
+        pause() {
+            this.playing = false;
+            this.generation++;
+            cancelAnimationFrame(this.rafId);
+            this.crossfade = null;
+            this.crossfadeStarting = false;
+            this.videos.forEach((video) => video.pause());
+        }
+
+        stop(reset = true) {
+            this.pause();
+            if (!reset) return;
+            const stoppedGeneration = this.generation;
+            const active = this.activeVideo;
+            this.seekToStart(active).then(() => {
+                if (this.playing || stoppedGeneration !== this.generation) return;
+                if (this.drawVideo(active, 1, true)) this.showCanvas();
+                else this.showDirectVideo(this.activeIndex);
+            });
+            this.primed = [false, false];
+            this.priming = [null, null];
+        }
+
+        toggle() {
+            if (this.playing) this.pause();
+            else this.play();
+        }
+
+        beginCrossfade(generation) {
+            if (this.crossfade || this.crossfadeStarting || !this.playing || generation !== this.generation) return;
+            this.crossfadeStarting = true;
+            const fromIndex = this.activeIndex;
+            const from = this.videos[fromIndex];
+            const nextIndex = 1 - fromIndex;
+            const to = this.videos[nextIndex];
+            const durationMs = this.overlapSeconds(from) * 1000;
+
+            const launch = async () => {
+                if (!this.primed[nextIndex]) await this.prime(nextIndex, generation);
+                if (!this.playing || generation !== this.generation || this.crossfade || fromIndex !== this.activeIndex) {
+                    this.crossfadeStarting = false;
+                    return;
+                }
+                to.muted = true;
+                to.defaultMuted = true;
+                to.volume = 0;
+                to.defaultPlaybackRate = 1;
+                to.playbackRate = 1;
+
+                /* Start the standby decoder and explicitly consume the play
+                   promise. An uncaught rejected promise was the red console
+                   error seen when Safari interrupted a play with pause/reset. */
+                try {
+                    const standbyPlay = to.play();
+                    if (standbyPlay && typeof standbyPlay.then === 'function') await standbyPlay;
+                } catch (_) {
+                    this.crossfadeStarting = false;
+                    return;
+                }
+                if (!this.playing || generation !== this.generation || fromIndex !== this.activeIndex) {
+                    to.pause();
+                    this.crossfadeStarting = false;
+                    return;
+                }
+                this.crossfade = {
+                    fromIndex,
+                    toIndex: nextIndex,
+                    startedAt: performance.now(),
+                    durationMs
+                };
+                this.crossfadeStarting = false;
+            };
+            launch();
+        }
+
+        finishCrossfade(generation) {
+            if (!this.crossfade || generation !== this.generation) return;
+            const oldIndex = this.crossfade.fromIndex;
+            const newIndex = this.crossfade.toIndex;
+            const oldVideo = this.videos[oldIndex];
+            const newVideo = this.videos[newIndex];
+
+            this.activeIndex = newIndex;
+            this.crossfade = null;
+            this.crossfadeStarting = false;
+            this.primed[newIndex] = false;
+            oldVideo.pause();
+            oldVideo.muted = true;
+            oldVideo.defaultMuted = true;
+            oldVideo.volume = 0;
+            newVideo.defaultPlaybackRate = 1;
+            newVideo.playbackRate = 1;
+            newVideo.muted = this.muted;
+            newVideo.defaultMuted = this.muted;
+            newVideo.volume = 1;
+            oldVideo.style.opacity = '0';
+            oldVideo.classList.remove('is-active');
+            newVideo.style.opacity = '1';
+            newVideo.classList.add('is-active');
+            this.primed[oldIndex] = false;
+            this.prime(oldIndex, generation);
+        }
+
+        startRenderLoop(generation) {
+            cancelAnimationFrame(this.rafId);
+            const render = (now) => {
+                if (!this.playing || generation !== this.generation) return;
+                const active = this.activeVideo;
+
+                if (this.crossfade) {
+                    const from = this.videos[this.crossfade.fromIndex];
+                    const to = this.videos[this.crossfade.toIndex];
+                    const progress = Math.min(1, Math.max(0, (now - this.crossfade.startedAt) / this.crossfade.durationMs));
+                    const drewBase = this.drawVideo(from, 1, true);
+                    if (drewBase) {
+                        this.drawVideo(to, progress, false);
+                        this.showCanvas();
+                    } else {
+                        this.showDirectVideo(this.crossfade.fromIndex);
+                    }
+                    if (progress >= 1) this.finishCrossfade(generation);
+                } else {
+                    if (this.drawVideo(active, 1, true)) this.showCanvas();
+                    else this.showDirectVideo(this.activeIndex);
+                    const duration = active.duration;
+                    if (Number.isFinite(duration) && duration > 0) {
+                        const remaining = duration - active.currentTime;
+                        const overlap = this.overlapSeconds(active);
+                        if (remaining <= Math.max(0.30, overlap * 4)) {
+                            this.prime(1 - this.activeIndex, generation);
+                        }
+                        if (remaining <= overlap + 0.035) {
+                            this.beginCrossfade(generation);
+                        }
+                        if (active.ended || remaining <= -0.01) {
+                            this.beginCrossfade(generation);
+                        }
+                    }
+                }
+
+                this.rafId = requestAnimationFrame(render);
+            };
+            this.rafId = requestAnimationFrame(render);
+        }
+    }
+
+    fetchFolderListing().then(buildGrid).catch(() => buildGrid(MOTION_FALLBACK));
+
+    function bindReliableTap(element, action, excludedSelector) {
+        let lastActivation = -1000;
+        const activate = (event) => {
+            if (excludedSelector && event.target.closest && event.target.closest(excludedSelector)) return;
+            const now = performance.now();
+            if (now - lastActivation < 450) {
+                if (event.cancelable) event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            lastActivation = now;
+            if (event.cancelable) event.preventDefault();
+            event.stopPropagation();
+            action();
+        };
+        element.addEventListener('pointerup', (event) => {
+            if (event.pointerType === 'touch' || event.pointerType === 'pen') activate(event);
+        }, { passive: false });
+        if (!window.PointerEvent) element.addEventListener('touchend', activate, { passive: false });
+        element.addEventListener('click', (event) => {
+            if (touchCapable) activate(event);
+            else action();
+        });
+        element.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+                event.preventDefault();
+                action();
+            }
+        });
+    }
+
+    function initMotionItems() {
+        const motionItems = Array.from(grid.querySelectorAll('.motion-item'));
+        const loopers = [];
+        function stopAllExcept(exceptLooper) {
+            loopers.forEach((looper) => {
+                if (looper !== exceptLooper) looper.stop(true);
+            });
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                observer.unobserve(entry.target);
+                const src = entry.target.dataset.motionSrc;
+                const looper = entry.target.motionLooper;
+                if (!src || !looper) return;
+                if (touchCapable) looper.preparePreview();
+                primeSource(src).then((resolved) => looper.upgradeSource(resolved));
+            });
+        }, { rootMargin: '700px 0px' });
+
+        motionItems.forEach((item, index) => {
+            const workImage = item.querySelector('.work-image');
+            const videos = Array.from(item.querySelectorAll('.motion-video-layer'));
+            const src = motionVideoList[index];
+            if (!workImage || videos.length !== 2 || !src) return;
+
+            item.dataset.motionSrc = src;
+            const looper = new CanvasLoopPlayer(videos, {
+                muted: true,
+                onMetadata: (video) => setCardAspect(item, video)
+            });
+            looper.setSource(bestSource(src));
+            item.motionLooper = looper;
+            loopers.push(looper);
+            observer.observe(item);
+
+            const play = () => {
+                stopAllExcept(looper);
+                looper.play();
+                primeSource(src).then((resolved) => looper.upgradeSource(resolved));
+            };
+            const stop = () => looper.stop(true);
+            const toggle = () => {
+                stopAllExcept(looper);
+                looper.toggle();
+                primeSource(src).then((resolved) => looper.upgradeSource(resolved));
+            };
+
+            if (touchCapable) bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
+            else {
+                item.addEventListener('mouseenter', play);
+                item.addEventListener('mouseleave', stop);
+            }
+        });
+    }
+
+    function fitViewerStage(video) {
+        if (!video.videoWidth || !video.videoHeight) return;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const maxWidth = viewportWidth * (viewportWidth <= 768 ? 0.96 : 0.92);
+        const maxHeight = viewportHeight * (viewportWidth <= 768 ? 0.96 : 0.92);
+        const ratio = video.videoWidth / video.videoHeight;
+        let width = maxWidth;
+        let height = width / ratio;
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height * ratio;
+        }
+        viewerStage.style.width = Math.ceil(width) + 'px';
+        viewerStage.style.height = Math.ceil(height) + 'px';
+    }
+
+    const viewerLooper = new CanvasLoopPlayer(viewerVideos, {
+        muted: false,
+        onMetadata: fitViewerStage
+    });
+
+    function hideViewerFreeze() {
+        if (!viewerFreeze) return;
+        viewerFreeze.style.display = 'none';
+        const ctx = viewerFreeze.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, viewerFreeze.width, viewerFreeze.height);
+    }
+
+    function captureViewerFrame() {
+        if (!viewerFreeze) return false;
+        const transitionCanvas = viewerStage.querySelector('.motion-transition-canvas');
+        if (!transitionCanvas || transitionCanvas.style.display === 'none' || !transitionCanvas.width) return false;
+        const stageWidth = Math.max(1, Math.round(viewerStage.clientWidth));
+        const stageHeight = Math.max(1, Math.round(viewerStage.clientHeight));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        viewerFreeze.width = Math.round(stageWidth * dpr);
+        viewerFreeze.height = Math.round(stageHeight * dpr);
+        const ctx = viewerFreeze.getContext('2d');
+        if (!ctx) return false;
+        try {
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, stageWidth, stageHeight);
+            ctx.drawImage(transitionCanvas, 0, 0, stageWidth, stageHeight);
+            viewerFreeze.style.display = 'block';
+            return true;
+        } catch (_) {
+            hideViewerFreeze();
+            return false;
+        }
+    }
+
+    async function renderViewer(revealWhenReady = false, session = viewerSession) {
+        const src = motionVideoList[motionViewerIndex];
+        if (!src) return;
+        viewerSource = src;
+        viewerLooper.setSource(bestSource(src));
+        await viewerLooper.play();
+        if (session !== viewerSession || viewerSource !== src) return;
+        hideViewerFreeze();
+        if (revealWhenReady) viewer.classList.add('active');
+        primeSource(src).then((resolved) => {
+            if (viewerSource === src) viewerLooper.upgradeSource(resolved);
+        });
+    }
+
+    window.openMotionViewer = function (event, index) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        clearTimeout(viewerCloseTimer);
+        const session = ++viewerSession;
+        hideViewerFreeze();
+        motionViewerIndex = index;
+        document.body.style.overflow = 'hidden';
+        renderViewer(true, session);
+    };
+
+    function closeViewer() {
+        const session = ++viewerSession;
+        clearTimeout(viewerCloseTimer);
+        captureViewerFrame();
+        viewerLooper.pause();
+        viewer.classList.remove('active');
+        document.body.style.overflow = '';
+        viewerSource = '';
+        viewerCloseTimer = setTimeout(() => {
+            if (session !== viewerSession || viewer.classList.contains('active')) return;
+            viewerLooper.stop(false);
+            viewerVideos.forEach((video) => {
+                video.removeAttribute('src');
+                video.load();
+            });
+            hideViewerFreeze();
+        }, VIEWER_FADE_CLEANUP_MS);
+    }
+
+    function showNext() {
+        if (!motionVideoList.length) return;
+        const session = ++viewerSession;
+        captureViewerFrame();
+        motionViewerIndex = (motionViewerIndex + 1) % motionVideoList.length;
+        renderViewer(false, session);
+    }
+
+    function showPrev() {
+        if (!motionVideoList.length) return;
+        const session = ++viewerSession;
+        captureViewerFrame();
+        motionViewerIndex = (motionViewerIndex - 1 + motionVideoList.length) % motionVideoList.length;
+        renderViewer(false, session);
+    }
+
+    document.getElementById('motion-viewer-close').addEventListener('click', closeViewer);
+    document.getElementById('motion-viewer-next').addEventListener('click', showNext);
+    document.getElementById('motion-viewer-prev').addEventListener('click', showPrev);
+    bindReliableTap(viewerStage, () => viewerLooper.toggle());
+    viewer.addEventListener('click', (event) => {
+        if (event.target === viewer) closeViewer();
+    });
+
+    const refitViewer = () => {
+        const metadataVideo = viewerVideos.find((video) => video.videoWidth && video.videoHeight);
+        if (metadataVideo) fitViewerStage(metadataVideo);
+    };
+    window.addEventListener('resize', refitViewer);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', refitViewer);
+
+    document.addEventListener('keydown', (event) => {
+        if (!viewer.classList.contains('active')) return;
+        if (event.key === 'Escape') closeViewer();
+        else if (event.key === 'ArrowRight') showNext();
+        else if (event.key === 'ArrowLeft') showPrev();
+        else if (event.key === ' ' || event.key === 'Spacebar') {
+            event.preventDefault();
+            viewerLooper.toggle();
+        }
+    });
+
+    window.addEventListener('beforeunload', () => {
+        RESOLVED_SOURCES.forEach((url) => {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        });
+    });
+})();
+
     </script>
 <script>
     const form = document.getElementById('contactForm');
