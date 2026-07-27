@@ -1543,6 +1543,16 @@ min-width: 130px !important;
     inset: 0;
     overflow: hidden;
     background: #000;
+    contain: strict;
+}
+/* Off-screen cards keep only this lightweight black placeholder. Their two
+   video decoders and transition canvas are recreated before they approach the
+   viewport, then removed again after they move well away. */
+.motion-video-stack:empty::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #000;
 }
 .motion-video-layer {
     position: absolute;
@@ -1580,6 +1590,7 @@ min-width: 130px !important;
     cursor: pointer;
     opacity: 0;
     transform: translateY(4px);
+    pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
     padding: 6px;
     box-sizing: border-box;
@@ -1588,15 +1599,12 @@ min-width: 130px !important;
 }
 .motion-fullscreen-btn svg { width: 100%; height: 100%; }
 .motion-fullscreen-btn:hover { background: rgba(0, 0, 0, 0.7); }
-#page-motion .work-image:hover .motion-fullscreen-btn {
+/* The fullscreen control belongs to the active loop only. Keeping it hidden
+   on idle cards also prevents a grid of controls covering mobile artwork. */
+#page-motion .motion-item.is-playing .motion-fullscreen-btn {
     opacity: 1;
     transform: translateY(0);
-}
-@media (hover: none), (pointer: coarse) {
-    .motion-fullscreen-btn {
-        opacity: 0.85;
-        transform: none;
-    }
+    pointer-events: auto;
 }
 
 /* --- MOTION FULLSCREEN VIEWER --- */
@@ -5900,19 +5908,29 @@ window.addEventListener('resize', () => {
     let motionLoadPromise = null;
     let motionLoopers = [];
     let motionObserver = null;
+    let motionBatchObserver = null;
+    let renderedMotionCount = 0;
     let viewerSource = '';
+    const motionPage = document.getElementById('page-motion');
+    /* Mobile Safari has a much smaller practical decoder budget than desktop.
+       Keep only the viewport and a narrow pre-roll area hydrated on touch
+       devices, and unload them quickly after they leave that area. */
+    const MOTION_NEARBY_MARGIN = touchCapable ? 260 : 900;
+    const MOTION_UNLOAD_DELAY_MS = touchCapable ? 320 : 900;
+    const MAX_TOUCH_HYDRATED_ITEMS = 4;
+    let activeThumbnailItem = null;
+    let activeThumbnailLooper = null;
     let viewerSession = 0;
     let viewerCloseTimer = 0;
     const viewerFreeze = document.getElementById('motion-viewer-freeze');
 
-    function cardHTML(src, index) {
+    function cardHTML(index) {
         return (
-            '<div class="work-item motion-item">' +
+            '<div class="work-item motion-item" data-motion-index="' + index + '">' +
                 '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
-                    '<div class="motion-video-stack">' +
-                        '<video class="motion-video-layer is-active" muted playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback></video>' +
-                        '<video class="motion-video-layer" muted playsinline webkit-playsinline preload="none" disablepictureinpicture disableremoteplayback></video>' +
-                    '</div>' +
+                    /* Video/canvas decoder elements are injected only while this
+                       card is visible or close to the Motion viewport. */
+                    '<div class="motion-video-stack"></div>' +
                     '<button class="motion-fullscreen-btn" type="button" aria-label="View fullscreen" onclick="openMotionViewer(event, ' + index + ')">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
                             '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>' +
@@ -5935,8 +5953,10 @@ window.addEventListener('resize', () => {
 
     function buildGrid(filenames) {
         motionVideoList = filenames.map(motionFileURL);
-        grid.innerHTML = motionVideoList.map(cardHTML).join('');
-        initMotionItems();
+        grid.innerHTML = '';
+        renderedMotionCount = 0;
+        setupMotionObservers();
+        appendNextMotionBatch();
     }
 
     function primeSource(src) {
@@ -5965,6 +5985,14 @@ window.addEventListener('resize', () => {
 
     function bestSource(src) {
         return RESOLVED_SOURCES.get(src) || src;
+    }
+
+    function releaseResolvedSource(src) {
+        if (!src) return;
+        const resolved = RESOLVED_SOURCES.get(src);
+        if (resolved && resolved.startsWith('blob:')) URL.revokeObjectURL(resolved);
+        RESOLVED_SOURCES.delete(src);
+        SOURCE_CACHE.delete(src);
     }
 
     function safeStart(video) {
@@ -6290,7 +6318,7 @@ window.addEventListener('resize', () => {
         }
 
         async play() {
-            if (!this.source || this.playing) return;
+            if (!this.source || this.playing) return false;
             this.playing = true;
             const generation = ++this.generation;
             const active = this.activeVideo;
@@ -6320,14 +6348,15 @@ window.addEventListener('resize', () => {
                     this.playing = false;
                     this.showDirectVideo(this.activeIndex);
                 }
-                return;
+                return false;
             }
-            if (!this.playing || generation !== this.generation) return;
+            if (!this.playing || generation !== this.generation) return false;
 
             if (this.drawVideo(active, 1, true)) this.showCanvas();
             else this.showDirectVideo(this.activeIndex);
             this.startRenderLoop(generation);
             this.prime(1 - this.activeIndex, generation);
+            return true;
         }
         pause() {
             this.playing = false;
@@ -6353,8 +6382,11 @@ window.addEventListener('resize', () => {
         }
 
         toggle() {
-            if (this.playing) this.pause();
-            else this.play();
+            if (this.playing) {
+                this.pause();
+                return Promise.resolve(false);
+            }
+            return this.play();
         }
 
         beginCrossfade(generation) {
@@ -6475,18 +6507,159 @@ window.addEventListener('resize', () => {
         }
     }
 
-    function ensureMotionPageLoaded() {
-        if (motionVideoList.length && grid.children.length) return Promise.resolve(motionVideoList);
-        if (motionLoadPromise) return motionLoadPromise;
-
-        /* Build the cards only on the first visit to Motion. Individual MP4
-           sources are still assigned lazily by the existing observer. */
-        buildGrid(MOTION_FILES);
-        motionLoadPromise = Promise.resolve(motionVideoList);
-        return motionLoadPromise;
+    function motionBatchSize() {
+        if (window.innerWidth <= 768) return 8;
+        if (window.innerWidth <= 1024) return 9;
+        return 12;
     }
 
-    window.ensureMotionPageLoaded = ensureMotionPageLoaded;
+    function isMotionPageActive() {
+        return !!motionPage && motionPage.classList.contains('visible') && !document.hidden;
+    }
+
+    function isNearMotionViewport(item, margin = MOTION_NEARBY_MARGIN) {
+        if (!item || !motionPage || !isMotionPageActive()) return false;
+        const rect = item.getBoundingClientRect();
+        const rootRect = motionPage.getBoundingClientRect();
+        return rect.bottom >= rootRect.top - margin && rect.top <= rootRect.bottom + margin;
+    }
+
+    function setActiveThumbnail(item, looper) {
+        if (activeThumbnailItem && activeThumbnailItem !== item) {
+            activeThumbnailItem.classList.remove('is-playing');
+        }
+        activeThumbnailItem = item || null;
+        activeThumbnailLooper = looper || null;
+        if (item) item.classList.toggle('is-playing', !!(looper && looper.playing));
+    }
+
+    function stopActiveThumbnail(exceptItem = null) {
+        if (!activeThumbnailItem || activeThumbnailItem === exceptItem) return;
+        const previousItem = activeThumbnailItem;
+        const previousLooper = activeThumbnailLooper || previousItem.motionLooper;
+        activeThumbnailItem = null;
+        activeThumbnailLooper = null;
+        previousItem.classList.remove('is-playing');
+        /* Pause only the one loop that was actually playing. The old code
+           reset every hydrated card on each tap, creating a burst of seeks
+           that could make all Safari video surfaces briefly turn black. */
+        if (previousLooper) previousLooper.pause();
+    }
+
+    function enforceTouchHydrationLimit(preferredItem = null) {
+        if (!touchCapable || !motionPage) return;
+        const rootRect = motionPage.getBoundingClientRect();
+        const viewportCenter = (rootRect.top + rootRect.bottom) / 2;
+        const hydrated = Array.from(grid.querySelectorAll('.motion-item'))
+            .filter((item) => !!item.motionLooper);
+        if (hydrated.length <= MAX_TOUCH_HYDRATED_ITEMS) return;
+
+        hydrated.sort((a, b) => {
+            const priority = (item) => {
+                if (item === preferredItem) return -2;
+                if (item === activeThumbnailItem) return -1;
+                const rect = item.getBoundingClientRect();
+                return Math.abs(((rect.top + rect.bottom) / 2) - viewportCenter);
+            };
+            return priority(a) - priority(b);
+        });
+
+        hydrated.slice(MAX_TOUCH_HYDRATED_ITEMS).forEach((item) => {
+            if (item !== preferredItem && item !== activeThumbnailItem) dehydrateMotionItem(item);
+        });
+    }
+
+    function ensureCardSource(looper, src) {
+        /* Keep thumbnails on their normal same-origin HTTP URL. This preserves
+           byte-range loading and lets the browser discard media buffers when
+           the card is dehydrated instead of retaining whole-file Blob URLs. */
+        if (looper && !looper.source) looper.setSource(src);
+    }
+
+    function createMotionVideoLayer(active) {
+        const video = document.createElement('video');
+        video.className = 'motion-video-layer' + (active ? ' is-active' : '');
+        video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
+        video.preload = 'none';
+        video.disablePictureInPicture = true;
+        video.disableRemotePlayback = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.setAttribute('disablepictureinpicture', '');
+        video.setAttribute('disableremoteplayback', '');
+        return video;
+    }
+
+    function hydrateMotionItem(item, index) {
+        if (!item || !isMotionPageActive()) return item ? item.motionLooper : null;
+        if (item.motionLooper) return item.motionLooper;
+
+        const stack = item.querySelector('.motion-video-stack');
+        const src = motionVideoList[index];
+        if (!stack || !src) return null;
+
+        clearTimeout(item.motionUnloadTimer);
+        const videoA = createMotionVideoLayer(true);
+        const videoB = createMotionVideoLayer(false);
+        stack.replaceChildren(videoA, videoB);
+
+        const looper = new CanvasLoopPlayer([videoA, videoB], {
+            muted: true,
+            onMetadata: (video) => setCardAspect(item, video)
+        });
+        item.motionLooper = looper;
+        item.dataset.motionSrc = src;
+        motionLoopers.push(looper);
+        ensureCardSource(looper, src);
+
+        /* Do not play-warm every nearby card on iOS. Loading metadata/first
+           data is enough for the native first frame, while automatic muted
+           play calls across several cards can exhaust Safari's decoder pool. */
+        enforceTouchHydrationLimit(item);
+        return looper;
+    }
+
+    function dehydrateMotionItem(item) {
+        if (!item) return;
+        clearTimeout(item.motionUnloadTimer);
+        const looper = item.motionLooper;
+        if (!looper) return;
+
+        looper.pause();
+        looper.videos.forEach((video) => {
+            try {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            } catch (_) {}
+        });
+        if (looper.canvas) {
+            try {
+                const ctx = looper.canvas.getContext('2d');
+                if (ctx) ctx.clearRect(0, 0, looper.canvas.width, looper.canvas.height);
+            } catch (_) {}
+        }
+
+        motionLoopers = motionLoopers.filter((entry) => entry !== looper);
+        if (activeThumbnailItem === item || activeThumbnailLooper === looper) {
+            activeThumbnailItem = null;
+            activeThumbnailLooper = null;
+        }
+        item.classList.remove('is-playing');
+        item.motionLooper = null;
+        const stack = item.querySelector('.motion-video-stack');
+        if (stack) stack.replaceChildren();
+    }
+
+    function scheduleMotionUnload(item) {
+        if (!item || !item.motionLooper) return;
+        clearTimeout(item.motionUnloadTimer);
+        item.motionUnloadTimer = setTimeout(() => {
+            if (!isNearMotionViewport(item)) dehydrateMotionItem(item);
+        }, MOTION_UNLOAD_DELAY_MS);
+    }
 
     function bindReliableTap(element, action, excludedSelector) {
         let lastActivation = -1000;
@@ -6519,71 +6692,154 @@ window.addEventListener('resize', () => {
         });
     }
 
-    function initMotionItems() {
-        const motionItems = Array.from(grid.querySelectorAll('.motion-item'));
+    function initMotionItem(item) {
+        if (!item || item.dataset.motionBound === 'true') return;
+        const index = Number(item.dataset.motionIndex);
+        const workImage = item.querySelector('.work-image');
+        const src = motionVideoList[index];
+        if (!workImage || !Number.isInteger(index) || !src) return;
+
+        item.dataset.motionBound = 'true';
+        item.dataset.motionSrc = src;
+
+        const play = async () => {
+            const looper = hydrateMotionItem(item, index);
+            if (!looper) return;
+            stopActiveThumbnail(item);
+            ensureCardSource(looper, src);
+            /* Reserve the single mobile playback slot immediately. A second
+               fast tap can then cancel this pending play before Safari starts
+               another decoder. */
+            activeThumbnailItem = item;
+            activeThumbnailLooper = looper;
+            item.classList.remove('is-playing');
+            const started = await looper.play();
+            if (started && looper.playing && activeThumbnailItem === item) {
+                setActiveThumbnail(item, looper);
+            } else if (activeThumbnailItem === item) {
+                setActiveThumbnail(null, null);
+            }
+        };
+        const stop = () => {
+            if (item.motionLooper) item.motionLooper.pause();
+            if (activeThumbnailItem === item) setActiveThumbnail(null, null);
+            item.classList.remove('is-playing');
+        };
+        const toggle = async () => {
+            const looper = hydrateMotionItem(item, index);
+            if (!looper) return;
+            if (looper.playing) {
+                looper.pause();
+                if (activeThumbnailItem === item) setActiveThumbnail(null, null);
+                item.classList.remove('is-playing');
+                return;
+            }
+            stopActiveThumbnail(item);
+            ensureCardSource(looper, src);
+            /* Reserve the single mobile playback slot immediately. A second
+               fast tap can then cancel this pending play before Safari starts
+               another decoder. */
+            activeThumbnailItem = item;
+            activeThumbnailLooper = looper;
+            item.classList.remove('is-playing');
+            const started = await looper.play();
+            if (started && looper.playing && activeThumbnailItem === item) {
+                setActiveThumbnail(item, looper);
+            } else if (activeThumbnailItem === item) {
+                setActiveThumbnail(null, null);
+            }
+        };
+
+        if (touchCapable) bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
+        else {
+            item.addEventListener('mouseenter', play);
+            item.addEventListener('mouseleave', stop);
+        }
+        if (motionObserver) motionObserver.observe(item);
+    }
+
+    function initMotionItems(items) {
+        Array.from(items || []).forEach(initMotionItem);
+    }
+
+    function observeMotionBatchTail() {
+        if (!motionBatchObserver) return;
+        motionBatchObserver.disconnect();
+        if (renderedMotionCount >= motionVideoList.length) return;
+        const lastItem = grid.querySelector('.motion-item:last-child');
+        if (lastItem) motionBatchObserver.observe(lastItem);
+    }
+
+    function appendNextMotionBatch() {
+        if (renderedMotionCount >= motionVideoList.length) return;
+        const start = renderedMotionCount;
+        const end = Math.min(motionVideoList.length, start + motionBatchSize());
+        let html = '';
+        for (let index = start; index < end; index++) html += cardHTML(index);
+        grid.insertAdjacentHTML('beforeend', html);
+        renderedMotionCount = end;
+        const newItems = Array.from(grid.querySelectorAll('.motion-item')).slice(start, end);
+        initMotionItems(newItems);
+        observeMotionBatchTail();
+        requestAnimationFrame(refreshMotionViewport);
+    }
+
+    function setupMotionObservers() {
         if (motionObserver) motionObserver.disconnect();
-        motionLoopers.forEach((looper) => looper.pause());
-        motionLoopers = [];
-
-        function stopAllExcept(exceptLooper) {
-            motionLoopers.forEach((looper) => {
-                if (looper !== exceptLooper && looper.source) looper.stop(true);
-            });
-        }
-
-        function ensureCardSource(looper, src) {
-            if (!looper.source) looper.setSource(bestSource(src));
-        }
+        if (motionBatchObserver) motionBatchObserver.disconnect();
 
         motionObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (!entry.isIntersecting) return;
-                motionObserver.unobserve(entry.target);
-                const src = entry.target.dataset.motionSrc;
-                const looper = entry.target.motionLooper;
-                if (!src || !looper) return;
-                ensureCardSource(looper, src);
-                if (touchCapable) looper.preparePreview();
-                primeSource(src).then((resolved) => looper.upgradeSource(resolved));
+                const item = entry.target;
+                const index = Number(item.dataset.motionIndex);
+                if (entry.isIntersecting && isMotionPageActive()) {
+                    clearTimeout(item.motionUnloadTimer);
+                    hydrateMotionItem(item, index);
+                    enforceTouchHydrationLimit(item === activeThumbnailItem ? item : null);
+                } else {
+                    scheduleMotionUnload(item);
+                }
             });
-        }, { rootMargin: '350px 0px' });
+        }, {
+            root: motionPage,
+            rootMargin: MOTION_NEARBY_MARGIN + 'px 0px',
+            threshold: 0
+        });
 
-        motionItems.forEach((item, index) => {
-            const workImage = item.querySelector('.work-image');
-            const videos = Array.from(item.querySelectorAll('.motion-video-layer'));
-            const src = motionVideoList[index];
-            if (!workImage || videos.length !== 2 || !src) return;
-
-            item.dataset.motionSrc = src;
-            const looper = new CanvasLoopPlayer(videos, {
-                muted: true,
-                onMetadata: (video) => setCardAspect(item, video)
-            });
-            item.motionLooper = looper;
-            motionLoopers.push(looper);
-            motionObserver.observe(item);
-
-            const play = () => {
-                stopAllExcept(looper);
-                ensureCardSource(looper, src);
-                looper.play();
-                primeSource(src).then((resolved) => looper.upgradeSource(resolved));
-            };
-            const stop = () => looper.stop(true);
-            const toggle = () => {
-                stopAllExcept(looper);
-                ensureCardSource(looper, src);
-                looper.toggle();
-                primeSource(src).then((resolved) => looper.upgradeSource(resolved));
-            };
-
-            if (touchCapable) bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
-            else {
-                item.addEventListener('mouseenter', play);
-                item.addEventListener('mouseleave', stop);
-            }
+        motionBatchObserver = new IntersectionObserver((entries) => {
+            if (!isMotionPageActive()) return;
+            if (entries.some((entry) => entry.isIntersecting)) appendNextMotionBatch();
+        }, {
+            root: motionPage,
+            rootMargin: '1400px 0px',
+            threshold: 0
         });
     }
+
+    function refreshMotionViewport() {
+        if (!isMotionPageActive()) return;
+        const items = Array.from(grid.querySelectorAll('.motion-item'));
+        items.forEach((item) => {
+            const index = Number(item.dataset.motionIndex);
+            if (isNearMotionViewport(item)) hydrateMotionItem(item, index);
+            else scheduleMotionUnload(item);
+        });
+        enforceTouchHydrationLimit(activeThumbnailItem);
+        observeMotionBatchTail();
+    }
+
+    function ensureMotionPageLoaded() {
+        if (!motionVideoList.length || !grid.children.length) {
+            if (!motionLoadPromise) {
+                buildGrid(MOTION_FILES);
+                motionLoadPromise = Promise.resolve(motionVideoList);
+            }
+        }
+        requestAnimationFrame(() => requestAnimationFrame(refreshMotionViewport));
+        return motionLoadPromise || Promise.resolve(motionVideoList);
+    }
+
+    window.ensureMotionPageLoaded = ensureMotionPageLoaded;
 
     function fitViewerStage(video) {
         if (!video.videoWidth || !video.videoHeight) return;
@@ -6637,9 +6893,35 @@ window.addEventListener('resize', () => {
         }
     }
 
+    function suspendThumbnailsForViewer(selectedIndex) {
+        const selectedItem = grid.querySelector('.motion-item[data-motion-index="' + selectedIndex + '"]');
+        stopActiveThumbnail(null);
+        Array.from(grid.querySelectorAll('.motion-item')).forEach((item) => {
+            if (!item.motionLooper) return;
+            if (item === selectedItem) {
+                item.motionLooper.pause();
+                item.classList.remove('is-playing');
+                /* Keep one paused layer underneath the opening transition, but
+                   release the standby decoder before the fullscreen pair starts. */
+                const standby = item.motionLooper.standbyVideo;
+                if (standby) {
+                    try {
+                        standby.pause();
+                        standby.removeAttribute('src');
+                        standby.load();
+                    } catch (_) {}
+                }
+                return;
+            }
+            dehydrateMotionItem(item);
+        });
+    }
+
     async function renderViewer(revealWhenReady = false, session = viewerSession) {
         const src = motionVideoList[motionViewerIndex];
         if (!src) return;
+        const previousSource = viewerSource;
+        if (previousSource && previousSource !== src) releaseResolvedSource(previousSource);
         viewerSource = src;
         viewerLooper.setSource(bestSource(src));
         await viewerLooper.play();
@@ -6657,6 +6939,7 @@ window.addEventListener('resize', () => {
             event.stopPropagation();
         }
         clearTimeout(viewerCloseTimer);
+        suspendThumbnailsForViewer(index);
         const session = ++viewerSession;
         hideViewerFreeze();
         motionViewerIndex = index;
@@ -6666,6 +6949,7 @@ window.addEventListener('resize', () => {
 
     function closeViewer() {
         const session = ++viewerSession;
+        const closingSource = viewerSource;
         clearTimeout(viewerCloseTimer);
         captureViewerFrame();
         viewerLooper.pause();
@@ -6679,7 +6963,9 @@ window.addEventListener('resize', () => {
                 video.removeAttribute('src');
                 video.load();
             });
+            releaseResolvedSource(closingSource);
             hideViewerFreeze();
+            if (isMotionPageActive()) requestAnimationFrame(refreshMotionViewport);
         }, VIEWER_FADE_CLEANUP_MS);
     }
 
@@ -6726,12 +7012,17 @@ window.addEventListener('resize', () => {
     });
 
     window.pauseMotionPage = function () {
-        motionLoopers.forEach((looper) => looper.pause());
+        activeThumbnailItem = null;
+        activeThumbnailLooper = null;
+        Array.from(grid.querySelectorAll('.motion-item')).forEach(dehydrateMotionItem);
         if (viewer.classList.contains('active')) closeViewer();
     };
 
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) window.pauseMotionPage();
+        else if (motionPage && motionPage.classList.contains('visible')) {
+            requestAnimationFrame(refreshMotionViewport);
+        }
     });
 
     /* handleRouting() runs earlier in this document, so direct visits to
