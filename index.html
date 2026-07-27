@@ -1443,7 +1443,11 @@ min-width: 130px !important;
     padding-top: 88px !important;
 }
 @media (max-width: 768px) {
-    #page-motion .overlay-content { padding-top: 58px !important; }
+    #page-motion .overlay-content {
+        padding-top: 58px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
 }
 
 #page-motion .works-container {
@@ -1476,13 +1480,17 @@ min-width: 130px !important;
 }
 @media (max-width: 768px) {
     #page-motion .works-grid.mode-collage {
-        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 14px !important;
         margin-top: -8px !important;
     }
     #page-motion .works-container {
-        padding-left: 0.6vw !important;
-        padding-right: 0.6vw !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    #page-motion .motion-item {
+        width: 100% !important;
+        min-width: 0 !important;
     }
 }
 
@@ -1535,9 +1543,9 @@ min-width: 130px !important;
     user-select: none;
 }
 
-/* iPhone/iPad load the checked-in WebP first frame immediately. After a clip
-   has played, that image is replaced by a snapshot of the exact stopped frame,
-   so the visual freeze effect remains while the MP4 decoder is released. */
+/* Every device loads the checked-in WebP first frame immediately. After a clip
+   has played, the poster is replaced by the exact stopped frame, preserving
+   the freeze-frame effect without decoding every MP4 during initial loading. */
 .motion-poster {
     position: absolute !important;
     inset: 0;
@@ -1558,8 +1566,8 @@ min-width: 130px !important;
 }
 .motion-item.is-playing .motion-poster { opacity: 0; }
 
-/* Desktop retains the existing generated-preview fallback. iOS normally never
-   shows this because its checked-in WebP is available immediately. */
+/* This appears only when a checked-in poster is missing or still loading.
+   The old serial MP4 decoder is retained purely as a safety fallback. */
 .motion-item.poster-loading .work-image::before {
     content: '';
     position: absolute;
@@ -5971,20 +5979,22 @@ window.addEventListener('resize', () => {
 
     function cardHTML(index) {
         const filename = MOTION_FILES[index] || '';
-        const useStaticPoster = useIOSLeanThumbnails && !!filename;
-        const cardClass = useStaticPoster
-            ? 'work-item motion-item poster-ready ios-lean-motion'
-            : 'work-item motion-item poster-loading';
+        /* Every device starts from the checked-in first-frame WebP. This avoids
+           decoding every MP4 merely to build the initial grid. Desktop still
+           replaces this image with the exact frame where a hover/play stops. */
+        const useStaticPoster = !!filename;
+        const cardClass = 'work-item motion-item poster-ready' +
+            (useIOSLeanThumbnails ? ' ios-lean-motion' : '');
         const posterAttributes = useStaticPoster
             ? ' src="' + motionPosterURL(filename) + '" loading="eager"' +
-              (index < 4 ? ' fetchpriority="high"' : '')
+              (index < 6 ? ' fetchpriority="high"' : '')
             : '';
         return (
             '<div class="' + cardClass + '" data-motion-index="' + index + '">' +
                 '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
                     '<img class="motion-poster" alt="" aria-hidden="true" decoding="async" draggable="false"' + posterAttributes + '>' +
-                    /* Desktop injects its existing dual-decoder player near the
-                       viewport. iOS injects only one decoder after a tap/press. */
+                    /* Desktop injects its dual-decoder player only when needed.
+                       iOS injects one decoder after an intentional tap/press. */
                     '<div class="motion-video-stack"></div>' +
                     '<button class="motion-fullscreen-btn" type="button" aria-label="View fullscreen" onclick="openMotionViewer(event, ' + index + ')">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -7266,6 +7276,62 @@ window.addEventListener('resize', () => {
         });
     }
 
+    function commitDesktopFreezeToPoster(item, looper, stack) {
+        if (!item || !looper || looper.isIOSLeanThumbnail || !looper.canvas) return false;
+        const poster = item.querySelector('.motion-poster');
+        const canvas = looper.canvas;
+        if (!poster || !canvas.width || !canvas.height || typeof canvas.toBlob !== 'function') return false;
+
+        /* Draw the exact paused frame once more before converting it. The video
+           remains decoded until this synchronous draw completes. */
+        try {
+            if (looper.activeVideo && looper.activeVideo.readyState >= 2) {
+                looper.drawVideo(looper.activeVideo, 1, true);
+                looper.showCanvas();
+            }
+        } catch (_) {}
+
+        const generation = (item.motionFreezeGeneration || 0) + 1;
+        item.motionFreezeGeneration = generation;
+        if (stack) stack.classList.add('has-frame');
+
+        const finish = (blob) => {
+            if (!blob || item.motionFreezeGeneration !== generation || looper.playing) {
+                if (stack && !looper.playing) stack.classList.remove('has-frame');
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const previous = item.dataset.freezeObjectUrl || '';
+            poster.onload = () => {
+                if (item.motionFreezeGeneration !== generation || looper.playing) return;
+                if (stack) stack.classList.remove('has-frame');
+                if (previous.startsWith('blob:') && previous !== url) {
+                    try { URL.revokeObjectURL(previous); } catch (_) {}
+                }
+            };
+            poster.src = url;
+            item.dataset.freezeObjectUrl = url;
+            item.dataset.posterReady = 'true';
+            item.classList.remove('poster-loading');
+            item.classList.add('poster-ready');
+        };
+
+        try {
+            canvas.toBlob((blob) => {
+                if (blob) finish(blob);
+                else {
+                    try { canvas.toBlob(finish, 'image/jpeg', 0.8); } catch (_) {
+                        if (stack) stack.classList.remove('has-frame');
+                    }
+                }
+            }, 'image/webp', 0.78);
+            return true;
+        } catch (_) {
+            if (stack) stack.classList.remove('has-frame');
+            return false;
+        }
+    }
+
     function initMotionItem(item) {
         if (!item || item.dataset.motionBound === 'true') return;
         const index = Number(item.dataset.motionIndex);
@@ -7275,8 +7341,9 @@ window.addEventListener('resize', () => {
 
         item.dataset.motionBound = 'true';
         item.dataset.motionSrc = src;
-        if (useIOSLeanThumbnails) prepareStaticMotionPoster(item, index);
-        else requestMotionPoster(item, index);
+        /* Static first-frame posters are now used on desktop as well as iOS.
+           The serial MP4 decoder remains only as a missing-file fallback. */
+        prepareStaticMotionPoster(item, index);
 
         const play = async () => {
             const looper = hydrateMotionItem(item, index);
@@ -7300,11 +7367,17 @@ window.addEventListener('resize', () => {
             }
         };
         const stop = () => {
-            if (item.motionLooper) item.motionLooper.pause();
+            const looper = item.motionLooper;
+            if (!looper) return;
+            looper.pause();
             if (activeThumbnailItem === item) setActiveThumbnail(null, null);
             item.classList.remove('is-playing');
             const stack = item.querySelector('.motion-video-stack');
-            if (stack) stack.classList.remove('has-frame');
+            /* Desktop keeps the exact frame where the hover ended, then frees
+               the visible video stack once that frame has become the poster. */
+            const freezing = !useIOSLeanThumbnails &&
+                commitDesktopFreezeToPoster(item, looper, stack);
+            if (!freezing && stack) stack.classList.remove('has-frame');
         };
         const toggle = async () => {
             const looper = hydrateMotionItem(item, index);
@@ -7314,7 +7387,12 @@ window.addEventListener('resize', () => {
                 if (activeThumbnailItem === item) setActiveThumbnail(null, null);
                 item.classList.remove('is-playing');
                 const stack = item.querySelector('.motion-video-stack');
-                if ((!looper.isIOSLeanThumbnail || !captured) && stack) stack.classList.remove('has-frame');
+                const desktopFreeze = !looper.isIOSLeanThumbnail &&
+                    commitDesktopFreezeToPoster(item, looper, stack);
+                if ((!looper.isIOSLeanThumbnail && !desktopFreeze) ||
+                    (looper.isIOSLeanThumbnail && !captured)) {
+                    if (stack) stack.classList.remove('has-frame');
+                }
                 if (looper.isIOSLeanThumbnail) {
                     setTimeout(() => {
                         if (item !== activeThumbnailItem && item.motionLooper === looper) dehydrateMotionItem(item);
@@ -7420,13 +7498,10 @@ window.addEventListener('resize', () => {
         motionObserver = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 const item = entry.target;
-                const index = Number(item.dataset.motionIndex);
                 if (entry.isIntersecting && isMotionPageActive()) {
+                    /* Posters are already visible, so merely entering the
+                       viewport must not create or download MP4 decoders. */
                     clearTimeout(item.motionUnloadTimer);
-                    if (!useIOSLeanThumbnails) {
-                        hydrateMotionItem(item, index);
-                        enforceTouchHydrationLimit(item === activeThumbnailItem ? item : null);
-                    }
                 } else {
                     scheduleMotionUnload(item);
                 }
@@ -7451,16 +7526,10 @@ window.addEventListener('resize', () => {
         if (!isMotionPageActive()) return;
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         items.forEach((item) => {
-            const index = Number(item.dataset.motionIndex);
-            if (useIOSLeanThumbnails) {
-                if (!isNearMotionViewport(item)) scheduleMotionUnload(item);
-            } else if (isNearMotionViewport(item)) {
-                hydrateMotionItem(item, index);
-            } else {
-                scheduleMotionUnload(item);
-            }
+            /* Static posters handle every idle card. MP4 players are created
+               only by a hover, tap or fullscreen action, then unloaded later. */
+            if (!isNearMotionViewport(item)) scheduleMotionUnload(item);
         });
-        if (!useIOSLeanThumbnails) enforceTouchHydrationLimit(activeThumbnailItem);
         observeMotionBatchTail();
     }
 
