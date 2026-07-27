@@ -1617,6 +1617,15 @@ min-width: 130px !important;
 }
 .motion-video-layer.is-active { opacity: 1; }
 
+/* The card box owns the native MP4 ratio. Every visual layer fills that box
+   without ever supplying geometry back to the layout, preventing a later
+   frozen canvas snapshot from changing portrait/landscape classification. */
+#page-motion .motion-poster,
+#page-motion .motion-video-layer,
+#page-motion .motion-transition-canvas {
+    aspect-ratio: inherit;
+}
+
 /* --- Per-video fullscreen button, bottom right of each thumbnail --- */
 .motion-fullscreen-btn {
     position: absolute;
@@ -6141,8 +6150,32 @@ window.addEventListener('resize', () => {
         });
     }
 
-    function setCardAspectDimensions(item, width, height) {
+    function setCardAspectDimensions(item, width, height, options = {}) {
         if (!item || !width || !height) return;
+        const numericWidth = Number(width);
+        const numericHeight = Number(height);
+        if (!Number.isFinite(numericWidth) || !Number.isFinite(numericHeight) || numericWidth <= 0 || numericHeight <= 0) return;
+
+        const lockNativeAspect = options.lockNativeAspect === true;
+        if (item.dataset.motionAspectLocked === 'true' && !lockNativeAspect) {
+            /* The checked-in first-frame WebP comes directly from this MP4 and
+               is the authoritative card geometry. Later canvas snapshots use
+               the card's CSS pixel dimensions, so allowing their image load
+               event to redefine the card ratio can turn portrait clips into
+               landscape cards. Keep the original native ratio locked. */
+            const lockedWidth = Number(item.dataset.motionNativeWidth);
+            const lockedHeight = Number(item.dataset.motionNativeHeight);
+            if (lockedWidth > 0 && lockedHeight > 0) {
+                width = lockedWidth;
+                height = lockedHeight;
+            } else {
+                return;
+            }
+        } else {
+            width = numericWidth;
+            height = numericHeight;
+        }
+
         const ratio = width / height;
         const workImage = item.querySelector('.work-image');
         if (workImage) workImage.style.aspectRatio = width + ' / ' + height;
@@ -6150,6 +6183,12 @@ window.addEventListener('resize', () => {
         item.classList.toggle('motion-landscape', ratio >= 1.2);
         item.classList.toggle('motion-square', ratio >= 0.82 && ratio < 1.2);
         item.classList.toggle('motion-portrait', ratio < 0.82);
+
+        if (lockNativeAspect) {
+            item.dataset.motionNativeWidth = String(width);
+            item.dataset.motionNativeHeight = String(height);
+            item.dataset.motionAspectLocked = 'true';
+        }
     }
 
     function applyMotionPoster(item, poster) {
@@ -6160,7 +6199,9 @@ window.addEventListener('resize', () => {
         item.dataset.posterReady = 'true';
         item.classList.remove('poster-loading');
         item.classList.add('poster-ready');
-        setCardAspectDimensions(item, poster.width, poster.height);
+        setCardAspectDimensions(item, poster.width, poster.height, {
+            lockNativeAspect: item.dataset.motionAspectLocked !== 'true'
+        });
     }
 
     function waitForPosterEvent(video, names, timeoutMs) {
@@ -6377,28 +6418,38 @@ window.addEventListener('resize', () => {
         const filename = MOTION_FILES[index];
         if (!image || !filename) return;
 
+        const posterPath = motionPosterURL(filename);
+        const expectedPosterURL = new URL(posterPath, location.href).href;
         const applyDimensions = () => {
+            /* This handler must only measure the original checked-in WebP.
+               Desktop later replaces the same <img> with a canvas snapshot;
+               that snapshot is sized in CSS pixels and is not valid metadata
+               for the MP4's native aspect ratio. */
+            const loadedURL = image.currentSrc || image.src || '';
+            if (loadedURL && loadedURL !== expectedPosterURL) return;
             if (!image.naturalWidth || !image.naturalHeight) return;
             item.dataset.posterReady = 'true';
             item.classList.remove('poster-loading');
             item.classList.add('poster-ready');
-            setCardAspectDimensions(item, image.naturalWidth, image.naturalHeight);
+            setCardAspectDimensions(item, image.naturalWidth, image.naturalHeight, { lockNativeAspect: true });
         };
 
-        image.addEventListener('load', applyDimensions);
+        image.addEventListener('load', applyDimensions, { once: true });
         image.addEventListener('error', () => {
             /* Missing poster files fall back to the old serial decoder rather
                than ever leaving a permanent black card. */
             item.classList.add('poster-loading');
             requestMotionPoster(item, index);
         }, { once: true });
-        if (!image.getAttribute('src')) image.src = motionPosterURL(filename);
+        if (!image.getAttribute('src')) image.src = posterPath;
         if (image.complete && image.naturalWidth) applyDimensions();
     }
 
     function setCardAspect(item, video) {
         if (!item || !video.videoWidth || !video.videoHeight) return;
-        setCardAspectDimensions(item, video.videoWidth, video.videoHeight);
+        setCardAspectDimensions(item, video.videoWidth, video.videoHeight, {
+            lockNativeAspect: item.dataset.motionAspectLocked !== 'true'
+        });
     }
 
     class CanvasLoopPlayer {
