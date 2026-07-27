@@ -1564,7 +1564,14 @@ min-width: 130px !important;
     -webkit-user-drag: none;
     transition: opacity 0.12s linear;
 }
-.motion-item.is-playing .motion-poster { opacity: 0; }
+/* Keep the poster permanently painted underneath the video stack.
+   The stack sits above it (z-index: 2), so the moving MP4 still displays
+   normally, but any one-frame compositor gap reveals the frozen poster
+   instead of the card background. */
+.motion-item.is-playing .motion-poster {
+    opacity: 1;
+    transition: none;
+}
 
 /* Desktop hover-out handoff: keep the exact canvas frame fully opaque while
    the frozen poster blob is being created and decoded. This prevents the card
@@ -1611,6 +1618,15 @@ min-width: 130px !important;
 }
 .motion-video-stack.has-frame { opacity: 1; }
 .motion-video-stack:empty::after { display: none; }
+
+/* Desktop hover-in must be a direct visual handoff, not a fade through the
+   card background. The poster remains underneath as a safety frame while the
+   already-painted video/canvas stack is revealed instantly above it. */
+@media (hover: hover) and (pointer: fine) {
+    #page-motion .motion-video-stack {
+        transition: none !important;
+    }
+}
 #page-motion .motion-video-layer { background: transparent; }
 .motion-video-layer {
     position: absolute;
