@@ -1535,9 +1535,9 @@ min-width: 130px !important;
     user-select: none;
 }
 
-/* Every card owns an independent still poster. It remains visible when Safari
-   unloads the card's video decoders, so idle/off-screen cards never become a
-   black rectangle. Posters are generated serially by one temporary decoder. */
+/* iPhone/iPad load the checked-in WebP first frame immediately. After a clip
+   has played, that image is replaced by a snapshot of the exact stopped frame,
+   so the visual freeze effect remains while the MP4 decoder is released. */
 .motion-poster {
     position: absolute !important;
     inset: 0;
@@ -1558,8 +1558,8 @@ min-width: 130px !important;
 }
 .motion-item.is-playing .motion-poster { opacity: 0; }
 
-/* A neutral loading surface is used only for the brief period before the
-   serial poster decoder has produced the real still image. */
+/* Desktop retains the existing generated-preview fallback. iOS normally never
+   shows this because its checked-in WebP is available immediately. */
 .motion-item.poster-loading .work-image::before {
     content: '';
     position: absolute;
@@ -5909,6 +5909,7 @@ window.addEventListener('resize', () => {
 // --- MOTION PAGE: adaptive aspect-ratio cards and canvas-rendered seamless loops. ---
 (function () {
     const MOTION_FOLDER = '/artwork/motion/';
+    const MOTION_POSTER_FOLDER = MOTION_FOLDER + 'posters/';
 
     /* Static GitHub Pages file list. Add any future MP4 filename here after
        uploading it to artwork/motion. The list is only used when the Motion
@@ -5942,6 +5943,9 @@ window.addEventListener('resize', () => {
     const touchCapable = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     const isIOS = /iP(?:hone|ad|od)/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    /* Desktop keeps the existing dual-decoder/canvas behaviour. iPhone and
+       iPad use one active decoder plus exact stopped-frame snapshots. */
+    const useIOSLeanThumbnails = isIOS;
     const VIEWER_FADE_CLEANUP_MS = 360;
 
     let motionVideoList = [];
@@ -5958,7 +5962,7 @@ window.addEventListener('resize', () => {
        devices, and unload them quickly after they leave that area. */
     const MOTION_NEARBY_MARGIN = touchCapable ? 260 : 900;
     const MOTION_UNLOAD_DELAY_MS = touchCapable ? 320 : 900;
-    const MAX_TOUCH_HYDRATED_ITEMS = 4;
+    const MAX_TOUCH_HYDRATED_ITEMS = useIOSLeanThumbnails ? 1 : 4;
     let activeThumbnailItem = null;
     let activeThumbnailLooper = null;
     let viewerSession = 0;
@@ -5966,12 +5970,21 @@ window.addEventListener('resize', () => {
     const viewerFreeze = document.getElementById('motion-viewer-freeze');
 
     function cardHTML(index) {
+        const filename = MOTION_FILES[index] || '';
+        const useStaticPoster = useIOSLeanThumbnails && !!filename;
+        const cardClass = useStaticPoster
+            ? 'work-item motion-item poster-ready ios-lean-motion'
+            : 'work-item motion-item poster-loading';
+        const posterAttributes = useStaticPoster
+            ? ' src="' + motionPosterURL(filename) + '" loading="eager"' +
+              (index < 4 ? ' fetchpriority="high"' : '')
+            : '';
         return (
-            '<div class="work-item motion-item poster-loading" data-motion-index="' + index + '">' +
+            '<div class="' + cardClass + '" data-motion-index="' + index + '">' +
                 '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
-                    '<img class="motion-poster" alt="" aria-hidden="true" decoding="async" draggable="false">' +
-                    /* Video/canvas decoder elements are injected only while this
-                       card is visible or close to the Motion viewport. */
+                    '<img class="motion-poster" alt="" aria-hidden="true" decoding="async" draggable="false"' + posterAttributes + '>' +
+                    /* Desktop injects its existing dual-decoder player near the
+                       viewport. iOS injects only one decoder after a tap/press. */
                     '<div class="motion-video-stack"></div>' +
                     '<button class="motion-fullscreen-btn" type="button" aria-label="View fullscreen" onclick="openMotionViewer(event, ' + index + ')">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -5988,6 +6001,14 @@ window.addEventListener('resize', () => {
            which preserves Safari byte-range loading and the current lazy-load
            behaviour. */
         return MOTION_FOLDER + String(filename)
+            .split('/')
+            .map((part) => encodeURIComponent(part))
+            .join('/');
+    }
+
+    function motionPosterURL(filename) {
+        const posterName = String(filename).replace(/\.[^/.]+$/, '.webp');
+        return MOTION_POSTER_FOLDER + posterName
             .split('/')
             .map((part) => encodeURIComponent(part))
             .join('/');
@@ -6338,6 +6359,31 @@ window.addEventListener('resize', () => {
         }
         request.items.add(item);
         runPosterWorker();
+    }
+
+    function prepareStaticMotionPoster(item, index) {
+        if (!item) return;
+        const image = item.querySelector('.motion-poster');
+        const filename = MOTION_FILES[index];
+        if (!image || !filename) return;
+
+        const applyDimensions = () => {
+            if (!image.naturalWidth || !image.naturalHeight) return;
+            item.dataset.posterReady = 'true';
+            item.classList.remove('poster-loading');
+            item.classList.add('poster-ready');
+            setCardAspectDimensions(item, image.naturalWidth, image.naturalHeight);
+        };
+
+        image.addEventListener('load', applyDimensions);
+        image.addEventListener('error', () => {
+            /* Missing poster files fall back to the old serial decoder rather
+               than ever leaving a permanent black card. */
+            item.classList.add('poster-loading');
+            requestMotionPoster(item, index);
+        }, { once: true });
+        if (!image.getAttribute('src')) image.src = motionPosterURL(filename);
+        if (image.complete && image.naturalWidth) applyDimensions();
     }
 
     function setCardAspect(item, video) {
@@ -6773,6 +6819,227 @@ window.addEventListener('resize', () => {
         }
     }
 
+    class IOSThumbnailPlayer {
+        constructor(video, item, onMetadata) {
+            this.videos = [video];
+            this.video = video;
+            this.item = item;
+            this.parent = video.parentElement;
+            this.onMetadata = onMetadata || null;
+            this.source = '';
+            this.playing = false;
+            this.generation = 0;
+            this.isIOSLeanThumbnail = true;
+            this.freezeObjectURL = item.dataset.freezeObjectUrl || '';
+
+            this.canvas = this.parent.querySelector('.motion-transition-canvas');
+            if (!this.canvas) {
+                this.canvas = document.createElement('canvas');
+                this.canvas.className = 'motion-transition-canvas';
+                this.canvas.setAttribute('aria-hidden', 'true');
+                this.parent.appendChild(this.canvas);
+            }
+            this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+            video.controls = false;
+            video.removeAttribute('controls');
+            video.loop = true;
+            video.muted = true;
+            video.defaultMuted = true;
+            video.volume = 0;
+            video.playsInline = true;
+            video.preload = 'none';
+            video.disablePictureInPicture = true;
+            video.disableRemotePlayback = true;
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
+            video.style.opacity = '0';
+            video.style.pointerEvents = 'none';
+
+            video.addEventListener('loadedmetadata', () => {
+                if (this.onMetadata) this.onMetadata(video);
+            });
+        }
+
+        setSource(src) {
+            if (!src) return;
+            this.source = src;
+        }
+
+        ensureSource(preload = 'auto') {
+            if (!this.source) return;
+            this.video.preload = preload;
+            if (this.video.getAttribute('src') !== this.source) {
+                this.video.setAttribute('src', this.source);
+                this.video.load();
+            }
+        }
+
+        prepare() {
+            if (this.playing || !this.source) return;
+            this.ensureSource('auto');
+        }
+
+        resizeCanvas() {
+            const cssWidth = Math.max(1, Math.round(this.parent.clientWidth));
+            const cssHeight = Math.max(1, Math.round(this.parent.clientHeight));
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            const width = Math.max(1, Math.round(cssWidth * dpr));
+            const height = Math.max(1, Math.round(cssHeight * dpr));
+            if (this.canvas.width !== width || this.canvas.height !== height) {
+                this.canvas.width = width;
+                this.canvas.height = height;
+            }
+            this.canvas.style.width = cssWidth + 'px';
+            this.canvas.style.height = cssHeight + 'px';
+            if (this.ctx) this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return { width: cssWidth, height: cssHeight };
+        }
+
+        captureCurrentFrame() {
+            const video = this.video;
+            if (!this.ctx || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+            const size = this.resizeCanvas();
+            const scale = Math.max(size.width / video.videoWidth, size.height / video.videoHeight) * 1.08;
+            const drawWidth = video.videoWidth * scale;
+            const drawHeight = video.videoHeight * scale;
+            const x = (size.width - drawWidth) / 2;
+            const y = (size.height - drawHeight) / 2;
+            try {
+                this.ctx.save();
+                this.ctx.globalCompositeOperation = 'copy';
+                this.ctx.globalAlpha = 1;
+                this.ctx.drawImage(video, x, y, drawWidth, drawHeight);
+                this.ctx.restore();
+                this.canvas.style.display = 'block';
+                this.parent.classList.add('has-frame');
+                return true;
+            } catch (_) {
+                try { this.ctx.restore(); } catch (_) {}
+                return false;
+            }
+        }
+
+        clearCanvas() {
+            try {
+                if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            } catch (_) {}
+            this.canvas.style.display = 'none';
+        }
+
+        commitFreezeToPoster(generation) {
+            const poster = this.item.querySelector('.motion-poster');
+            if (!poster || !this.canvas.width || typeof this.canvas.toBlob !== 'function') return;
+            const finish = (blob) => {
+                if (!blob || generation !== this.generation || this.playing) return;
+                const url = URL.createObjectURL(blob);
+                const previous = this.item.dataset.freezeObjectUrl;
+                this.item.dataset.freezeObjectUrl = url;
+                this.freezeObjectURL = url;
+                poster.onload = () => {
+                    if (generation !== this.generation || this.playing) return;
+                    this.clearCanvas();
+                    this.parent.classList.remove('has-frame');
+                    if (previous && previous.startsWith('blob:') && previous !== url) {
+                        try { URL.revokeObjectURL(previous); } catch (_) {}
+                    }
+                };
+                poster.src = url;
+                this.item.dataset.posterReady = 'true';
+                this.item.classList.add('poster-ready');
+            };
+            try {
+                this.canvas.toBlob((blob) => {
+                    if (blob) finish(blob);
+                    else {
+                        try { this.canvas.toBlob(finish, 'image/jpeg', 0.78); } catch (_) {}
+                    }
+                }, 'image/webp', 0.76);
+            } catch (_) {}
+        }
+
+        releaseSource() {
+            try {
+                this.video.pause();
+                this.video.removeAttribute('src');
+                this.video.load();
+            } catch (_) {}
+            this.video.style.opacity = '0';
+            this.video.classList.remove('is-active');
+        }
+
+        async play() {
+            if (!this.source) return false;
+            if (this.playing) return true;
+            this.playing = true;
+            const generation = ++this.generation;
+            this.ensureSource('auto');
+            this.video.loop = true;
+            this.video.muted = true;
+            this.video.defaultMuted = true;
+            this.video.volume = 0;
+            this.video.style.opacity = '1';
+            this.video.classList.add('is-active');
+            /* Keep the poster/frozen canvas visible beneath the transparent
+               video until Safari confirms a real painted frame. */
+            this.parent.classList.add('has-frame');
+
+            try {
+                const promise = this.video.play();
+                if (promise && typeof promise.then === 'function') await promise;
+                const painted = await waitForPaintedFrame(this.video, 1050);
+                if (!painted || generation !== this.generation || !this.playing) throw new Error('No painted frame');
+                this.clearCanvas();
+                this.item.classList.add('is-playing');
+                return true;
+            } catch (_) {
+                if (generation === this.generation) {
+                    this.playing = false;
+                    this.releaseSource();
+                    this.item.classList.remove('is-playing');
+                    if (this.canvas.style.display === 'none') this.parent.classList.remove('has-frame');
+                }
+                return false;
+            }
+        }
+
+        freezeAndUnload() {
+            const generation = ++this.generation;
+            const captured = this.captureCurrentFrame();
+            this.playing = false;
+            this.item.classList.remove('is-playing');
+            this.releaseSource();
+            if (captured) {
+                this.commitFreezeToPoster(generation);
+            } else {
+                this.clearCanvas();
+                this.parent.classList.remove('has-frame');
+            }
+            return captured;
+        }
+
+        pause() {
+            return this.freezeAndUnload();
+        }
+
+        stop() {
+            return this.freezeAndUnload();
+        }
+
+        toggle() {
+            if (this.playing) {
+                this.freezeAndUnload();
+                return Promise.resolve(false);
+            }
+            return this.play();
+        }
+
+        destroy() {
+            if (this.playing) this.freezeAndUnload();
+            else this.releaseSource();
+        }
+    }
+
     function motionBatchSize() {
         if (window.innerWidth <= 768) return 8;
         if (window.innerWidth <= 1024) return 9;
@@ -6807,6 +7074,20 @@ window.addEventListener('resize', () => {
         activeThumbnailLooper = null;
         previousItem.classList.remove('is-playing');
         const previousStack = previousItem.querySelector('.motion-video-stack');
+
+        if (previousLooper && previousLooper.isIOSLeanThumbnail) {
+            /* Snapshot the exact frame first, then remove the MP4 source. The
+               previous card keeps its stopped frame without keeping a decoder. */
+            const captured = previousLooper.pause();
+            if (!captured && previousStack) previousStack.classList.remove('has-frame');
+            setTimeout(() => {
+                if (previousItem !== activeThumbnailItem && previousItem.motionLooper === previousLooper) {
+                    dehydrateMotionItem(previousItem);
+                }
+            }, 420);
+            return;
+        }
+
         if (previousStack) previousStack.classList.remove('has-frame');
         /* Pause only the one loop that was actually playing. The old code
            reset every hydrated card on each tap, creating a burst of seeks
@@ -6870,23 +7151,29 @@ window.addEventListener('resize', () => {
         if (!stack || !src) return null;
 
         clearTimeout(item.motionUnloadTimer);
-        const videoA = createMotionVideoLayer(true);
-        const videoB = createMotionVideoLayer(false);
-        stack.classList.remove('has-frame');
-        stack.replaceChildren(videoA, videoB);
-
-        const looper = new CanvasLoopPlayer([videoA, videoB], {
-            muted: true,
-            onMetadata: (video) => setCardAspect(item, video)
-        });
+        let looper;
+        if (useIOSLeanThumbnails) {
+            const video = createMotionVideoLayer(true);
+            stack.classList.remove('has-frame');
+            stack.replaceChildren(video);
+            looper = new IOSThumbnailPlayer(video, item, (metadataVideo) => setCardAspect(item, metadataVideo));
+        } else {
+            const videoA = createMotionVideoLayer(true);
+            const videoB = createMotionVideoLayer(false);
+            stack.classList.remove('has-frame');
+            stack.replaceChildren(videoA, videoB);
+            looper = new CanvasLoopPlayer([videoA, videoB], {
+                muted: true,
+                onMetadata: (video) => setCardAspect(item, video)
+            });
+        }
         item.motionLooper = looper;
         item.dataset.motionSrc = src;
         motionLoopers.push(looper);
         ensureCardSource(looper, src);
 
-        /* Do not play-warm every nearby card on iOS. Loading metadata/first
-           data is enough for the native first frame, while automatic muted
-           play calls across several cards can exhaust Safari's decoder pool. */
+        /* iOS creates no nearby decoders automatically; this limit is only a
+           final safety net for rapid taps. Desktop behaviour remains intact. */
         enforceTouchHydrationLimit(item);
         return looper;
     }
@@ -6896,6 +7183,20 @@ window.addEventListener('resize', () => {
         clearTimeout(item.motionUnloadTimer);
         const looper = item.motionLooper;
         if (!looper) return;
+
+        if (looper.isIOSLeanThumbnail) {
+            looper.destroy();
+            motionLoopers = motionLoopers.filter((entry) => entry !== looper);
+            if (activeThumbnailItem === item || activeThumbnailLooper === looper) {
+                activeThumbnailItem = null;
+                activeThumbnailLooper = null;
+            }
+            item.classList.remove('is-playing');
+            item.motionLooper = null;
+            /* Keep the tiny no-source video/canvas DOM momentarily if a frame
+               snapshot is being converted. Its decoder is already released. */
+            return;
+        }
 
         looper.pause();
         looper.videos.forEach((video) => {
@@ -6974,7 +7275,8 @@ window.addEventListener('resize', () => {
 
         item.dataset.motionBound = 'true';
         item.dataset.motionSrc = src;
-        requestMotionPoster(item, index);
+        if (useIOSLeanThumbnails) prepareStaticMotionPoster(item, index);
+        else requestMotionPoster(item, index);
 
         const play = async () => {
             const looper = hydrateMotionItem(item, index);
@@ -7008,11 +7310,16 @@ window.addEventListener('resize', () => {
             const looper = hydrateMotionItem(item, index);
             if (!looper) return;
             if (looper.playing) {
-                looper.pause();
+                const captured = looper.pause();
                 if (activeThumbnailItem === item) setActiveThumbnail(null, null);
                 item.classList.remove('is-playing');
                 const stack = item.querySelector('.motion-video-stack');
-                if (stack) stack.classList.remove('has-frame');
+                if ((!looper.isIOSLeanThumbnail || !captured) && stack) stack.classList.remove('has-frame');
+                if (looper.isIOSLeanThumbnail) {
+                    setTimeout(() => {
+                        if (item !== activeThumbnailItem && item.motionLooper === looper) dehydrateMotionItem(item);
+                    }, 420);
+                }
                 return;
             }
             stopActiveThumbnail(item);
@@ -7033,6 +7340,44 @@ window.addEventListener('resize', () => {
                 setActiveThumbnail(null, null);
             }
         };
+
+        if (useIOSLeanThumbnails) {
+            let warmTimer = 0;
+            let warmPlayer = null;
+            let startX = 0;
+            let startY = 0;
+            workImage.addEventListener('pointerdown', (event) => {
+                if (event.target.closest && event.target.closest('.motion-fullscreen-btn')) return;
+                startX = event.clientX;
+                startY = event.clientY;
+                clearTimeout(warmTimer);
+                warmTimer = setTimeout(() => {
+                    /* An intentional press releases the previously playing
+                       decoder before preloading the newly selected MP4. Normal
+                       scrolling moves beyond the threshold before this fires. */
+                    if (activeThumbnailItem && activeThumbnailItem !== item) stopActiveThumbnail(item);
+                    warmPlayer = hydrateMotionItem(item, index);
+                    if (warmPlayer) {
+                        ensureCardSource(warmPlayer, src);
+                        warmPlayer.prepare();
+                    }
+                }, 85);
+            }, { passive: true });
+            workImage.addEventListener('pointermove', (event) => {
+                if (Math.hypot(event.clientX - startX, event.clientY - startY) < 12) return;
+                clearTimeout(warmTimer);
+                if (warmPlayer && warmPlayer !== activeThumbnailLooper) {
+                    const player = warmPlayer;
+                    warmPlayer = null;
+                    setTimeout(() => {
+                        if (item !== activeThumbnailItem && item.motionLooper === player) dehydrateMotionItem(item);
+                    }, 180);
+                }
+            }, { passive: true });
+            workImage.addEventListener('pointercancel', () => {
+                clearTimeout(warmTimer);
+            }, { passive: true });
+        }
 
         if (touchCapable) bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
         else {
@@ -7078,8 +7423,10 @@ window.addEventListener('resize', () => {
                 const index = Number(item.dataset.motionIndex);
                 if (entry.isIntersecting && isMotionPageActive()) {
                     clearTimeout(item.motionUnloadTimer);
-                    hydrateMotionItem(item, index);
-                    enforceTouchHydrationLimit(item === activeThumbnailItem ? item : null);
+                    if (!useIOSLeanThumbnails) {
+                        hydrateMotionItem(item, index);
+                        enforceTouchHydrationLimit(item === activeThumbnailItem ? item : null);
+                    }
                 } else {
                     scheduleMotionUnload(item);
                 }
@@ -7105,10 +7452,15 @@ window.addEventListener('resize', () => {
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         items.forEach((item) => {
             const index = Number(item.dataset.motionIndex);
-            if (isNearMotionViewport(item)) hydrateMotionItem(item, index);
-            else scheduleMotionUnload(item);
+            if (useIOSLeanThumbnails) {
+                if (!isNearMotionViewport(item)) scheduleMotionUnload(item);
+            } else if (isNearMotionViewport(item)) {
+                hydrateMotionItem(item, index);
+            } else {
+                scheduleMotionUnload(item);
+            }
         });
-        enforceTouchHydrationLimit(activeThumbnailItem);
+        if (!useIOSLeanThumbnails) enforceTouchHydrationLimit(activeThumbnailItem);
         observeMotionBatchTail();
     }
 
