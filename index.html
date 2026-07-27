@@ -1573,11 +1573,11 @@ min-width: 130px !important;
     transition: none;
 }
 
-/* Desktop hover-out handoff: keep the exact canvas frame fully opaque while
-   the frozen poster blob is being created and decoded. This prevents the card
-   background from flashing between the live MP4 and the stopped frame. */
+/* Desktop hover-out handoff: the exact canvas frame stays above the poster,
+   while the already-decoded poster remains painted underneath as a permanent
+   safety layer. Never hide both layers during the pause/freeze handoff. */
 .motion-item.is-freezing .motion-poster {
-    opacity: 0 !important;
+    opacity: 1 !important;
     transition: none !important;
 }
 .motion-item.is-freezing .motion-video-stack {
