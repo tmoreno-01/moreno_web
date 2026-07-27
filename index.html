@@ -2524,15 +2524,42 @@ body.adhd-mode #ios-brush-selector {
 </head>
 <body>
 <script>
-// Applies saved theme BEFORE first paint, so dark mode users never see a white flash.
-// This is intentionally synchronous and placed before any visible markup.
-(function() {
+// Restore the complete saved appearance before any visible markup is painted.
+// The previous bootstrap restored only dark mode, so a saved custom colour
+// could briefly (or on an interrupted reload, apparently permanently) show white.
+(function () {
     try {
+        var root = document.documentElement;
+        var savedCustomBg = localStorage.getItem('customBg');
         var savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
+
+        if (savedCustomBg) {
+            var channels = savedCustomBg.match(/\d+(?:\.\d+)?/g);
+            if (channels && channels.length >= 3) {
+                var r = Math.max(0, Math.min(255, Number(channels[0])));
+                var g = Math.max(0, Math.min(255, Number(channels[1])));
+                var b = Math.max(0, Math.min(255, Number(channels[2])));
+                var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                var darkColour = yiq < 128;
+                var textColour = darkColour ? '#ffffff' : '#1a1a1a';
+
+                root.style.setProperty('--bg-color', savedCustomBg);
+                root.style.setProperty('--text-color', textColour);
+                root.style.setProperty('--text-muted', darkColour ? '#aaaaaa' : '#666666');
+                root.style.setProperty('--overlay-bg', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.97)');
+                root.style.setProperty('--lightbox-bg', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.98)');
+                root.style.setProperty('--logo-filter', darkColour ? 'invert(1)' : 'none');
+                root.style.setProperty('--dot-color', textColour);
+                root.style.setProperty('--frace-blend', darkColour ? 'screen' : 'multiply');
+                root.style.setProperty('--loader-invert', darkColour ? 'invert(0)' : 'invert(1)');
+            }
+        } else if (savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
         }
-    } catch (e) {}
+    } catch (error) {
+        // Storage can be unavailable in strict/private contexts. The default
+        // light appearance remains usable rather than stopping page startup.
+    }
 })();
 </script>
 <!-- New Duck Page -->
@@ -3377,7 +3404,7 @@ let clickTimer;
 themeToggleBtn.addEventListener('click', (e) => {
     e.preventDefault();
     clickCount++;
-    
+
     clearTimeout(clickTimer);
     clickTimer = setTimeout(() => { clickCount = 0; }, 500);
 
@@ -3387,41 +3414,60 @@ themeToggleBtn.addEventListener('click', (e) => {
         return;
     }
 
-    const currentTime = new Date().getTime();
+    const currentTime = Date.now();
     const timeDiff = currentTime - lastThemeClickTime;
 
     if (timeDiff < 350) {
         // --- DOUBLE CLICK: Random Color ---
         clearTimeout(themeClickTimer);
+        themeClickTimer = null;
+
         const r = Math.floor(Math.random() * 256);
         const g = Math.floor(Math.random() * 256);
         const b = Math.floor(Math.random() * 256);
         const randomColor = `rgb(${r}, ${g}, ${b})`;
 
         applyCustomBackground(randomColor);
-        localStorage.setItem('customBg', randomColor);
-        localStorage.removeItem('theme'); 
+        try {
+            // A double click supersedes the provisional single-click choice.
+            localStorage.setItem('customBg', randomColor);
+            localStorage.removeItem('theme');
+        } catch (error) {}
         lastThemeClickTime = 0;
     } else {
         // --- SINGLE CLICK: Toggle Dark/Light ---
         lastThemeClickTime = currentTime;
-        themeClickTimer = setTimeout(() => {
-            if (isCustomBg) {
-                // If we were in custom mode, wipe the variables and go to Light Mode
-                clearCustomStyles();
-                isDarkMode = false; 
-                document.body.classList.remove('dark-mode');
+
+        // Snapshot the intended result now. Previously the preference was not
+        // written until this 350 ms timer fired. A hard refresh in that window
+        // cancelled the timer and made the site load the old/default white theme.
+        const wasCustomBackground = isCustomBg;
+        const nextDarkMode = wasCustomBackground ? false : !isDarkMode;
+
+        try {
+            if (wasCustomBackground) {
                 localStorage.removeItem('customBg');
                 localStorage.setItem('theme', 'light');
             } else {
-                // Standard Toggle
-                isDarkMode = !isDarkMode;
-                document.body.classList.toggle('dark-mode', isDarkMode);
-                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                localStorage.setItem('theme', nextDarkMode ? 'dark' : 'light');
                 localStorage.removeItem('customBg');
             }
+        } catch (error) {}
+
+        themeClickTimer = setTimeout(() => {
+            themeClickTimer = null;
+
+            if (wasCustomBackground) {
+                clearCustomStyles();
+                isDarkMode = false;
+                document.body.classList.remove('dark-mode');
+            } else {
+                isDarkMode = nextDarkMode;
+                document.body.classList.toggle('dark-mode', isDarkMode);
+            }
+
             resize(); // Refresh canvas
-        }, 350); 
+        }, 350);
     }
 });
 
@@ -5972,6 +6018,7 @@ window.addEventListener('resize', () => {
        uploading it to artwork/motion. The list is only used when the Motion
        page is opened, so these files do not load on the home/gallery pages. */
     const MOTION_FILES = Object.freeze([
+  'jeff_01.mp4',
         '3dglasses.mp4',
         'beanieman_01.mp4',
         'funnymedieval_01.mp4',
@@ -7111,20 +7158,33 @@ window.addEventListener('resize', () => {
             this.priming[index] = (async () => {
                 await this.seekToStart(video, 900);
                 if (!this.playing || generation !== this.generation) return false;
+
                 video.muted = true;
                 video.defaultMuted = true;
                 video.volume = 0;
-                try {
-                    const warmPlay = video.play();
-                    if (warmPlay && typeof warmPlay.then === 'function') await warmPlay;
-                    await waitForPaintedFrame(video, 700);
-                } catch (_) {}
-                video.pause();
-                await waitForSeek(video, safeStart(video), 700);
-                if (!this.playing || generation !== this.generation) return false;
-                this.primed[index] = video.readyState >= 2;
+                video.loop = false;
                 video.style.opacity = '0';
                 video.classList.remove('is-active');
+
+                try {
+                    /* Decode and paint the first real frame now, while the
+                       current clip still has almost its entire run remaining.
+                       Crucially, leave this decoder parked on that painted
+                       frame. The old version sought back to 0 after warming,
+                       which flushed Safari's ready frame and recreated the
+                       expensive start-up delay at every loop boundary. */
+                    const warmPlay = video.play();
+                    if (warmPlay && typeof warmPlay.then === 'function') await warmPlay;
+                    const painted = await waitForPaintedFrame(video, 750);
+                    video.pause();
+                    if (!painted) return false;
+                } catch (_) {
+                    try { video.pause(); } catch (_) {}
+                    return false;
+                }
+
+                if (!this.playing || generation !== this.generation) return false;
+                this.primed[index] = video.readyState >= 2 && video.videoWidth > 0;
                 return this.primed[index];
             })().finally(() => {
                 this.priming[index] = null;
@@ -7139,8 +7199,14 @@ window.addEventListener('resize', () => {
                 const active = this.activeVideo;
                 if (active && Number.isFinite(active.duration) && active.duration > 0) {
                     const remaining = active.duration - active.currentTime;
-                    const launchLead = Math.max(0.095, Math.min(0.16, active.duration * 0.16));
-                    if ((active.ended || remaining <= launchLead) && !this.swapStarting) {
+                    const standbyIndex = 1 - this.activeIndex;
+                    /* A warmed standby already owns a decoded first frame, so
+                       switch only about one display frame before the end. If
+                       warming is unexpectedly late, begin sooner and let the
+                       outgoing video use native looping as a temporary safety
+                       net rather than visibly stopping at its final frame. */
+                    const handoffLead = this.primed[standbyIndex] ? 0.034 : 0.24;
+                    if ((active.ended || remaining <= handoffLead) && !this.swapStarting) {
                         this.beginSeamlessSwap(generation, active.ended);
                     }
                 }
@@ -7159,28 +7225,31 @@ window.addEventListener('resize', () => {
             const to = this.ensureStandby();
 
             try {
-                if (!this.primed[toIndex]) await this.primeIndex(toIndex, generation);
-                if (!this.playing || generation !== this.generation || token !== this.swapToken || fromIndex !== this.activeIndex) return;
-
-                await waitForSeek(to, safeStart(to), 650);
-                if (!this.playing || generation !== this.generation || token !== this.swapToken) return;
+                if (!this.primed[toIndex]) {
+                    /* Do not allow the outgoing decoder to become a dead last
+                       frame while an unusually slow iPhone is still warming the
+                       standby decoder. Native looping is only a temporary guard
+                       and is disabled as soon as the standby is ready. */
+                    from.loop = true;
+                    await this.primeIndex(toIndex, generation);
+                    from.loop = false;
+                }
+                if (!this.playing || generation !== this.generation ||
+                    token !== this.swapToken || fromIndex !== this.activeIndex ||
+                    !this.primed[toIndex]) return;
 
                 to.muted = true;
                 to.defaultMuted = true;
                 to.volume = 0;
-                to.style.opacity = '0';
-                to.classList.remove('is-active');
-                const nextPlay = to.play();
-                if (nextPlay && typeof nextPlay.then === 'function') await nextPlay;
-                const painted = await waitForPaintedFrame(to, urgent ? 420 : 650);
-                if (!painted || !this.playing || generation !== this.generation || token !== this.swapToken || fromIndex !== this.activeIndex) return;
-
-                /* The standby decoder is already painting at frame zero. Keep
-                   the outgoing layer visible until the same animation frame in
-                   which the incoming layer becomes visible, so Safari never
-                   exposes the card background at the MP4 boundary. */
+                to.loop = false;
                 to.style.transition = 'none';
                 from.style.transition = 'none';
+
+                /* The standby is paused on an already-decoded first frame.
+                   Reveal that exact frame and request playback in the same JS
+                   task. No seek and no wait-for-frame occurs at the boundary,
+                   removing the large Safari pause between the two clips. */
+                const nextPlay = to.play();
                 to.style.opacity = '1';
                 to.classList.add('is-active');
                 from.style.opacity = '0';
@@ -7189,14 +7258,29 @@ window.addEventListener('resize', () => {
                 this.video = to;
                 this.primed[toIndex] = false;
 
-                from.pause();
-                this.primed[fromIndex] = false;
-                this.swapStarting = false;
-                this.primeIndex(fromIndex, generation);
+                /* The outgoing decoder can now be recycled in the background.
+                   Keeping it alive until after the visual swap avoids a GPU
+                   surface tear on older iPhones and iPads. */
+                requestAnimationFrame(() => {
+                    try { from.pause(); } catch (_) {}
+                    this.primed[fromIndex] = false;
+                    if (this.playing && generation === this.generation) {
+                        this.primeIndex(fromIndex, generation);
+                    }
+                });
+
+                if (nextPlay && typeof nextPlay.then === 'function') {
+                    nextPlay.catch(() => {
+                        if (this.playing && generation === this.generation &&
+                            this.activeIndex === toIndex) {
+                            try {
+                                to.loop = true;
+                                to.play().catch(() => {});
+                            } catch (_) {}
+                        }
+                    });
+                }
             } catch (_) {
-                /* Native loop is only a last-resort fallback. It is enabled
-                   without hiding the current layer, so even a failed standby
-                   launch cannot produce a black/background flash. */
                 if (this.playing && generation === this.generation && fromIndex === this.activeIndex) {
                     try {
                         from.loop = true;
