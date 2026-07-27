@@ -1525,7 +1525,7 @@ min-width: 130px !important;
     max-width: none !important;
     margin: 0;
     box-shadow: none !important;
-    background: #000;
+    background: rgba(127, 127, 127, 0.12);
     aspect-ratio: var(--motion-ratio, 0.5625);
     overflow: hidden;
     border-radius: 6px;
@@ -1535,25 +1535,62 @@ min-width: 130px !important;
     user-select: none;
 }
 
-/* Two decoded layers alternate at every loop point. The outgoing layer fades
-   into a start-ready layer, so the visible video never performs an end-to-zero
-   seek and the decoder never visibly stalls. */
-.motion-video-stack {
-    position: absolute;
+/* Every card owns an independent still poster. It remains visible when Safari
+   unloads the card's video decoders, so idle/off-screen cards never become a
+   black rectangle. Posters are generated serially by one temporary decoder. */
+.motion-poster {
+    position: absolute !important;
     inset: 0;
-    overflow: hidden;
-    background: #000;
-    contain: strict;
+    z-index: 1;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    object-fit: cover !important;
+    object-position: center;
+    opacity: 1;
+    transform: scale(1.08);
+    transform-origin: center;
+    filter: none !important;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    transition: opacity 0.12s linear;
 }
-/* Off-screen cards keep only this lightweight black placeholder. Their two
-   video decoders and transition canvas are recreated before they approach the
-   viewport, then removed again after they move well away. */
-.motion-video-stack:empty::after {
+.motion-item.is-playing .motion-poster { opacity: 0; }
+
+/* A neutral loading surface is used only for the brief period before the
+   serial poster decoder has produced the real still image. */
+.motion-item.poster-loading .work-image::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: #000;
+    z-index: 0;
+    background: linear-gradient(110deg,
+        rgba(127,127,127,0.08) 25%,
+        rgba(127,127,127,0.20) 42%,
+        rgba(127,127,127,0.08) 58%);
+    background-size: 220% 100%;
+    animation: motion-poster-loading 1.15s linear infinite;
 }
+@keyframes motion-poster-loading {
+    to { background-position: -220% 0; }
+}
+
+/* Two decoded layers alternate at every loop point. The stack is transparent
+   and hidden until a valid moving frame exists; the poster remains underneath. */
+.motion-video-stack {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    background: transparent;
+    contain: strict;
+    opacity: 0;
+    transition: opacity 0.08s linear;
+}
+.motion-video-stack.has-frame { opacity: 1; }
+.motion-video-stack:empty::after { display: none; }
+#page-motion .motion-video-layer { background: transparent; }
 .motion-video-layer {
     position: absolute;
     inset: 0;
@@ -5898,6 +5935,10 @@ window.addEventListener('resize', () => {
 
     const SOURCE_CACHE = new Map();
     const RESOLVED_SOURCES = new Map();
+    const POSTER_CACHE = new Map();
+    const POSTER_REQUESTS = new Map();
+    const POSTER_QUEUE = [];
+    let posterWorkerRunning = false;
     const touchCapable = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     const isIOS = /iP(?:hone|ad|od)/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -5926,8 +5967,9 @@ window.addEventListener('resize', () => {
 
     function cardHTML(index) {
         return (
-            '<div class="work-item motion-item" data-motion-index="' + index + '">' +
+            '<div class="work-item motion-item poster-loading" data-motion-index="' + index + '">' +
                 '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
+                    '<img class="motion-poster" alt="" aria-hidden="true" decoding="async" draggable="false">' +
                     /* Video/canvas decoder elements are injected only while this
                        card is visible or close to the Motion viewport. */
                     '<div class="motion-video-stack"></div>' +
@@ -6068,15 +6110,239 @@ window.addEventListener('resize', () => {
         });
     }
 
-    function setCardAspect(item, video) {
-        if (!item || !video.videoWidth || !video.videoHeight) return;
-        const ratio = video.videoWidth / video.videoHeight;
+    function setCardAspectDimensions(item, width, height) {
+        if (!item || !width || !height) return;
+        const ratio = width / height;
         const workImage = item.querySelector('.work-image');
-        if (workImage) workImage.style.aspectRatio = video.videoWidth + ' / ' + video.videoHeight;
+        if (workImage) workImage.style.aspectRatio = width + ' / ' + height;
         item.style.setProperty('--motion-ratio', String(ratio));
         item.classList.toggle('motion-landscape', ratio >= 1.2);
         item.classList.toggle('motion-square', ratio >= 0.82 && ratio < 1.2);
         item.classList.toggle('motion-portrait', ratio < 0.82);
+    }
+
+    function applyMotionPoster(item, poster) {
+        if (!item || !poster || !poster.url) return;
+        const image = item.querySelector('.motion-poster');
+        if (!image) return;
+        image.src = poster.url;
+        item.dataset.posterReady = 'true';
+        item.classList.remove('poster-loading');
+        item.classList.add('poster-ready');
+        setCardAspectDimensions(item, poster.width, poster.height);
+    }
+
+    function waitForPosterEvent(video, names, timeoutMs) {
+        if (video.readyState >= 1 && video.videoWidth && video.videoHeight && names.includes('loadedmetadata')) {
+            return Promise.resolve(true);
+        }
+        return new Promise((resolve) => {
+            let settled = false;
+            const finish = (ok) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                names.forEach((name) => video.removeEventListener(name, onSuccess));
+                video.removeEventListener('error', onError);
+                resolve(ok);
+            };
+            const onSuccess = () => finish(true);
+            const onError = () => finish(false);
+            const timer = setTimeout(() => finish(false), timeoutMs);
+            names.forEach((name) => video.addEventListener(name, onSuccess, { once: true }));
+            video.addEventListener('error', onError, { once: true });
+        });
+    }
+
+    async function seekPosterVideo(video, time) {
+        const target = Math.max(0.001, time || 0.001);
+        if (Math.abs(video.currentTime - target) > 0.003) {
+            const pending = waitForPosterEvent(video, ['seeked', 'loadeddata'], 1800);
+            try { video.currentTime = target; } catch (_) {}
+            await pending;
+        }
+
+        /* Muted inline autoplay is used only by this single serial probe. It
+           forces iOS Safari to produce an actual drawable frame without
+           increasing the gallery's decoder count. */
+        try {
+            const promise = video.play();
+            if (promise && typeof promise.then === 'function') await promise;
+        } catch (_) {}
+
+        await new Promise((resolve) => {
+            let settled = false;
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                resolve();
+            };
+            const timer = setTimeout(finish, 700);
+            if (typeof video.requestVideoFrameCallback === 'function') {
+                video.requestVideoFrameCallback(finish);
+            } else {
+                video.addEventListener('timeupdate', finish, { once: true });
+                video.addEventListener('loadeddata', finish, { once: true });
+                requestAnimationFrame(() => requestAnimationFrame(finish));
+            }
+        });
+        video.pause();
+    }
+
+    function canvasContainsVisibleFrame(canvas) {
+        const sample = document.createElement('canvas');
+        sample.width = 24;
+        sample.height = 24;
+        const ctx = sample.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return true;
+        try {
+            ctx.drawImage(canvas, 0, 0, sample.width, sample.height);
+            const pixels = ctx.getImageData(0, 0, sample.width, sample.height).data;
+            let total = 0;
+            let maximum = 0;
+            for (let i = 0; i < pixels.length; i += 4) {
+                const value = Math.max(pixels[i], pixels[i + 1], pixels[i + 2]);
+                total += value;
+                if (value > maximum) maximum = value;
+            }
+            const average = total / (pixels.length / 4);
+            /* Reject only a genuinely blank decoder surface. Very dark art is
+               retained as long as it contains even modest visible detail. */
+            return maximum > 18 || average > 4;
+        } catch (_) {
+            return true;
+        }
+    }
+
+    async function generateMotionPoster(src) {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.defaultMuted = true;
+        video.volume = 0;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.disablePictureInPicture = true;
+        video.disableRemotePlayback = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.setAttribute('aria-hidden', 'true');
+        video.tabIndex = -1;
+        video.style.cssText = 'position:fixed;left:-8px;top:-8px;width:4px;height:4px;opacity:0.001;pointer-events:none;z-index:-1;';
+
+        try {
+            const absolute = new URL(src, location.href);
+            if (absolute.origin !== location.origin) video.crossOrigin = 'anonymous';
+        } catch (_) {}
+
+        document.body.appendChild(video);
+        try {
+            video.src = src;
+            video.load();
+            const metadataReady = await waitForPosterEvent(video, ['loadedmetadata'], 6500);
+            if (!metadataReady || !video.videoWidth || !video.videoHeight) throw new Error('Poster metadata unavailable');
+
+            const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 2;
+            const targets = [0.035, 0.10, 0.22, 0.45, Math.min(0.85, duration * 0.18)]
+                .map((time) => Math.min(Math.max(0.001, time), Math.max(0.001, duration - 0.035)))
+                .filter((time, index, values) => index === 0 || Math.abs(time - values[index - 1]) > 0.025);
+
+            const maxDimension = touchCapable ? 480 : 640;
+            const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+            canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+            const ctx = canvas.getContext('2d', { alpha: false });
+            if (!ctx) throw new Error('Poster canvas unavailable');
+
+            let captured = false;
+            for (const target of targets) {
+                await seekPosterVideo(video, target);
+                if (video.readyState < 2 || !video.videoWidth) continue;
+                try {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    if (canvasContainsVisibleFrame(canvas)) {
+                        captured = true;
+                        break;
+                    }
+                } catch (_) {}
+            }
+            if (!captured) {
+                /* One final attempt after a longer muted decode window. */
+                try {
+                    const play = video.play();
+                    if (play && typeof play.then === 'function') await play;
+                    await new Promise((resolve) => setTimeout(resolve, 240));
+                    video.pause();
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    captured = true;
+                } catch (_) {}
+            }
+            if (!captured) throw new Error('No poster frame decoded');
+
+            let url = canvas.toDataURL('image/webp', 0.76);
+            if (!url || url === 'data:,') url = canvas.toDataURL('image/jpeg', 0.78);
+            return { url, width: video.videoWidth, height: video.videoHeight };
+        } finally {
+            try {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            } catch (_) {}
+            video.remove();
+        }
+    }
+
+    async function runPosterWorker() {
+        if (posterWorkerRunning) return;
+        posterWorkerRunning = true;
+        while (POSTER_QUEUE.length) {
+            const src = POSTER_QUEUE.shift();
+            const request = POSTER_REQUESTS.get(src);
+            if (!request) continue;
+            let poster = null;
+            try {
+                poster = await generateMotionPoster(src);
+                POSTER_CACHE.set(src, poster);
+            } catch (_) {
+                /* A single delayed retry covers Safari's occasional failure to
+                   allocate the temporary decoder immediately after navigation. */
+                if (!request.retried && isMotionPageActive()) {
+                    request.retried = true;
+                    POSTER_QUEUE.push(src);
+                    await new Promise((resolve) => setTimeout(resolve, 350));
+                    continue;
+                }
+            }
+
+            POSTER_REQUESTS.delete(src);
+            if (poster) request.items.forEach((item) => applyMotionPoster(item, poster));
+            await new Promise((resolve) => setTimeout(resolve, touchCapable ? 45 : 20));
+        }
+        posterWorkerRunning = false;
+    }
+
+    function requestMotionPoster(item, index) {
+        const src = motionVideoList[index];
+        if (!item || !src || item.dataset.posterReady === 'true') return;
+        const cached = POSTER_CACHE.get(src);
+        if (cached) {
+            applyMotionPoster(item, cached);
+            return;
+        }
+        let request = POSTER_REQUESTS.get(src);
+        if (!request) {
+            request = { items: new Set(), retried: false };
+            POSTER_REQUESTS.set(src, request);
+            POSTER_QUEUE.push(src);
+        }
+        request.items.add(item);
+        runPosterWorker();
+    }
+
+    function setCardAspect(item, video) {
+        if (!item || !video.videoWidth || !video.videoHeight) return;
+        setCardAspectDimensions(item, video.videoWidth, video.videoHeight);
     }
 
     class CanvasLoopPlayer {
@@ -6540,6 +6806,8 @@ window.addEventListener('resize', () => {
         activeThumbnailItem = null;
         activeThumbnailLooper = null;
         previousItem.classList.remove('is-playing');
+        const previousStack = previousItem.querySelector('.motion-video-stack');
+        if (previousStack) previousStack.classList.remove('has-frame');
         /* Pause only the one loop that was actually playing. The old code
            reset every hydrated card on each tap, creating a burst of seeks
            that could make all Safari video surfaces briefly turn black. */
@@ -6585,6 +6853,7 @@ window.addEventListener('resize', () => {
         video.preload = 'none';
         video.disablePictureInPicture = true;
         video.disableRemotePlayback = true;
+        video.crossOrigin = 'anonymous';
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
         video.setAttribute('disablepictureinpicture', '');
@@ -6603,6 +6872,7 @@ window.addEventListener('resize', () => {
         clearTimeout(item.motionUnloadTimer);
         const videoA = createMotionVideoLayer(true);
         const videoB = createMotionVideoLayer(false);
+        stack.classList.remove('has-frame');
         stack.replaceChildren(videoA, videoB);
 
         const looper = new CanvasLoopPlayer([videoA, videoB], {
@@ -6650,7 +6920,10 @@ window.addEventListener('resize', () => {
         item.classList.remove('is-playing');
         item.motionLooper = null;
         const stack = item.querySelector('.motion-video-stack');
-        if (stack) stack.replaceChildren();
+        if (stack) {
+            stack.classList.remove('has-frame');
+            stack.replaceChildren();
+        }
     }
 
     function scheduleMotionUnload(item) {
@@ -6701,6 +6974,7 @@ window.addEventListener('resize', () => {
 
         item.dataset.motionBound = 'true';
         item.dataset.motionSrc = src;
+        requestMotionPoster(item, index);
 
         const play = async () => {
             const looper = hydrateMotionItem(item, index);
@@ -6714,9 +6988,12 @@ window.addEventListener('resize', () => {
             activeThumbnailLooper = looper;
             item.classList.remove('is-playing');
             const started = await looper.play();
+            const stack = item.querySelector('.motion-video-stack');
             if (started && looper.playing && activeThumbnailItem === item) {
+                if (stack) stack.classList.add('has-frame');
                 setActiveThumbnail(item, looper);
             } else if (activeThumbnailItem === item) {
+                if (stack) stack.classList.remove('has-frame');
                 setActiveThumbnail(null, null);
             }
         };
@@ -6724,6 +7001,8 @@ window.addEventListener('resize', () => {
             if (item.motionLooper) item.motionLooper.pause();
             if (activeThumbnailItem === item) setActiveThumbnail(null, null);
             item.classList.remove('is-playing');
+            const stack = item.querySelector('.motion-video-stack');
+            if (stack) stack.classList.remove('has-frame');
         };
         const toggle = async () => {
             const looper = hydrateMotionItem(item, index);
@@ -6732,6 +7011,8 @@ window.addEventListener('resize', () => {
                 looper.pause();
                 if (activeThumbnailItem === item) setActiveThumbnail(null, null);
                 item.classList.remove('is-playing');
+                const stack = item.querySelector('.motion-video-stack');
+                if (stack) stack.classList.remove('has-frame');
                 return;
             }
             stopActiveThumbnail(item);
@@ -6743,9 +7024,12 @@ window.addEventListener('resize', () => {
             activeThumbnailLooper = looper;
             item.classList.remove('is-playing');
             const started = await looper.play();
+            const stack = item.querySelector('.motion-video-stack');
             if (started && looper.playing && activeThumbnailItem === item) {
+                if (stack) stack.classList.add('has-frame');
                 setActiveThumbnail(item, looper);
             } else if (activeThumbnailItem === item) {
+                if (stack) stack.classList.remove('has-frame');
                 setActiveThumbnail(null, null);
             }
         };
@@ -7021,6 +7305,7 @@ window.addEventListener('resize', () => {
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) window.pauseMotionPage();
         else if (motionPage && motionPage.classList.contains('visible')) {
+            runPosterWorker();
             requestAnimationFrame(refreshMotionViewport);
         }
     });
