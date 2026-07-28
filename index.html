@@ -7378,12 +7378,20 @@ window.addEventListener('resize', () => {
                 this.freezeObjectURL = url;
                 poster.onload = () => {
                     if (generation !== this.generation || this.playing) return;
+                    /* The snapshot already contains the same 1.08 cover crop
+                       as the visible MP4. Keep the frozen poster unscaled so
+                       switching from canvas to poster is pixel-for-pixel and
+                       cannot appear to zoom on iPhone or iPad. */
+                    this.item.classList.add('has-frozen-poster');
                     this.clearCanvas();
                     this.parent.classList.remove('has-frame');
                     if (previous && previous.startsWith('blob:') && previous !== url) {
                         try { URL.revokeObjectURL(previous); } catch (_) {}
                     }
                 };
+                /* Apply the no-double-scale state before assigning the blob.
+                   Cached blob images can fire load immediately on Safari. */
+                this.item.classList.add('has-frozen-poster');
                 poster.src = url;
                 this.item.dataset.posterReady = 'true';
                 this.item.classList.add('poster-ready');
