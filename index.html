@@ -1533,6 +1533,36 @@ min-width: 130px !important;
     grid-column: span 1 !important;
 }
 
+/* Desktop and iPad use justified Motion rows. Every item in a completed row
+   receives one shared height, while its width is calculated from the native
+   video ratio. A 16:9 clip therefore becomes wider instead of shorter and the
+   following cards move to the next row when the remaining space is too small. */
+@media (min-width: 769px) {
+    #page-motion .works-grid.mode-collage {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        grid-template-columns: none !important;
+        grid-auto-flow: initial !important;
+    }
+
+    #page-motion .works-grid.mode-collage .motion-item {
+        flex: 0 0 var(--motion-item-width, 100%) !important;
+        width: var(--motion-item-width, 100%) !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        grid-column: auto !important;
+    }
+
+    #page-motion .works-grid.mode-collage .motion-item .work-image {
+        width: 100% !important;
+        height: var(--motion-row-height, auto) !important;
+        aspect-ratio: auto !important;
+    }
+}
+
 #page-motion .works-grid.mode-collage .motion-item .work-image {
     position: relative;
     width: 100% !important;
@@ -6019,6 +6049,8 @@ window.addEventListener('resize', () => {
        page is opened, so these files do not load on the home/gallery pages. */
     const MOTION_FILES = Object.freeze([
   'jeff_01.mp4',
+'puzzleface_01.mp4',
+'threesome_01.mp4',
         '3dglasses.mp4',
         'beanieman_01.mp4',
         'funnymedieval_01.mp4',
@@ -6072,6 +6104,124 @@ window.addEventListener('resize', () => {
     let viewerSession = 0;
     let viewerCloseTimer = 0;
     const viewerFreeze = document.getElementById('motion-viewer-freeze');
+    let motionRowLayoutFrame = 0;
+
+    function motionRowGap() {
+        if (window.innerWidth >= 1400) return 25;
+        if (window.innerWidth <= 1024) return 16;
+        return 22;
+    }
+
+    function motionTargetRowHeight(containerWidth) {
+        /* Match the visual scale of the previous portrait-card grid while
+           allowing wide clips to spend horizontal space instead of losing
+           height. The slight width scaling keeps rows stable across laptops
+           and iPads without producing oversized final rows. */
+        if (window.innerWidth >= 1400) return Math.min(540, Math.max(470, containerWidth * 0.325));
+        if (window.innerWidth >= 1025) return Math.min(520, Math.max(430, containerWidth * 0.41));
+        return Math.min(500, Math.max(340, containerWidth * 0.47));
+    }
+
+    function readMotionRatio(item) {
+        const stored = Number(item && item.dataset.motionRatio);
+        if (Number.isFinite(stored) && stored > 0) return stored;
+        const cssRatio = Number.parseFloat(item && item.style.getPropertyValue('--motion-ratio'));
+        return Number.isFinite(cssRatio) && cssRatio > 0 ? cssRatio : 0.5625;
+    }
+
+    function applyMotionRow(row, containerWidth, gap, targetHeight, justify) {
+        if (!row.length) return;
+        const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
+        const gapTotal = gap * Math.max(0, row.length - 1);
+
+        /* Flex wrapping is pixel-sensitive. A mathematically exact row can
+           still exceed the browser's usable width by a fraction of a pixel
+           after each card width is rounded, causing the final card (notably
+           the 16:9 clip) to jump onto the next line and leave a huge hole.
+           Keep a tiny invisible fitting allowance so the row selected by the
+           layout algorithm always remains on that physical flex line. */
+        const rowFitAllowance = justify ? 4 : 0;
+        const available = Math.max(1, containerWidth - gapTotal - rowFitAllowance);
+        let height = justify ? available / ratioTotal : targetHeight;
+
+        /* Never inflate a sparse/final row beyond the established card scale.
+           Completed rows can move slightly either side of the target. */
+        if (!justify) height = Math.min(height, targetHeight);
+        height = Math.max(1, height);
+
+        row.forEach((entry) => {
+            const width = Math.max(1, entry.ratio * height);
+            entry.item.style.setProperty('--motion-item-width', width.toFixed(3) + 'px');
+            entry.item.style.setProperty('--motion-row-height', height.toFixed(3) + 'px');
+        });
+    }
+
+    function layoutMotionRows() {
+        motionRowLayoutFrame = 0;
+        const items = Array.from(grid.querySelectorAll('.motion-item'));
+        if (!items.length) return;
+
+        /* Keep the established two-column iPhone layout and 14px centre gap.
+           Wide clips already span both mobile columns. */
+        if (window.innerWidth <= 768) {
+            items.forEach((item) => {
+                item.style.removeProperty('--motion-item-width');
+                item.style.removeProperty('--motion-row-height');
+            });
+            return;
+        }
+
+        const containerWidth = grid.clientWidth;
+        if (!containerWidth) return;
+        const gap = motionRowGap();
+        const targetHeight = motionTargetRowHeight(containerWidth);
+        const minAcceptedHeight = targetHeight * 0.88;
+        const maxAcceptedHeight = targetHeight * 1.14;
+        let row = [];
+
+        items.forEach((item) => {
+            const entry = { item, ratio: readMotionRatio(item) };
+            if (!row.length) {
+                row.push(entry);
+                return;
+            }
+
+            const currentRatios = row.reduce((sum, member) => sum + member.ratio, 0);
+            const currentHeight = (containerWidth - gap * (row.length - 1)) / currentRatios;
+            const withRatios = currentRatios + entry.ratio;
+            const withHeight = (containerWidth - gap * row.length) / withRatios;
+
+            /* Close the row before this card when the existing set is already
+               near the target height and adding the next card would compress
+               everything too far. This is what turns portrait + portrait +
+               16:9 into one even-height row and pushes the next portrait down. */
+            const currentIsGood = currentHeight >= minAcceptedHeight && currentHeight <= maxAcceptedHeight;
+            const addingIsTooShort = withHeight < minAcceptedHeight;
+            const currentCloser = Math.abs(currentHeight - targetHeight) <= Math.abs(withHeight - targetHeight);
+
+            if (currentIsGood && addingIsTooShort && currentCloser) {
+                applyMotionRow(row, containerWidth, gap, targetHeight, true);
+                row = [entry];
+            } else {
+                row.push(entry);
+                if (withHeight <= targetHeight && row.length > 1) {
+                    applyMotionRow(row, containerWidth, gap, targetHeight, true);
+                    row = [];
+                }
+            }
+        });
+
+        if (row.length) {
+            const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
+            const naturalWidth = ratioTotal * targetHeight + gap * Math.max(0, row.length - 1);
+            applyMotionRow(row, containerWidth, gap, targetHeight, naturalWidth >= containerWidth * 0.9);
+        }
+    }
+
+    function scheduleMotionRowLayout() {
+        if (motionRowLayoutFrame) cancelAnimationFrame(motionRowLayoutFrame);
+        motionRowLayoutFrame = requestAnimationFrame(layoutMotionRows);
+    }
 
     function cardHTML(index) {
         const filename = MOTION_FILES[index] || '';
@@ -6267,6 +6417,7 @@ window.addEventListener('resize', () => {
         const workImage = item.querySelector('.work-image');
         if (workImage) workImage.style.aspectRatio = width + ' / ' + height;
         item.style.setProperty('--motion-ratio', String(ratio));
+        item.dataset.motionRatio = String(ratio);
         item.classList.toggle('motion-landscape', ratio >= 1.2);
         item.classList.toggle('motion-square', ratio >= 0.82 && ratio < 1.2);
         item.classList.toggle('motion-portrait', ratio < 0.82);
@@ -6276,6 +6427,7 @@ window.addEventListener('resize', () => {
             item.dataset.motionNativeHeight = String(height);
             item.dataset.motionAspectLocked = 'true';
         }
+        scheduleMotionRowLayout();
     }
 
     function applyMotionPoster(item, poster) {
@@ -7896,6 +8048,7 @@ window.addEventListener('resize', () => {
         const newItems = Array.from(grid.querySelectorAll('.motion-item')).slice(start, end);
         initMotionItems(newItems);
         observeMotionBatchTail();
+        scheduleMotionRowLayout();
         requestAnimationFrame(refreshMotionViewport);
     }
 
@@ -7948,6 +8101,7 @@ window.addEventListener('resize', () => {
                 motionLoadPromise = Promise.resolve(motionVideoList);
             }
         }
+        scheduleMotionRowLayout();
         requestAnimationFrame(() => requestAnimationFrame(refreshMotionViewport));
         return motionLoadPromise || Promise.resolve(motionVideoList);
     }
@@ -8110,7 +8264,10 @@ window.addEventListener('resize', () => {
         const metadataVideo = viewerVideos.find((video) => video.videoWidth && video.videoHeight);
         if (metadataVideo) fitViewerStage(metadataVideo);
     };
-    window.addEventListener('resize', refitViewer);
+    window.addEventListener('resize', () => {
+        refitViewer();
+        scheduleMotionRowLayout();
+    });
     if (window.visualViewport) window.visualViewport.addEventListener('resize', refitViewer);
 
     document.addEventListener('keydown', (event) => {
@@ -8135,6 +8292,7 @@ window.addEventListener('resize', () => {
         if (document.hidden) window.pauseMotionPage();
         else if (motionPage && motionPage.classList.contains('visible')) {
             runPosterWorker();
+            scheduleMotionRowLayout();
             requestAnimationFrame(refreshMotionViewport);
         }
     });
