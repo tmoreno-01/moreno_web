@@ -4132,6 +4132,141 @@ function planBalancedMediaRows(
     return rows;
 }
 
+/* Phone/iPad rows preserve the exact source order. Earlier versions sorted
+   or pulled aspect ratios forward, which gradually collected square and
+   landscape work near the bottom of the page. This planner considers only
+   consecutive items, rejects miniature shared-height rows, and chooses the
+   best set of row breaks across the complete sequence. */
+function planLargeTouchRows(entries, containerWidth, gap, options = {}) {
+    const count = entries.length;
+    if (!count) return [];
+
+    const targetHeight = Math.max(
+        1,
+        Number(options.targetHeight) || containerWidth * 0.72
+    );
+    const maxItems = Math.max(
+        2,
+        Math.min(3, Number(options.maxItems) || 2)
+    );
+    const minimumRowHeightFraction = Math.min(
+        0.90,
+        Math.max(
+            0.55,
+            Number(options.minimumRowHeightFraction) || 0.68
+        )
+    );
+    const minimumItemFraction = Math.min(
+        0.42,
+        Math.max(
+            0.20,
+            Number(options.minimumItemFraction) || 0.27
+        )
+    );
+
+    const memo = new Array(count + 1).fill(null);
+    memo[count] = { cost: 0, rows: [] };
+
+    for (let start = count - 1; start >= 0; start--) {
+        let best = null;
+
+        for (
+            let size = 1;
+            size <= Math.min(maxItems, count - start);
+            size++
+        ) {
+            const end = start + size;
+            if (!memo[end]) continue;
+
+            const row = entries.slice(start, end);
+            const ratioTotal = row.reduce(
+                (sum, entry) => sum + Math.max(0.01, entry.ratio),
+                0
+            );
+            const available = Math.max(
+                1,
+                containerWidth - gap * Math.max(0, size - 1) - 4
+            );
+            const rowHeight = available / ratioTotal;
+            const widths = row.map(
+                (entry) => entry.ratio * rowHeight
+            );
+
+            if (size > 1) {
+                const minimumRowHeight =
+                    targetHeight * minimumRowHeightFraction;
+                const minimumItemWidth =
+                    containerWidth * minimumItemFraction;
+
+                /* This blocks the bad landscape + square combination from
+                   the screenshot: it may fill the width mathematically, but
+                   its shared height is too short to remain visually useful. */
+                if (rowHeight < minimumRowHeight) continue;
+                if (
+                    widths.some(
+                        (width) => width < minimumItemWidth
+                    )
+                ) {
+                    continue;
+                }
+            }
+
+            const heightError = Math.abs(
+                Math.log(
+                    Math.max(0.01, rowHeight / targetHeight)
+                )
+            );
+
+            const remaining = count - end;
+            const orphanPenalty =
+                remaining === 1 && size > 1 ? 2.8 : 0;
+
+            /* Singles remain exactly where they occur. A wide landscape
+               can therefore use a natural full-width row, while the next
+               square or portrait stays mixed into the following sequence.
+               Portrait/square singles cost more, encouraging a valid pair
+               whenever one exists without reordering anything. */
+            let singlePenalty = 0;
+            if (size === 1) {
+                const ratio = row[0].ratio;
+                singlePenalty =
+                    ratio >= 1.18 ? 0.45 :
+                    ratio >= 0.88 ? 1.65 :
+                    2.35;
+            }
+
+            const rowCountPenalty = size === 3 ? 0.18 : 0;
+            const cost =
+                heightError * 4.1 +
+                orphanPenalty +
+                singlePenalty +
+                rowCountPenalty +
+                memo[end].cost;
+
+            if (!best || cost < best.cost) {
+                best = {
+                    cost,
+                    rows: [row].concat(memo[end].rows)
+                };
+            }
+        }
+
+        /* A one-item row is always legal, so this is only defensive. */
+        if (!best) {
+            best = {
+                cost: 100 + memo[start + 1].cost,
+                rows: [[entries[start]]].concat(
+                    memo[start + 1].rows
+                )
+            };
+        }
+
+        memo[start] = best;
+    }
+
+    return memo[0].rows;
+}
+
 function layoutStudiesRows() {
     studiesLayoutFrame = 0;
     if (!pageSketches) return;
@@ -4150,32 +4285,32 @@ function layoutStudiesRows() {
     }));
 
     if (window.innerWidth <= 1024 && entries.length > 1) {
-        /* Phone rows normally contain two or three images; iPad can use up to
-           four. The global planner borrows from the following row when needed,
-           so a lone portrait is never left beside a large empty column. */
-        const maxItems = window.innerWidth <= 768 ? 3 : 4;
-        const minimumItemWidth = window.innerWidth <= 768
-            ? Math.max(132, containerWidth * 0.30)
-            : Math.max(180, containerWidth * 0.25);
-        const rows = planBalancedMediaRows(
+        entries.forEach((entry) => {
+            entry.item.style.removeProperty('order');
+        });
+
+        const rows = planLargeTouchRows(
             entries,
             containerWidth,
             gap,
-            targetHeight,
-            2,
-            maxItems,
             {
-                minimumItemWidth,
-                singleWideRatio: 1.18,
-                allowRatioGrouping: true
+                targetHeight,
+                maxItems: window.innerWidth <= 768 ? 2 : 3,
+                minimumRowHeightFraction:
+                    window.innerWidth <= 768 ? 0.68 : 0.62,
+                minimumItemFraction:
+                    window.innerWidth <= 768 ? 0.27 : 0.22
             }
         );
 
-        rows.flat().forEach((entry, order) => {
-            entry.item.style.order = String(order);
-        });
         rows.forEach((row) => {
-            applyStudiesRow(row, containerWidth, gap, targetHeight, true);
+            applyStudiesRow(
+                row,
+                containerWidth,
+                gap,
+                targetHeight,
+                true
+            );
         });
         return;
     }
@@ -6727,10 +6862,9 @@ window.addEventListener('resize', () => {
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         if (!items.length) return;
 
-        /* iPhone and iPad use one global row plan rather than treating square,
-           landscape and portrait clips as separate streams. The planner picks
-           two-to-four consecutive works per row, evaluates every possible row
-           break, and rejects any plan that strands one card by itself. */
+        /* iPhone and iPad keep the exact curated source order. Dynamic
+           programming selects only consecutive row breaks, preventing both
+           miniature mixed rows and aspect-ratio grouping at the bottom. */
         if (window.innerWidth <= 1024) {
             const containerWidth = grid.clientWidth;
             if (!containerWidth) return;
@@ -6761,29 +6895,32 @@ window.addEventListener('resize', () => {
                 return;
             }
 
-            const maxItems = window.innerWidth <= 768 ? 3 : 4;
-            const minimumItemWidth = window.innerWidth <= 768
-                ? Math.max(132, containerWidth * 0.30)
-                : Math.max(180, containerWidth * 0.25);
-            const rows = planBalancedMediaRows(
+            entries.forEach((entry) => {
+                entry.item.style.removeProperty('order');
+            });
+
+            const rows = planLargeTouchRows(
                 entries,
                 containerWidth,
                 gap,
-                targetHeight,
-                2,
-                maxItems,
                 {
-                    minimumItemWidth,
-                    singleWideRatio: 1.18,
-                    allowRatioGrouping: true
+                    targetHeight,
+                    maxItems: window.innerWidth <= 768 ? 2 : 3,
+                    minimumRowHeightFraction:
+                        window.innerWidth <= 768 ? 0.68 : 0.62,
+                    minimumItemFraction:
+                        window.innerWidth <= 768 ? 0.27 : 0.22
                 }
             );
 
-            rows.flat().forEach((entry, order) => {
-                entry.item.style.order = String(order);
-            });
             rows.forEach((row) => {
-                applyMotionRow(row, containerWidth, gap, targetHeight, true);
+                applyMotionRow(
+                    row,
+                    containerWidth,
+                    gap,
+                    targetHeight,
+                    true
+                );
             });
             return;
         }
