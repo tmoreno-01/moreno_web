@@ -7628,17 +7628,26 @@ window.addEventListener('resize', () => {
         }
 
         freezeAndUnload() {
-            const generation = ++this.generation;
+            ++this.generation;
             cancelAnimationFrame(this.loopRaf);
             this.loopRaf = 0;
             this.swapToken++;
             this.swapStarting = false;
+
+            /* Keep the captured canvas itself as the frozen surface.
+               Converting that frame to a WebP made Mobile Safari perform a
+               second colour-space conversion, which visibly darkened the
+               stopped image. The canvas is already the exact displayed frame,
+               so retaining it avoids colour, crop and timing changes. */
             const captured = this.captureCurrentFrame();
             this.playing = false;
             this.item.classList.remove('is-playing');
             this.releaseSource();
+
             if (captured) {
-                this.commitFreezeToPoster(generation);
+                this.item.classList.remove('has-frozen-poster');
+                this.parent.classList.add('has-frame');
+                this.canvas.style.display = 'block';
             } else {
                 this.clearCanvas();
                 this.parent.classList.remove('has-frame');
@@ -7783,8 +7792,24 @@ window.addEventListener('resize', () => {
         let looper;
         if (useIOSLeanThumbnails) {
             const video = createMotionVideoLayer(true);
-            stack.classList.remove('has-frame');
-            stack.replaceChildren(video);
+            const frozenCanvas = stack.querySelector('.motion-transition-canvas');
+
+            /* Preserve an existing exact frozen canvas while the next MP4 is
+               loading. Removing it here exposed the older poster underneath
+               and could create a colour/crop jump before Safari painted the
+               new video frame. */
+            Array.from(stack.querySelectorAll('.motion-video-layer')).forEach((oldVideo) => {
+                try {
+                    oldVideo.pause();
+                    oldVideo.removeAttribute('src');
+                    oldVideo.load();
+                } catch (_) {}
+                oldVideo.remove();
+            });
+
+            if (frozenCanvas) stack.insertBefore(video, frozenCanvas);
+            else stack.appendChild(video);
+
             looper = new IOSThumbnailPlayer(video, item, (metadataVideo) => setCardAspect(item, metadataVideo));
         } else {
             const videoA = createMotionVideoLayer(true);
