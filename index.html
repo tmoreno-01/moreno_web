@@ -3878,7 +3878,11 @@ saveLastPage('sketches');
 function openMotion() {
 isPaintingActive = false;
 saveLastPage('motion');
+    /* Motion has its own navigation state. Gallery should remain at the
+       normal grey opacity whenever Motion is the selected page. */
+    btnGallery.classList.remove('active');
     if (pageMotion.classList.contains('visible')) {
+        btnMotion.classList.add('active');
         if (typeof window.ensureMotionPageLoaded === 'function') window.ensureMotionPageLoaded();
         else window.__motionOpenRequested = true;
         return;
@@ -3886,7 +3890,6 @@ saveLastPage('motion');
     clearNavigation();
     pageMotion.classList.add('visible');
     btnMotion.classList.add('active');
-    btnGallery.classList.add('active'); // Keep gallery root active
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
@@ -7589,6 +7592,7 @@ window.addEventListener('resize', () => {
         async play() {
             if (!this.source) return false;
             if (this.playing) return true;
+            this.item.classList.remove('mobile-video-frozen');
             this.playing = true;
             const generation = ++this.generation;
             this.activeIndex = Math.min(this.activeIndex, this.videos.length - 1);
@@ -7633,26 +7637,55 @@ window.addEventListener('resize', () => {
             this.loopRaf = 0;
             this.swapToken++;
             this.swapStarting = false;
+            this.primed = [false, false];
+            this.priming = [null, null];
 
-            /* Keep the captured canvas itself as the frozen surface.
-               Converting that frame to a WebP made Mobile Safari perform a
-               second colour-space conversion, which visibly darkened the
-               stopped image. The canvas is already the exact displayed frame,
-               so retaining it avoids colour, crop and timing changes. */
-            const captured = this.captureCurrentFrame();
+            /* Mobile Safari tone-maps a video differently when it is copied
+               into a canvas, which is why every canvas/WebP freeze looked
+               darker than the moving MP4. Keep the actual visible video layer
+               paused on its current frame instead. This is the only handoff
+               that preserves Safari's exact colour, crop and brightness. */
+            const active = this.activeVideo;
+            let heldFrame = false;
+
+            this.videos.forEach((video, index) => {
+                try {
+                    video.pause();
+                    video.loop = false;
+                } catch (_) {}
+
+                if (video === active && video.readyState >= 2 &&
+                    video.videoWidth > 0 && video.videoHeight > 0) {
+                    video.style.opacity = '1';
+                    video.classList.add('is-active');
+                    heldFrame = true;
+                    return;
+                }
+
+                /* The hidden loop standby is no longer needed while paused.
+                   Releasing only that source keeps decoder use controlled
+                   without touching the visible frozen video frame. */
+                try {
+                    video.removeAttribute('src');
+                    video.load();
+                } catch (_) {}
+                video.style.opacity = '0';
+                video.classList.remove('is-active');
+                if (index > 0) video.preload = 'none';
+            });
+
             this.playing = false;
-            this.item.classList.remove('is-playing');
-            this.releaseSource();
+            this.item.classList.remove('is-playing', 'has-frozen-poster');
+            this.clearCanvas();
 
-            if (captured) {
-                this.item.classList.remove('has-frozen-poster');
+            if (heldFrame) {
+                this.item.classList.add('mobile-video-frozen');
                 this.parent.classList.add('has-frame');
-                this.canvas.style.display = 'block';
             } else {
-                this.clearCanvas();
+                this.item.classList.remove('mobile-video-frozen');
                 this.parent.classList.remove('has-frame');
             }
-            return captured;
+            return heldFrame;
         }
 
         pause() { return this.freezeAndUnload(); }
@@ -7667,8 +7700,12 @@ window.addEventListener('resize', () => {
         }
 
         destroy() {
-            if (this.playing) this.freezeAndUnload();
-            else this.releaseSource();
+            ++this.generation;
+            this.playing = false;
+            this.item.classList.remove('is-playing', 'mobile-video-frozen');
+            this.releaseSource();
+            this.clearCanvas();
+            this.parent.classList.remove('has-frame');
         }
     }
 
@@ -7708,15 +7745,12 @@ window.addEventListener('resize', () => {
         const previousStack = previousItem.querySelector('.motion-video-stack');
 
         if (previousLooper && previousLooper.isIOSLeanThumbnail) {
-            /* Snapshot the exact frame first, then remove the MP4 source. The
-               previous card keeps its stopped frame without keeping a decoder. */
-            const captured = previousLooper.pause();
-            if (!captured && previousStack) previousStack.classList.remove('has-frame');
-            setTimeout(() => {
-                if (previousItem !== activeThumbnailItem && previousItem.motionLooper === previousLooper) {
-                    dehydrateMotionItem(previousItem);
-                }
-            }, 420);
+            /* Pause the real visible video surface. Do not dehydrate it here:
+               removing its source forces Safari to replace the frame with a
+               canvas/poster whose colour does not match the MP4. It will still
+               be released normally once the card leaves the Motion viewport. */
+            const heldFrame = previousLooper.pause();
+            if (!heldFrame && previousStack) previousStack.classList.remove('has-frame');
             return;
         }
 
@@ -7743,8 +7777,10 @@ window.addEventListener('resize', () => {
 
         hydrated.sort((a, b) => {
             const priority = (item) => {
-                if (item === preferredItem) return -2;
-                if (item === activeThumbnailItem) return -1;
+                if (item === preferredItem) return -3;
+                if (item === activeThumbnailItem) return -2;
+                if (item.classList.contains('mobile-video-frozen') &&
+                    isNearMotionViewport(item, 0)) return -1;
                 const rect = item.getBoundingClientRect();
                 return Math.abs(((rect.top + rect.bottom) / 2) - viewportCenter);
             };
@@ -7752,7 +7788,13 @@ window.addEventListener('resize', () => {
         });
 
         hydrated.slice(MAX_TOUCH_HYDRATED_ITEMS).forEach((item) => {
-            if (item !== preferredItem && item !== activeThumbnailItem) dehydrateMotionItem(item);
+            if (item === preferredItem || item === activeThumbnailItem) return;
+            /* A visible paused video is the exact freeze surface. Keep it
+               until it leaves the viewport; off-screen held frames may be
+               safely released to stay within Safari's media budget. */
+            if (item.classList.contains('mobile-video-frozen') &&
+                isNearMotionViewport(item, 0)) return;
+            dehydrateMotionItem(item);
         });
     }
 
@@ -7845,7 +7887,7 @@ window.addEventListener('resize', () => {
                 activeThumbnailItem = null;
                 activeThumbnailLooper = null;
             }
-            item.classList.remove('is-playing');
+            item.classList.remove('is-playing', 'mobile-video-frozen');
             item.motionLooper = null;
             /* Keep the tiny no-source video/canvas DOM momentarily if a frame
                snapshot is being converted. Its decoder is already released. */
@@ -8100,11 +8142,9 @@ window.addEventListener('resize', () => {
                     (looper.isIOSLeanThumbnail && !captured)) {
                     if (stack) stack.classList.remove('has-frame');
                 }
-                if (looper.isIOSLeanThumbnail) {
-                    setTimeout(() => {
-                        if (item !== activeThumbnailItem && item.motionLooper === looper) dehydrateMotionItem(item);
-                    }, 420);
-                }
+                /* Keep the paused iOS video element on its current frame.
+                   Off-screen cleanup still releases it through the normal
+                   Motion viewport observer. */
                 return;
             }
             stopActiveThumbnail(item);
