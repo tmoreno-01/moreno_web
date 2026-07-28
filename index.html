@@ -1484,8 +1484,17 @@ min-width: 130px !important;
     }
 }
 @media (max-width: 768px) {
+    /* Use the same justified-row principle as desktop/iPad on phones.
+       JavaScript gives every card in a physical row one shared height and
+       calculates its width from the native MP4 ratio. This removes the uneven
+       bottoms created by two equal-width CSS grid columns. */
     #page-motion .works-grid.mode-collage {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        grid-template-columns: none !important;
+        grid-auto-flow: initial !important;
         gap: 14px !important;
         margin-top: -8px !important;
     }
@@ -1493,9 +1502,18 @@ min-width: 130px !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
-    #page-motion .motion-item {
-        width: 100% !important;
+    #page-motion .works-grid.mode-collage .motion-item {
+        flex: 0 0 var(--motion-item-width, 100%) !important;
+        width: var(--motion-item-width, 100%) !important;
+        max-width: none !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
+        grid-column: auto !important;
+    }
+    #page-motion .works-grid.mode-collage .motion-item .work-image {
+        width: 100% !important;
+        height: var(--motion-row-height, auto) !important;
+        aspect-ratio: auto !important;
     }
 }
 
@@ -6242,12 +6260,15 @@ window.addEventListener('resize', () => {
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         if (!items.length) return;
 
-        /* Keep the established two-column iPhone layout and 14px centre gap.
-           Landscape clips already span both columns. Square clips also receive
-           a complete row, but their visible height is locked to the normal
-           portrait-card height so they do not create a short tile and a large
-           empty hole beside/below it. */
+        /* Phones now use real justified rows rather than two equal-width grid
+           columns. Two portrait-format clips share one calculated height and
+           receive ratio-correct widths, matching desktop/iPad. Landscape clips
+           retain a complete natural-ratio row. Square clips retain the earlier
+           complete-row treatment and the normal portrait reference height. */
         if (window.innerWidth <= 768) {
+            const containerWidth = grid.clientWidth;
+            if (!containerWidth) return;
+
             const mobileGap = 14;
             const portraitRatios = items
                 .map(readMotionRatio)
@@ -6256,18 +6277,44 @@ window.addEventListener('resize', () => {
             const referencePortraitRatio = portraitRatios.length
                 ? portraitRatios[Math.floor(portraitRatios.length / 2)]
                 : 0.5625;
-            const columnWidth = Math.max(1, (grid.clientWidth - mobileGap) / 2);
-            const referenceHeight = Math.max(1, columnWidth / referencePortraitRatio);
+            const referenceColumnWidth = Math.max(1, (containerWidth - mobileGap) / 2);
+            const referenceHeight = Math.max(1, referenceColumnWidth / referencePortraitRatio);
+            let row = [];
+
+            const flushPortraitRow = (justify) => {
+                if (!row.length) return;
+                applyMotionRow(row, containerWidth, mobileGap, referenceHeight, justify);
+                row = [];
+            };
 
             items.forEach((item) => {
-                item.style.removeProperty('--motion-item-width');
-                item.style.removeProperty('--motion-row-height');
-                if (item.classList.contains('motion-square')) {
-                    item.style.setProperty('--motion-mobile-square-height', referenceHeight.toFixed(3) + 'px');
-                } else {
-                    item.style.removeProperty('--motion-mobile-square-height');
+                item.style.removeProperty('--motion-mobile-square-height');
+                const ratio = readMotionRatio(item);
+                const entry = { item, ratio };
+
+                if (item.classList.contains('motion-landscape')) {
+                    flushPortraitRow(row.length > 1);
+                    const height = Math.max(1, containerWidth / ratio);
+                    item.style.setProperty('--motion-item-width', containerWidth.toFixed(3) + 'px');
+                    item.style.setProperty('--motion-row-height', height.toFixed(3) + 'px');
+                    return;
                 }
+
+                if (item.classList.contains('motion-square')) {
+                    flushPortraitRow(row.length > 1);
+                    item.style.setProperty('--motion-item-width', containerWidth.toFixed(3) + 'px');
+                    item.style.setProperty('--motion-row-height', referenceHeight.toFixed(3) + 'px');
+                    item.style.setProperty('--motion-mobile-square-height', referenceHeight.toFixed(3) + 'px');
+                    return;
+                }
+
+                row.push(entry);
+                if (row.length === 2) flushPortraitRow(true);
             });
+
+            /* A final unpaired portrait keeps the established portrait-card
+               scale instead of being enlarged to the full phone width. */
+            flushPortraitRow(false);
             return;
         }
 
