@@ -1365,17 +1365,32 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     gap: 0 !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    transform: none !important;
-    transition: none !important;
+    transform: scale(1) !important;
+    transform-origin: center center !important;
+    transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease !important;
     opacity: 1 !important;
     z-index: auto !important;
-    cursor: default !important;
-    contain: layout style paint;
+    cursor: zoom-in !important;
+    contain: layout style;
+    will-change: transform;
+    -webkit-tap-highlight-color: transparent;
 }
 #page-sketches .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
-    transform: none !important;
-    opacity: 1 !important;
-    z-index: auto !important;
+    opacity: 0.985 !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #page-sketches .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
+        transform: scale(1.035) !important;
+        z-index: 20 !important;
+    }
+}
+
+@media (hover: none), (pointer: coarse) {
+    #page-sketches .works-grid.mode-studies .sketch-item:active {
+        transform: scale(1.015) !important;
+    }
 }
 #page-sketches .works-grid.mode-studies .sketch-item .work-image {
     position: relative;
@@ -1433,6 +1448,91 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
         gap: 14px !important;
         margin-top: -8px !important;
     }
+}
+
+/* --- STUDIES FULLSCREEN VIEWER --- */
+.studies-viewer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 405;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--bg-color);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.28s ease,
+                visibility 0.28s ease,
+                background-color 0.3s ease;
+}
+.studies-viewer.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+.studies-image-stage {
+    position: relative;
+    width: 92vw;
+    height: 92vh;
+    height: 92dvh;
+    max-width: 1800px;
+    overflow: hidden;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+}
+.studies-viewer-image {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    opacity: 0;
+    transform: scale(0.995);
+    transition: opacity 0.2s linear,
+                transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.studies-viewer-image.is-active {
+    opacity: 1;
+    transform: scale(1);
+}
+.studies-viewer .lightbox-close {
+    position: fixed;
+    top: 30px;
+    right: 40px;
+}
+.studies-viewer .slider-arrow {
+    position: fixed;
+    top: 50%;
+}
+.studies-viewer .left-arrow { left: 40px; }
+.studies-viewer .right-arrow { right: 40px; }
+
+@media (max-width: 768px) {
+    .studies-image-stage {
+        width: 94vw;
+        height: 92vh;
+        height: 92dvh;
+    }
+    .studies-viewer .lightbox-close {
+        top: 15px;
+        right: 25px;
+        font-size: 2.5rem;
+    }
+    .studies-viewer .left-arrow { left: 18px; }
+    .studies-viewer .right-arrow { right: 18px; }
 }
 /* --- MOTION PAGE (AI motion / experimental video works) --- */
 #page-motion .overlay-content {
@@ -1547,18 +1647,18 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     grid-column: span 1 !important;
 }
 
-/* On iPhone, a square clip is too short when it occupies only one of the two
-   narrow columns. Give it a complete row and crop it to the same reference
-   height as the portrait cards. JavaScript calculates that height from the
-   actual mobile grid width and the median portrait ratio, so it remains
-   consistent across iPhone sizes and orientation changes. */
+/* On phones, every aspect ratio now participates in the same balanced
+   justified-row planner. Square and landscape clips can sit beside compatible
+   neighbours instead of forcing isolated rows with empty space. */
 @media (max-width: 768px) {
-    #page-motion .works-grid.mode-collage .motion-item.motion-square {
-        grid-column: 1 / -1 !important;
+    #page-motion .works-grid.mode-collage .motion-item.motion-square,
+    #page-motion .works-grid.mode-collage .motion-item.motion-landscape {
+        grid-column: auto !important;
     }
 
-    #page-motion .works-grid.mode-collage .motion-item.motion-square .work-image {
-        height: var(--motion-mobile-square-height, auto) !important;
+    #page-motion .works-grid.mode-collage .motion-item.motion-square .work-image,
+    #page-motion .works-grid.mode-collage .motion-item.motion-landscape .work-image {
+        height: var(--motion-row-height, auto) !important;
         aspect-ratio: auto !important;
     }
 }
@@ -2748,7 +2848,7 @@ body.adhd-mode #ios-brush-selector {
             </a>
             <div class="dropdown-content">
                 <a href="/studies/" id="btn-sketches">Studies</a>
-                <a href="/paint/" id="btn-paint">Paint</a>
+                <a href="/play/" id="btn-paint">Play</a>
                 <a href="/exhibitions/" id="btn-exhibitions" style="display: none;">Exhibitions</a>
                 <a href="/press/" id="btn-press" style="display: none;">Press</a>
             </div>
@@ -3167,46 +3267,46 @@ body.adhd-mode #ios-brush-selector {
             <div class="works-grid mode-studies">
                 
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_01.webp" alt="Study 1" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_01.webp" alt="Study 1" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_02.webp" alt="Study 2" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_02.webp" alt="Study 2" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_03.webp" alt="Study 3" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_03.webp" alt="Study 3" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_04.webp" alt="Study 4" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_04.webp" alt="Study 4" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_05.webp" alt="Study 5" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_05.webp" alt="Study 5" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_06.webp" alt="Study 6" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_06.webp" alt="Study 6" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_07.webp" alt="Study 7" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_07.webp" alt="Study 7" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_08.webp" alt="Study 8" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_08.webp" alt="Study 8" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_09.webp" alt="Study 9" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_09.webp" alt="Study 9" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_10.webp" alt="Study 10" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_10.webp" alt="Study 10" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_11.webp" alt="Study 11" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_11.webp" alt="Study 11" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_12.webp" alt="Study 12" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/studies/sketch_12.webp" alt="Study 12" loading="lazy"></div>
                 </div>
 <div class="work-item sketch-item">
-    <div class="work-image"><img src="/artwork/sketch/sketch_13.webp" alt="Study 13" loading="lazy"></div>
+    <div class="work-image"><img src="/artwork/studies/sketch_13.webp" alt="Study 13" loading="lazy"></div>
 </div>
 <div class="work-item sketch-item">
-    <div class="work-image"><img src="/artwork/sketch/sketch_14.webp" alt="Study 14" loading="lazy"></div>
+    <div class="work-image"><img src="/artwork/studies/sketch_14.webp" alt="Study 14" loading="lazy"></div>
 </div>
 
                 </div>
@@ -3215,6 +3315,18 @@ body.adhd-mode #ios-brush-selector {
         </div>
     </div>
 </div>
+
+<!-- Fullscreen viewer for Studies still images. -->
+<div id="studies-viewer" class="studies-viewer" aria-hidden="true">
+    <div class="lightbox-close" id="studies-viewer-close" role="button" tabindex="0" aria-label="Close Studies viewer">×</div>
+    <div class="slider-arrow left-arrow" id="studies-viewer-prev" role="button" tabindex="0" aria-label="Previous Study"></div>
+    <div class="slider-arrow right-arrow" id="studies-viewer-next" role="button" tabindex="0" aria-label="Next Study"></div>
+    <div class="studies-image-stage" id="studies-image-stage">
+        <img id="studies-viewer-image-a" class="studies-viewer-image is-active" alt="">
+        <img id="studies-viewer-image-b" class="studies-viewer-image" alt="">
+    </div>
+</div>
+
 <div id="page-contact" class="page-overlay">
     <div class="overlay-content">
         <div class="form-container">
@@ -3395,8 +3507,11 @@ function handleRouting() {
         if (normalizedPath.includes('/about')) {
             updatePageMeta("Tyrone Moreno | About"); // <-- ADDED
             openAbout();
-        } else if (normalizedPath.includes('/paint')) {
-            updatePageMeta("Tyrone Moreno | Paint"); // <-- ADDED
+        } else if (normalizedPath.includes('/play') || normalizedPath.includes('/paint')) {
+            if (normalizedPath.includes('/paint')) {
+                window.history.replaceState(null, '', '/play/');
+            }
+            updatePageMeta("Tyrone Moreno | Play");
             clearNavigation();
         } else if (normalizedPath.includes('/gallery')) {
             updatePageMeta("Tyrone Moreno | Gallery"); // <-- ADDED
@@ -3875,6 +3990,148 @@ function applyStudiesRow(row, containerWidth, gap, targetHeight, justify) {
     });
 }
 
+/* Plan row boundaries across the whole sequence. In addition to avoiding
+   stranded portrait cards, every candidate row must now keep each thumbnail
+   above a real minimum width. A wide landscape may occupy a complete row;
+   a narrow portrait may not. When the original sequence has no valid solution,
+   a stable aspect-ratio grouping brings compatible shapes together. */
+function planBalancedMediaRows(
+    entries,
+    containerWidth,
+    gap,
+    targetHeight,
+    minItems,
+    maxItems,
+    options = {}
+) {
+    const minimumItemWidth = Math.max(1, Number(options.minimumItemWidth) || 1);
+    const singleWideRatio = Math.max(1, Number(options.singleWideRatio) || 1.18);
+    const allowRatioGrouping = options.allowRatioGrouping !== false;
+
+    const solve = (sequence) => {
+        const count = sequence.length;
+        if (!count) return [];
+        if (count === 1) return [sequence.slice()];
+
+        const memo = new Array(count + 1).fill(null);
+        memo[count] = { cost: 0, rows: [] };
+
+        for (let start = count - 1; start >= 0; start--) {
+            let best = null;
+
+            for (let size = 1; size <= maxItems; size++) {
+                const end = start + size;
+                if (end > count || !memo[end]) continue;
+                if (size > 1 && size < minItems) continue;
+
+                const row = sequence.slice(start, end);
+
+                /* A complete single-item row is valid only for a genuinely
+                   wide piece. This lets a landscape fill the line while
+                   preventing a narrow portrait from sitting beside empty space. */
+                if (size === 1 && row[0].ratio < singleWideRatio) continue;
+
+                const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
+                const available = Math.max(
+                    1,
+                    containerWidth - gap * Math.max(0, size - 1) - 4
+                );
+                const rowHeight = available / Math.max(0.01, ratioTotal);
+                const widths = row.map((entry) => entry.ratio * rowHeight);
+
+                /* Reject combinations such as a landscape beside a very narrow
+                   portrait when that would shrink the portrait to a tiny strip. */
+                if (widths.some((width) => width < minimumItemWidth)) continue;
+
+                const heightError = Math.abs(
+                    Math.log(Math.max(0.01, rowHeight / targetHeight))
+                );
+                const logRatios = row.map(
+                    (entry) => Math.log(Math.max(0.01, entry.ratio))
+                );
+                const meanLogRatio =
+                    logRatios.reduce((sum, value) => sum + value, 0) /
+                    logRatios.length;
+                const ratioSpread = Math.sqrt(
+                    logRatios.reduce(
+                        (sum, value) =>
+                            sum + Math.pow(value - meanLogRatio, 2),
+                        0
+                    ) / logRatios.length
+                );
+
+                let extremePenalty = 0;
+                if (rowHeight < targetHeight * 0.58) {
+                    extremePenalty +=
+                        Math.pow(
+                            (targetHeight * 0.58 - rowHeight) / targetHeight,
+                            2
+                        ) * 18;
+                }
+                if (rowHeight > targetHeight * 1.55) {
+                    extremePenalty +=
+                        Math.pow(
+                            (rowHeight - targetHeight * 1.55) / targetHeight,
+                            2
+                        ) * 18;
+                }
+
+                const singleRowPenalty = size === 1 ? 0.7 : 0;
+                const cost =
+                    heightError * 4.4 +
+                    ratioSpread * 0.85 +
+                    extremePenalty +
+                    singleRowPenalty +
+                    memo[end].cost;
+
+                if (!best || cost < best.cost) {
+                    best = {
+                        cost,
+                        rows: [row].concat(memo[end].rows)
+                    };
+                }
+            }
+
+            memo[start] = best;
+        }
+
+        return memo[0] ? memo[0].rows : null;
+    };
+
+    const originalPlan = solve(entries);
+    if (originalPlan) return originalPlan;
+
+    if (allowRatioGrouping) {
+        /* Stable sorting keeps the order inside each shape family while
+           allowing similar portraits/squares/landscapes to share rows. */
+        const grouped = entries
+            .map((entry, originalIndex) => ({ ...entry, originalIndex }))
+            .sort((a, b) => {
+                const ratioDifference = a.ratio - b.ratio;
+                return Math.abs(ratioDifference) > 0.04
+                    ? ratioDifference
+                    : a.originalIndex - b.originalIndex;
+            });
+
+        const groupedPlan = solve(grouped);
+        if (groupedPlan) return groupedPlan;
+    }
+
+    /* Safe fallback: use pairs and let an eligible landscape fill a row.
+       No item is discarded even if unusual future aspect ratios are added. */
+    const rows = [];
+    for (let index = 0; index < entries.length;) {
+        const remaining = entries.length - index;
+        if (remaining === 1) {
+            rows.push([entries[index]]);
+            break;
+        }
+        rows.push(entries.slice(index, index + 2));
+        index += 2;
+    }
+    return rows;
+}
+
 function layoutStudiesRows() {
     studiesLayoutFrame = 0;
     if (!pageSketches) return;
@@ -3887,6 +4144,44 @@ function layoutStudiesRows() {
 
     const gap = studiesRowGap();
     const targetHeight = studiesTargetRowHeight(containerWidth);
+    const entries = items.map((item) => ({
+        item,
+        ratio: readStudyRatio(item)
+    }));
+
+    if (window.innerWidth <= 1024 && entries.length > 1) {
+        /* Phone rows normally contain two or three images; iPad can use up to
+           four. The global planner borrows from the following row when needed,
+           so a lone portrait is never left beside a large empty column. */
+        const maxItems = window.innerWidth <= 768 ? 3 : 4;
+        const minimumItemWidth = window.innerWidth <= 768
+            ? Math.max(132, containerWidth * 0.30)
+            : Math.max(180, containerWidth * 0.25);
+        const rows = planBalancedMediaRows(
+            entries,
+            containerWidth,
+            gap,
+            targetHeight,
+            2,
+            maxItems,
+            {
+                minimumItemWidth,
+                singleWideRatio: 1.18,
+                allowRatioGrouping: true
+            }
+        );
+
+        rows.flat().forEach((entry, order) => {
+            entry.item.style.order = String(order);
+        });
+        rows.forEach((row) => {
+            applyStudiesRow(row, containerWidth, gap, targetHeight, true);
+        });
+        return;
+    }
+
+    /* Preserve the established desktop arrangement and natural DOM order. */
+    entries.forEach((entry) => entry.item.style.removeProperty('order'));
     let row = [];
     let ratioTotal = 0;
 
@@ -3897,23 +4192,20 @@ function layoutStudiesRows() {
         ratioTotal = 0;
     };
 
-    items.forEach((item) => {
-        const ratio = readStudyRatio(item);
+    entries.forEach((entry) => {
         const projectedCount = row.length + 1;
         const projectedWidth =
-            (ratioTotal + ratio) * targetHeight +
+            (ratioTotal + entry.ratio) * targetHeight +
             gap * Math.max(0, projectedCount - 1);
 
         if (row.length && projectedWidth > containerWidth + 4) {
             flush(row.length > 1);
         }
 
-        row.push({ item, ratio });
-        ratioTotal += ratio;
+        row.push(entry);
+        ratioTotal += entry.ratio;
     });
 
-    /* Keep the final sparse row at the established visual scale rather than
-       enlarging it to fill the complete width. */
     flush(false);
 }
 
@@ -4120,7 +4412,7 @@ saveLastPage('motion');
     window.history.pushState(null, '', '/gallery/'); 
     openWorks(); 
 });
-        btnPaint.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/paint/'); clearNavigation(); });
+        btnPaint.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/play/'); clearNavigation(); updatePageMeta("Tyrone Moreno | Play"); });
         
         btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
 btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/studies/'); openSketches(); });
@@ -6179,7 +6471,14 @@ window.addEventListener('popstate', (event) => {
     } 
     else if (normalizedPath.endsWith('/motion')) {
         openMotion();
-    } 
+    }
+    else if (normalizedPath.endsWith('/play') || normalizedPath.endsWith('/paint')) {
+        if (normalizedPath.endsWith('/paint')) {
+            window.history.replaceState(null, '', '/play/');
+        }
+        clearNavigation();
+        updatePageMeta("Tyrone Moreno | Play");
+    }
     else if (normalizedPath.includes('/gallery')) {
         openWorks();
         const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
@@ -6428,16 +6727,15 @@ window.addEventListener('resize', () => {
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         if (!items.length) return;
 
-        /* Phones now use real justified rows rather than two equal-width grid
-           columns. Two portrait-format clips share one calculated height and
-           receive ratio-correct widths, matching desktop/iPad. Landscape clips
-           retain a complete natural-ratio row. Square clips retain the earlier
-           complete-row treatment and the normal portrait reference height. */
-        if (window.innerWidth <= 768) {
+        /* iPhone and iPad use one global row plan rather than treating square,
+           landscape and portrait clips as separate streams. The planner picks
+           two-to-four consecutive works per row, evaluates every possible row
+           break, and rejects any plan that strands one card by itself. */
+        if (window.innerWidth <= 1024) {
             const containerWidth = grid.clientWidth;
             if (!containerWidth) return;
 
-            const mobileGap = 14;
+            const gap = window.innerWidth <= 768 ? 14 : 16;
             const portraitRatios = items
                 .map(readMotionRatio)
                 .filter((ratio) => Number.isFinite(ratio) && ratio > 0 && ratio < 0.82)
@@ -6445,46 +6743,53 @@ window.addEventListener('resize', () => {
             const referencePortraitRatio = portraitRatios.length
                 ? portraitRatios[Math.floor(portraitRatios.length / 2)]
                 : 0.5625;
-            const referenceColumnWidth = Math.max(1, (containerWidth - mobileGap) / 2);
-            const referenceHeight = Math.max(1, referenceColumnWidth / referencePortraitRatio);
-            let row = [];
+            const phoneColumnWidth = Math.max(1, (containerWidth - gap) / 2);
+            const targetHeight = window.innerWidth <= 768
+                ? Math.max(1, phoneColumnWidth / referencePortraitRatio)
+                : motionTargetRowHeight(containerWidth);
 
-            const flushPortraitRow = (justify) => {
-                if (!row.length) return;
-                applyMotionRow(row, containerWidth, mobileGap, referenceHeight, justify);
-                row = [];
-            };
-
-            items.forEach((item) => {
+            const entries = items.map((item) => {
                 item.style.removeProperty('--motion-mobile-square-height');
-                const ratio = readMotionRatio(item);
-                const entry = { item, ratio };
-
-                if (item.classList.contains('motion-landscape')) {
-                    flushPortraitRow(row.length > 1);
-                    const height = Math.max(1, containerWidth / ratio);
-                    item.style.setProperty('--motion-item-width', containerWidth.toFixed(3) + 'px');
-                    item.style.setProperty('--motion-row-height', height.toFixed(3) + 'px');
-                    return;
-                }
-
-                if (item.classList.contains('motion-square')) {
-                    flushPortraitRow(row.length > 1);
-                    item.style.setProperty('--motion-item-width', containerWidth.toFixed(3) + 'px');
-                    item.style.setProperty('--motion-row-height', referenceHeight.toFixed(3) + 'px');
-                    item.style.setProperty('--motion-mobile-square-height', referenceHeight.toFixed(3) + 'px');
-                    return;
-                }
-
-                row.push(entry);
-                if (row.length === 2) flushPortraitRow(true);
+                return {
+                    item,
+                    ratio: readMotionRatio(item)
+                };
             });
 
-            /* A final unpaired portrait keeps the established portrait-card
-               scale instead of being enlarged to the full phone width. */
-            flushPortraitRow(false);
+            if (entries.length === 1) {
+                applyMotionRow(entries, containerWidth, gap, targetHeight, false);
+                return;
+            }
+
+            const maxItems = window.innerWidth <= 768 ? 3 : 4;
+            const minimumItemWidth = window.innerWidth <= 768
+                ? Math.max(132, containerWidth * 0.30)
+                : Math.max(180, containerWidth * 0.25);
+            const rows = planBalancedMediaRows(
+                entries,
+                containerWidth,
+                gap,
+                targetHeight,
+                2,
+                maxItems,
+                {
+                    minimumItemWidth,
+                    singleWideRatio: 1.18,
+                    allowRatioGrouping: true
+                }
+            );
+
+            rows.flat().forEach((entry, order) => {
+                entry.item.style.order = String(order);
+            });
+            rows.forEach((row) => {
+                applyMotionRow(row, containerWidth, gap, targetHeight, true);
+            });
             return;
         }
+
+        /* Desktop retains its curated source order. */
+        items.forEach((item) => item.style.removeProperty('order'));
 
         const containerWidth = grid.clientWidth;
         if (!containerWidth) return;
@@ -9796,5 +10101,160 @@ function initTestArtEngine() {
     }, 8000);
 }
 </script>
+
+<script>
+(() => {
+    const page = document.getElementById('page-sketches');
+    const viewer = document.getElementById('studies-viewer');
+    const stage = document.getElementById('studies-image-stage');
+    const layers = [
+        document.getElementById('studies-viewer-image-a'),
+        document.getElementById('studies-viewer-image-b')
+    ];
+    const closeButton = document.getElementById('studies-viewer-close');
+    const previousButton = document.getElementById('studies-viewer-prev');
+    const nextButton = document.getElementById('studies-viewer-next');
+
+    if (!page || !viewer || !stage || layers.some((layer) => !layer)) return;
+
+    const items = Array.from(page.querySelectorAll('.sketch-item'));
+    const sources = items.map((item) => {
+        const image = item.querySelector('img');
+        return {
+            src: image ? image.currentSrc || image.src : '',
+            alt: image ? image.alt : 'Study'
+        };
+    });
+
+    let currentIndex = 0;
+    let activeLayer = 0;
+    let requestToken = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    function preloadNeighbours() {
+        if (sources.length < 2) return;
+        const previous = new Image();
+        const next = new Image();
+        previous.src = sources[(currentIndex - 1 + sources.length) % sources.length].src;
+        next.src = sources[(currentIndex + 1) % sources.length].src;
+    }
+
+    async function reveal(index, immediate = false) {
+        if (!sources.length) return;
+        currentIndex = (index + sources.length) % sources.length;
+        const token = ++requestToken;
+        const incomingIndex = immediate ? activeLayer : 1 - activeLayer;
+        const incoming = layers[incomingIndex];
+        const outgoing = layers[activeLayer];
+        const entry = sources[currentIndex];
+
+        incoming.classList.remove('is-active');
+        incoming.alt = entry.alt;
+        incoming.src = entry.src;
+
+        try {
+            if (!incoming.complete || !incoming.naturalWidth) {
+                await new Promise((resolve, reject) => {
+                    incoming.addEventListener('load', resolve, { once: true });
+                    incoming.addEventListener('error', reject, { once: true });
+                });
+            }
+            if (typeof incoming.decode === 'function') {
+                try { await incoming.decode(); } catch (_) {}
+            }
+        } catch (_) {
+            return;
+        }
+
+        if (token !== requestToken) return;
+
+        requestAnimationFrame(() => {
+            if (token !== requestToken) return;
+            incoming.classList.add('is-active');
+            if (incoming !== outgoing) outgoing.classList.remove('is-active');
+            activeLayer = incomingIndex;
+            preloadNeighbours();
+        });
+    }
+
+    function open(index) {
+        currentIndex = index;
+        viewer.classList.add('active');
+        viewer.setAttribute('aria-hidden', 'false');
+        reveal(index, true);
+    }
+
+    function close() {
+        ++requestToken;
+        viewer.classList.remove('active');
+        viewer.setAttribute('aria-hidden', 'true');
+    }
+
+    function showPrevious() { reveal(currentIndex - 1); }
+    function showNext() { reveal(currentIndex + 1); }
+
+    items.forEach((item, index) => {
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute(
+            'aria-label',
+            `Open ${sources[index]?.alt || `Study ${index + 1}`} fullscreen`
+        );
+        item.addEventListener('click', () => open(index));
+        item.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            open(index);
+        });
+    });
+
+    closeButton.addEventListener('click', close);
+    previousButton.addEventListener('click', showPrevious);
+    nextButton.addEventListener('click', showNext);
+
+    [closeButton, previousButton, nextButton].forEach((control) => {
+        control.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            control.click();
+        });
+    });
+
+    viewer.addEventListener('click', (event) => {
+        if (event.target === viewer) close();
+    });
+
+    stage.addEventListener('touchstart', (event) => {
+        const touch = event.changedTouches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }, { passive: true });
+
+    stage.addEventListener('touchend', (event) => {
+        const touch = event.changedTouches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+        if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+        if (deltaX < 0) showNext();
+        else showPrevious();
+    }, { passive: true });
+
+    document.addEventListener('keydown', (event) => {
+        if (!viewer.classList.contains('active')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+        } else if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            showPrevious();
+        } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            showNext();
+        }
+    });
+})();
+</script>
+
 </body>
 </html>
