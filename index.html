@@ -8509,8 +8509,11 @@ window.addEventListener('resize', () => {
         }
 
         overlapSeconds(video) {
+            /* Match fullscreen exactly: a very small 45–75 ms handoff.
+               This keeps Safari's two-decoder safety without making short
+               mobile thumbnail loops feel accelerated. */
             const duration = Number.isFinite(video && video.duration) ? video.duration : 5;
-            return Math.max(0.11, Math.min(0.16, duration * 0.025));
+            return Math.max(0.045, Math.min(0.075, duration * 0.012));
         }
 
         async play() {
@@ -8703,7 +8706,10 @@ window.addEventListener('resize', () => {
                             this.prime(standby, generation);
                         }
 
-                        if (remaining <= overlap + 0.13 || active.ended) {
+                        /* Use the same final handoff allowance as fullscreen.
+                           Standby preparation still happens earlier above, but
+                           the visible crossfade no longer begins prematurely. */
+                        if (remaining <= overlap + 0.035 || active.ended) {
                             this.beginCrossfade(generation);
                         }
                     }
