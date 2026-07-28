@@ -1533,6 +1533,39 @@ min-width: 130px !important;
     grid-column: span 1 !important;
 }
 
+/* On iPhone, a square clip is too short when it occupies only one of the two
+   narrow columns. Give it a complete row and crop it to the same reference
+   height as the portrait cards. JavaScript calculates that height from the
+   actual mobile grid width and the median portrait ratio, so it remains
+   consistent across iPhone sizes and orientation changes. */
+@media (max-width: 768px) {
+    #page-motion .works-grid.mode-collage .motion-item.motion-square {
+        grid-column: 1 / -1 !important;
+    }
+
+    #page-motion .works-grid.mode-collage .motion-item.motion-square .work-image {
+        height: var(--motion-mobile-square-height, auto) !important;
+        aspect-ratio: auto !important;
+    }
+}
+
+/* The general mobile Gallery rule sets artwork <img> elements to height:auto
+   and object-fit:contain. That is correct for Gallery artwork, but it was also
+   overriding the Motion poster on iPhone. The square WebP therefore used
+   different geometry from the full-height MP4 and appeared to jump upward
+   when playback began. Keep every Motion poster locked to the exact same
+   crop, centre point and box as its video layer. */
+@media (max-width: 768px) {
+    #page-motion .works-grid.mode-collage .motion-item .motion-poster {
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        object-fit: cover !important;
+        object-position: 50% 50% !important;
+    }
+}
+
 /* Desktop and iPad use justified Motion rows. Every item in a completed row
    receives one shared height, while its width is calculated from the native
    video ratio. A 16:9 clip therefore becomes wider instead of shorter and the
@@ -6163,11 +6196,30 @@ window.addEventListener('resize', () => {
         if (!items.length) return;
 
         /* Keep the established two-column iPhone layout and 14px centre gap.
-           Wide clips already span both mobile columns. */
+           Landscape clips already span both columns. Square clips also receive
+           a complete row, but their visible height is locked to the normal
+           portrait-card height so they do not create a short tile and a large
+           empty hole beside/below it. */
         if (window.innerWidth <= 768) {
+            const mobileGap = 14;
+            const portraitRatios = items
+                .map(readMotionRatio)
+                .filter((ratio) => Number.isFinite(ratio) && ratio > 0 && ratio < 0.82)
+                .sort((a, b) => a - b);
+            const referencePortraitRatio = portraitRatios.length
+                ? portraitRatios[Math.floor(portraitRatios.length / 2)]
+                : 0.5625;
+            const columnWidth = Math.max(1, (grid.clientWidth - mobileGap) / 2);
+            const referenceHeight = Math.max(1, columnWidth / referencePortraitRatio);
+
             items.forEach((item) => {
                 item.style.removeProperty('--motion-item-width');
                 item.style.removeProperty('--motion-row-height');
+                if (item.classList.contains('motion-square')) {
+                    item.style.setProperty('--motion-mobile-square-height', referenceHeight.toFixed(3) + 'px');
+                } else {
+                    item.style.removeProperty('--motion-mobile-square-height');
+                }
             });
             return;
         }
@@ -6384,6 +6436,58 @@ window.addEventListener('resize', () => {
             video.addEventListener('timeupdate', onTimeUpdate, { once: true });
             if (typeof video.requestVideoFrameCallback === 'function') {
                 video.requestVideoFrameCallback(() => finish(true));
+            }
+        });
+    }
+
+    /* Safari can resolve play() before a newly-started hidden decoder has
+       actually submitted its next frame to the compositor. Waiting for a
+       genuinely newer media frame lets the outgoing clip remain visible until
+       the standby is already moving, rather than revealing a parked first
+       frame and creating a visible pause at every loop boundary. */
+    function waitForFreshVideoFrame(video, startTime, timeoutMs = 260) {
+        return new Promise((resolve) => {
+            if (!video) {
+                resolve(false);
+                return;
+            }
+
+            let settled = false;
+            let frameCallbackId = 0;
+            const threshold = Number.isFinite(startTime) ? startTime + 0.001 : -1;
+            const finish = (ok) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                if (frameCallbackId && typeof video.cancelVideoFrameCallback === 'function') {
+                    try { video.cancelVideoFrameCallback(frameCallbackId); } catch (_) {}
+                }
+                resolve(!!ok);
+            };
+            const onTimeUpdate = () => {
+                if (video.readyState >= 2 && video.currentTime > threshold) finish(true);
+            };
+            const timer = setTimeout(() => {
+                finish(video.readyState >= 2 && video.currentTime > threshold);
+            }, timeoutMs);
+
+            video.addEventListener('timeupdate', onTimeUpdate);
+            if (typeof video.requestVideoFrameCallback === 'function') {
+                const checkFrame = (_now, metadata) => {
+                    if (settled) return;
+                    const mediaTime = metadata && Number.isFinite(metadata.mediaTime)
+                        ? metadata.mediaTime
+                        : video.currentTime;
+                    if (video.readyState >= 2 && mediaTime > threshold) {
+                        finish(true);
+                    } else {
+                        frameCallbackId = video.requestVideoFrameCallback(checkFrame);
+                    }
+                };
+                frameCallbackId = video.requestVideoFrameCallback(checkFrame);
+            } else {
+                requestAnimationFrame(() => requestAnimationFrame(onTimeUpdate));
             }
         });
     }
@@ -7353,12 +7457,12 @@ window.addEventListener('resize', () => {
                 if (active && Number.isFinite(active.duration) && active.duration > 0) {
                     const remaining = active.duration - active.currentTime;
                     const standbyIndex = 1 - this.activeIndex;
-                    /* A warmed standby already owns a decoded first frame, so
-                       switch only about one display frame before the end. If
-                       warming is unexpectedly late, begin sooner and let the
-                       outgoing video use native looping as a temporary safety
-                       net rather than visibly stopping at its final frame. */
-                    const handoffLead = this.primed[standbyIndex] ? 0.034 : 0.24;
+                    /* Begin early enough for the hidden standby to submit one
+                       genuinely moving frame before it becomes visible. The
+                       outgoing decoder stays in native-loop guard mode during
+                       that short preparation window, so a busy iPhone never
+                       stalls on the final frame. */
+                    const handoffLead = this.primed[standbyIndex] ? 0.115 : 0.34;
                     if ((active.ended || remaining <= handoffLead) && !this.swapStarting) {
                         this.beginSeamlessSwap(generation, active.ended);
                     }
@@ -7378,14 +7482,14 @@ window.addEventListener('resize', () => {
             const to = this.ensureStandby();
 
             try {
+                /* Keep the outgoing decoder moving even if Safari takes longer
+                   than expected to schedule the standby. This guard prevents a
+                   frozen final frame; it is removed immediately after a
+                   successful visual handoff. */
+                from.loop = true;
+
                 if (!this.primed[toIndex]) {
-                    /* Do not allow the outgoing decoder to become a dead last
-                       frame while an unusually slow iPhone is still warming the
-                       standby decoder. Native looping is only a temporary guard
-                       and is disabled as soon as the standby is ready. */
-                    from.loop = true;
                     await this.primeIndex(toIndex, generation);
-                    from.loop = false;
                 }
                 if (!this.playing || generation !== this.generation ||
                     token !== this.swapToken || fromIndex !== this.activeIndex ||
@@ -7397,12 +7501,32 @@ window.addEventListener('resize', () => {
                 to.loop = false;
                 to.style.transition = 'none';
                 from.style.transition = 'none';
+                to.style.opacity = '0';
+                to.classList.remove('is-active');
 
-                /* The standby is paused on an already-decoded first frame.
-                   Reveal that exact frame and request playback in the same JS
-                   task. No seek and no wait-for-frame occurs at the boundary,
-                   removing the large Safari pause between the two clips. */
+                /* Start the standby while it is still hidden, then wait for a
+                   genuinely newer decoded frame. The previous implementation
+                   revealed the parked first frame immediately after play(),
+                   which looked like a pause while Safari's compositor caught
+                   up. */
+                const startTime = to.currentTime;
                 const nextPlay = to.play();
+                if (nextPlay && typeof nextPlay.then === 'function') await nextPlay;
+                const freshFrame = await waitForFreshVideoFrame(to, startTime, urgent ? 180 : 260);
+
+                if (!freshFrame || !this.playing || generation !== this.generation ||
+                    token !== this.swapToken || fromIndex !== this.activeIndex) {
+                    try { to.pause(); } catch (_) {}
+                    this.primed[toIndex] = false;
+                    if (this.playing && generation === this.generation) {
+                        this.primeIndex(toIndex, generation);
+                    }
+                    return;
+                }
+
+                /* The standby is now already moving. Swap compositor layers in
+                   one frame, then leave the outgoing surface alive for two
+                   animation frames before recycling it. */
                 to.style.opacity = '1';
                 to.classList.add('is-active');
                 from.style.opacity = '0';
@@ -7410,29 +7534,18 @@ window.addEventListener('resize', () => {
                 this.activeIndex = toIndex;
                 this.video = to;
                 this.primed[toIndex] = false;
+                from.loop = false;
 
-                /* The outgoing decoder can now be recycled in the background.
-                   Keeping it alive until after the visual swap avoids a GPU
-                   surface tear on older iPhones and iPads. */
-                requestAnimationFrame(() => {
-                    try { from.pause(); } catch (_) {}
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    try {
+                        from.pause();
+                        from.loop = false;
+                    } catch (_) {}
                     this.primed[fromIndex] = false;
                     if (this.playing && generation === this.generation) {
                         this.primeIndex(fromIndex, generation);
                     }
-                });
-
-                if (nextPlay && typeof nextPlay.then === 'function') {
-                    nextPlay.catch(() => {
-                        if (this.playing && generation === this.generation &&
-                            this.activeIndex === toIndex) {
-                            try {
-                                to.loop = true;
-                                to.play().catch(() => {});
-                            } catch (_) {}
-                        }
-                    });
-                }
+                }));
             } catch (_) {
                 if (this.playing && generation === this.generation && fromIndex === this.activeIndex) {
                     try {
