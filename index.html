@@ -7273,34 +7273,33 @@ window.addEventListener('resize', () => {
             this.playing = false;
             this.generation = 0;
             this.isIOSLeanThumbnail = true;
-            this.freezeObjectURL = item.dataset.freezeObjectUrl || '';
-            this.loopRaf = 0;
-            this.swapStarting = false;
-            this.swapToken = 0;
-            this.primed = [false, false];
-            this.priming = [null, null];
 
-            this.canvas = this.parent.querySelector('.motion-transition-canvas');
-            if (!this.canvas) {
-                this.canvas = document.createElement('canvas');
-                this.canvas.className = 'motion-transition-canvas';
-                this.canvas.setAttribute('aria-hidden', 'true');
-                this.parent.appendChild(this.canvas);
-            }
-            this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+            /* Keep the existing transition canvas only as an inert compatibility
+               surface. iPhone thumbnail looping and freezing no longer draw to it. */
+            this.canvas = this.parent.querySelector('.motion-transition-canvas') || null;
             this.configureVideo(video, true);
         }
 
-        get activeVideo() { return this.videos[this.activeIndex]; }
-        get standbyVideo() { return this.videos[1 - this.activeIndex] || null; }
+        get activeVideo() {
+            return this.video;
+        }
+
+        /* Fullscreen suspension code checks this property. Native iPhone
+           looping deliberately uses one decoder, so there is no standby. */
+        get standbyVideo() {
+            return null;
+        }
 
         configureVideo(video, active = false) {
             video.controls = false;
             video.removeAttribute('controls');
             video.loop = false;
+            video.removeAttribute('loop');
             video.muted = true;
             video.defaultMuted = true;
             video.volume = 0;
+            video.defaultPlaybackRate = 1;
+            video.playbackRate = 1;
             video.playsInline = true;
             video.preload = 'none';
             video.disablePictureInPicture = true;
@@ -7309,6 +7308,9 @@ window.addEventListener('resize', () => {
             video.setAttribute('webkit-playsinline', '');
             video.setAttribute('disablepictureinpicture', '');
             video.setAttribute('disableremoteplayback', '');
+
+            /* Permanently bind Safari's hardware video surface to the card.
+               This preserves the square-card sizing fix through pause/resume. */
             video.style.position = 'absolute';
             video.style.inset = '0';
             video.style.width = '100%';
@@ -7324,15 +7326,11 @@ window.addEventListener('resize', () => {
             video.style.zIndex = active ? '2' : '0';
             video.style.opacity = active ? '1' : '0';
             video.style.pointerEvents = 'none';
+            video.style.willChange = 'auto';
             video.classList.toggle('is-active', active);
 
             video.addEventListener('loadedmetadata', () => {
                 if (this.onMetadata) this.onMetadata(video);
-            });
-            video.addEventListener('ended', () => {
-                if (this.playing && video === this.activeVideo) {
-                    this.beginSeamlessSwap(this.generation, true);
-                }
             });
         }
 
@@ -7352,28 +7350,7 @@ window.addEventListener('resize', () => {
         }
 
         ensureSource(preload = 'auto') {
-            this.ensureVideoSource(this.activeVideo, preload);
-        }
-
-        ensureStandby() {
-            const currentStandby = this.standbyVideo;
-            if (currentStandby && currentStandby.isConnected &&
-                currentStandby.parentElement === this.parent) {
-                return currentStandby;
-            }
-
-            const active = this.activeVideo || this.video;
-            this.videos = active ? [active] : [];
-            this.activeIndex = 0;
-            this.video = active || null;
-
-            const standby = createMotionVideoLayer(false);
-            this.configureVideo(standby, false);
-            standby.style.zIndex = '0';
-            this.parent.insertBefore(standby, this.canvas);
-            this.videos.push(standby);
-            this.ensureVideoSource(standby, 'auto');
-            return standby;
+            this.ensureVideoSource(this.video, preload);
         }
 
         prepare() {
@@ -7381,324 +7358,106 @@ window.addEventListener('resize', () => {
             this.ensureSource('auto');
         }
 
-        resizeCanvas() {
-            const cssWidth = Math.max(1, Math.round(this.parent.clientWidth));
-            const cssHeight = Math.max(1, Math.round(this.parent.clientHeight));
-            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-            const width = Math.max(1, Math.round(cssWidth * dpr));
-            const height = Math.max(1, Math.round(cssHeight * dpr));
-            if (this.canvas.width !== width || this.canvas.height !== height) {
-                this.canvas.width = width;
-                this.canvas.height = height;
-            }
-            this.canvas.style.width = cssWidth + 'px';
-            this.canvas.style.height = cssHeight + 'px';
-            if (this.ctx) this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            return { width: cssWidth, height: cssHeight };
-        }
-
-        captureCurrentFrame() {
-            const video = this.activeVideo;
-            if (!video || !this.ctx || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
-            const size = this.resizeCanvas();
-            const scale = Math.max(size.width / video.videoWidth, size.height / video.videoHeight) * 1.08;
-            const drawWidth = video.videoWidth * scale;
-            const drawHeight = video.videoHeight * scale;
-            const x = (size.width - drawWidth) / 2;
-            const y = (size.height - drawHeight) / 2;
-            try {
-                this.ctx.save();
-                this.ctx.globalCompositeOperation = 'copy';
-                this.ctx.globalAlpha = 1;
-                this.ctx.drawImage(video, x, y, drawWidth, drawHeight);
-                this.ctx.restore();
-                this.canvas.style.display = 'block';
-                this.parent.classList.add('has-frame');
-                return true;
-            } catch (_) {
-                try { this.ctx.restore(); } catch (_) {}
-                return false;
-            }
-        }
-
         clearCanvas() {
+            if (!this.canvas) return;
             try {
-                if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                const context = this.canvas.getContext('2d');
+                if (context) context.clearRect(0, 0, this.canvas.width, this.canvas.height);
             } catch (_) {}
             this.canvas.style.display = 'none';
         }
 
-        commitFreezeToPoster(generation) {
-            const poster = this.item.querySelector('.motion-poster');
-            if (!poster || !this.canvas.width || typeof this.canvas.toBlob !== 'function') return;
-            const finish = (blob) => {
-                if (!blob || generation !== this.generation || this.playing) return;
-                const url = URL.createObjectURL(blob);
-                const previous = this.item.dataset.freezeObjectUrl;
-                this.item.dataset.freezeObjectUrl = url;
-                this.freezeObjectURL = url;
-                poster.onload = () => {
-                    if (generation !== this.generation || this.playing) return;
-                    /* The snapshot already contains the same 1.08 cover crop
-                       as the visible MP4. Keep the frozen poster unscaled so
-                       switching from canvas to poster is pixel-for-pixel and
-                       cannot appear to zoom on iPhone or iPad. */
-                    this.item.classList.add('has-frozen-poster');
-                    this.clearCanvas();
-                    this.parent.classList.remove('has-frame');
-                    if (previous && previous.startsWith('blob:') && previous !== url) {
-                        try { URL.revokeObjectURL(previous); } catch (_) {}
-                    }
-                };
-                /* Apply the no-double-scale state before assigning the blob.
-                   Cached blob images can fire load immediately on Safari. */
-                this.item.classList.add('has-frozen-poster');
-                poster.src = url;
-                this.item.dataset.posterReady = 'true';
-                this.item.classList.add('poster-ready');
-            };
-            try {
-                this.canvas.toBlob((blob) => {
-                    if (blob) finish(blob);
-                    else {
-                        try { this.canvas.toBlob(finish, 'image/jpeg', 0.78); } catch (_) {}
-                    }
-                }, 'image/webp', 0.76);
-            } catch (_) {}
-        }
-
-        async seekToStart(video, timeoutMs = 850) {
-            if (!video) return false;
-            this.ensureVideoSource(video, 'auto');
-            await waitForMetadata(video, 1500);
-            video.pause();
-            return waitForSeek(video, safeStart(video), timeoutMs);
-        }
-
-        async primeIndex(index, generation = this.generation) {
-            if (this.primed[index]) return true;
-            if (this.priming[index]) return this.priming[index];
-            const video = this.videos[index];
-            if (!video) return false;
-
-            this.priming[index] = (async () => {
-                await this.seekToStart(video, 900);
-                if (!this.playing || generation !== this.generation) return false;
-
-                video.muted = true;
-                video.defaultMuted = true;
-                video.volume = 0;
-                video.loop = false;
-                video.style.opacity = '0';
-                video.classList.remove('is-active');
-
-                try {
-                    /* Decode and paint the first real frame now, while the
-                       current clip still has almost its entire run remaining.
-                       Crucially, leave this decoder parked on that painted
-                       frame. The old version sought back to 0 after warming,
-                       which flushed Safari's ready frame and recreated the
-                       expensive start-up delay at every loop boundary. */
-                    const warmPlay = video.play();
-                    if (warmPlay && typeof warmPlay.then === 'function') await warmPlay;
-                    const painted = await waitForPaintedFrame(video, 750);
-                    video.pause();
-                    if (!painted) return false;
-                } catch (_) {
-                    try { video.pause(); } catch (_) {}
-                    return false;
-                }
-
-                if (!this.playing || generation !== this.generation) return false;
-                this.primed[index] = video.readyState >= 2 && video.videoWidth > 0;
-                return this.primed[index];
-            })().finally(() => {
-                this.priming[index] = null;
-            });
-            return this.priming[index];
-        }
-
-        startLoopMonitor(generation) {
-            cancelAnimationFrame(this.loopRaf);
-            const tick = () => {
-                if (!this.playing || generation !== this.generation) return;
-                const active = this.activeVideo;
-                if (active && Number.isFinite(active.duration) && active.duration > 0) {
-                    const remaining = active.duration - active.currentTime;
-                    const standbyIndex = 1 - this.activeIndex;
-                    /* Begin early enough for the hidden standby to submit one
-                       genuinely moving frame before it becomes visible. The
-                       outgoing decoder stays in native-loop guard mode during
-                       that short preparation window, so a busy iPhone never
-                       stalls on the final frame. */
-                    const handoffLead = this.primed[standbyIndex] ? 0.115 : 0.34;
-                    if ((active.ended || remaining <= handoffLead) && !this.swapStarting) {
-                        this.beginSeamlessSwap(generation, active.ended);
-                    }
-                }
-                this.loopRaf = requestAnimationFrame(tick);
-            };
-            this.loopRaf = requestAnimationFrame(tick);
-        }
-
-        async beginSeamlessSwap(generation, urgent = false) {
-            if (this.swapStarting || !this.playing || generation !== this.generation) return;
-            this.swapStarting = true;
-            const token = ++this.swapToken;
-            const fromIndex = this.activeIndex;
-            const toIndex = 1 - fromIndex;
-            const from = this.videos[fromIndex];
-            const to = this.ensureStandby();
-
-            try {
-                /* Keep the outgoing decoder moving even if Safari takes longer
-                   than expected to schedule the standby. This guard prevents a
-                   frozen final frame; it is removed immediately after a
-                   successful visual handoff. */
-                from.loop = true;
-
-                if (!this.primed[toIndex]) {
-                    await this.primeIndex(toIndex, generation);
-                }
-                if (!this.playing || generation !== this.generation ||
-                    token !== this.swapToken || fromIndex !== this.activeIndex ||
-                    !this.primed[toIndex]) return;
-
-                to.muted = true;
-                to.defaultMuted = true;
-                to.volume = 0;
-                to.loop = false;
-                to.style.transition = 'none';
-                from.style.transition = 'none';
-                to.style.opacity = '0';
-                to.classList.remove('is-active');
-
-                /* Start the standby while it is still hidden, then wait for a
-                   genuinely newer decoded frame. The previous implementation
-                   revealed the parked first frame immediately after play(),
-                   which looked like a pause while Safari's compositor caught
-                   up. */
-                const startTime = to.currentTime;
-                const nextPlay = to.play();
-                if (nextPlay && typeof nextPlay.then === 'function') await nextPlay;
-                const freshFrame = await waitForFreshVideoFrame(to, startTime, urgent ? 180 : 260);
-
-                if (!freshFrame || !this.playing || generation !== this.generation ||
-                    token !== this.swapToken || fromIndex !== this.activeIndex) {
-                    try { to.pause(); } catch (_) {}
-                    this.primed[toIndex] = false;
-                    if (this.playing && generation === this.generation) {
-                        this.primeIndex(toIndex, generation);
-                    }
-                    return;
-                }
-
-                /* The standby is now already moving. Swap compositor layers in
-                   one frame, then leave the outgoing surface alive for two
-                   animation frames before recycling it. */
-                to.style.zIndex = '2';
-                to.style.opacity = '1';
-                to.classList.add('is-active');
-                from.style.zIndex = '0';
-                from.style.opacity = '0';
-                from.classList.remove('is-active');
-                this.activeIndex = toIndex;
-                this.video = to;
-                this.primed[toIndex] = false;
-                from.loop = false;
-
-                requestAnimationFrame(() => requestAnimationFrame(() => {
-                    try {
-                        from.pause();
-                        from.loop = false;
-                    } catch (_) {}
-                    this.primed[fromIndex] = false;
-                    if (this.playing && generation === this.generation) {
-                        this.primeIndex(fromIndex, generation);
-                    }
-                }));
-            } catch (_) {
-                if (this.playing && generation === this.generation && fromIndex === this.activeIndex) {
-                    try {
-                        from.loop = true;
-                        if (from.paused) from.play().catch(() => {});
-                    } catch (_) {}
-                }
-            } finally {
-                if (token === this.swapToken) this.swapStarting = false;
-            }
-        }
-
         releaseSource() {
-            cancelAnimationFrame(this.loopRaf);
-            this.loopRaf = 0;
-            this.swapStarting = false;
-            this.swapToken++;
-            this.primed = [false, false];
-            this.priming = [null, null];
-            this.videos.forEach((video, index) => {
-                try {
-                    video.pause();
-                    video.loop = false;
-                    video.removeAttribute('src');
-                    video.load();
-                } catch (_) {}
-                video.style.opacity = '0';
-                video.classList.remove('is-active');
-                if (index > 0) video.preload = 'none';
-            });
+            const video = this.video;
+            if (!video) return;
+            try {
+                video.pause();
+                video.loop = false;
+                video.removeAttribute('loop');
+                video.removeAttribute('src');
+                video.load();
+            } catch (_) {}
+            video.style.opacity = '0';
+            video.style.zIndex = '0';
+            video.classList.remove('is-active');
         }
 
         async play() {
             if (!this.source) return false;
             if (this.playing) return true;
+
+            const video = this.video;
+            if (!video) return false;
+
             this.item.classList.remove('mobile-video-frozen');
             this.playing = true;
             const generation = ++this.generation;
-            this.activeIndex = Math.min(this.activeIndex, this.videos.length - 1);
-            const active = this.activeVideo;
-            this.ensureVideoSource(active, 'auto');
-            active.loop = false;
-            active.muted = true;
-            active.defaultMuted = true;
-            active.volume = 0;
-            active.style.position = 'absolute';
-            active.style.inset = '0';
-            active.style.width = '100%';
-            active.style.height = '100%';
-            active.style.minWidth = '100%';
-            active.style.minHeight = '100%';
-            active.style.maxWidth = 'none';
-            active.style.maxHeight = 'none';
-            active.style.objectFit = 'cover';
-            active.style.objectPosition = '50% 50%';
-            active.style.transform = 'scale(1.08)';
-            active.style.transformOrigin = '50% 50%';
-            active.style.zIndex = '2';
-            active.style.opacity = '1';
-            active.classList.add('is-active');
-            this.parent.classList.add('has-frame');
+
+            this.ensureVideoSource(video, 'auto');
+            video.muted = true;
+            video.defaultMuted = true;
+            video.volume = 0;
+            video.defaultPlaybackRate = 1;
+            video.playbackRate = 1;
+
+            /* Let WebKit's native media pipeline own the loop. The previous
+               two-video handoff continuously sought, warmed, started and
+               swapped hardware decoder surfaces near every endpoint. Under
+               normal iPhone scheduling pressure those asynchronous operations
+               occasionally missed their frame deadline and produced the
+               intermittent hitch. Native loop keeps one uninterrupted decoder
+               and performs the wrap inside the media pipeline itself. */
+            video.loop = true;
+            video.setAttribute('loop', '');
+
+            video.style.position = 'absolute';
+            video.style.inset = '0';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.minWidth = '100%';
+            video.style.minHeight = '100%';
+            video.style.maxWidth = 'none';
+            video.style.maxHeight = 'none';
+            video.style.objectFit = 'cover';
+            video.style.objectPosition = '50% 50%';
+            video.style.transform = 'scale(1.08)';
+            video.style.transformOrigin = '50% 50%';
+            video.style.zIndex = '2';
+            video.style.opacity = '1';
+            video.style.willChange = 'auto';
+            video.classList.add('is-active');
 
             try {
-                if (active.ended || (Number.isFinite(active.duration) && active.currentTime >= active.duration - 0.02)) {
-                    active.currentTime = safeStart(active);
+                if (video.ended ||
+                    (Number.isFinite(video.duration) &&
+                     video.currentTime >= video.duration - 0.02)) {
+                    video.currentTime = safeStart(video);
                 }
-                const promise = active.play();
+
+                const promise = video.play();
                 if (promise && typeof promise.then === 'function') await promise;
-                const painted = await waitForPaintedFrame(active, 1050);
-                if (!painted || generation !== this.generation || !this.playing) throw new Error('No painted frame');
+
+                const painted = await waitForPaintedFrame(video, 1050);
+                if (!painted || generation !== this.generation || !this.playing) {
+                    throw new Error('No painted frame');
+                }
+
                 this.clearCanvas();
+                this.parent.classList.add('has-frame');
                 this.item.classList.add('is-playing');
-                this.ensureStandby();
-                this.primeIndex(1 - this.activeIndex, generation);
-                this.startLoopMonitor(generation);
                 return true;
             } catch (_) {
                 if (generation === this.generation) {
                     this.playing = false;
-                    this.releaseSource();
+                    try {
+                        video.pause();
+                        video.loop = false;
+                        video.removeAttribute('loop');
+                    } catch (_) {}
                     this.item.classList.remove('is-playing');
-                    if (this.canvas.style.display === 'none') this.parent.classList.remove('has-frame');
+                    if (!this.item.classList.contains('mobile-video-frozen')) {
+                        this.parent.classList.remove('has-frame');
+                    }
                 }
                 return false;
             }
@@ -7706,71 +7465,53 @@ window.addEventListener('resize', () => {
 
         freezeAndUnload() {
             ++this.generation;
-            cancelAnimationFrame(this.loopRaf);
-            this.loopRaf = 0;
-            this.swapToken++;
-            this.swapStarting = false;
-            this.primed = [false, false];
-            this.priming = [null, null];
-
-            /* Keep Safari's real paused video frame, but collapse the player
-               back to exactly one video layer. Previously the hidden standby
-               remained inside the thumbnail while removeAttribute('src') and
-               load() reset it. On repeatedly tapped square cards, WebKit could
-               briefly composite that resetting sibling at its intrinsic tiny
-               size along the top edge. Detaching it first removes that race. */
-            const active = this.activeVideo;
-            const staleVideos = this.videos.filter((video) => video && video !== active);
+            const video = this.video;
             let heldFrame = false;
 
-            if (active) {
+            if (video) {
                 try {
-                    active.pause();
-                    active.loop = false;
+                    /* Pause the exact hardware-decoded frame. No canvas,
+                       poster, source replacement, seek or colour conversion. */
+                    video.pause();
+                    video.loop = false;
+                    video.removeAttribute('loop');
                 } catch (_) {}
 
-                if (active.readyState >= 2 && active.videoWidth > 0 && active.videoHeight > 0) {
-                    active.style.position = 'absolute';
-                    active.style.inset = '0';
-                    active.style.width = '100%';
-                    active.style.height = '100%';
-                    active.style.minWidth = '100%';
-                    active.style.minHeight = '100%';
-                    active.style.maxWidth = 'none';
-                    active.style.maxHeight = 'none';
-                    active.style.objectFit = 'cover';
-                    active.style.objectPosition = '50% 50%';
-                    active.style.transform = 'scale(1.08)';
-                    active.style.transformOrigin = '50% 50%';
-                    active.style.zIndex = '2';
-                    active.style.opacity = '1';
-                    active.style.willChange = 'auto';
-                    active.classList.add('is-active');
+                if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                    video.style.position = 'absolute';
+                    video.style.inset = '0';
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.minWidth = '100%';
+                    video.style.minHeight = '100%';
+                    video.style.maxWidth = 'none';
+                    video.style.maxHeight = 'none';
+                    video.style.objectFit = 'cover';
+                    video.style.objectPosition = '50% 50%';
+                    video.style.transform = 'scale(1.08)';
+                    video.style.transformOrigin = '50% 50%';
+                    video.style.zIndex = '2';
+                    video.style.opacity = '1';
+                    video.style.willChange = 'auto';
+                    video.classList.add('is-active');
                     heldFrame = true;
                 }
             }
 
-            /* Update the player state before touching stale nodes so an
-               overlapping tap can never select a video that is being reset. */
-            this.videos = active ? [active] : [];
-            this.activeIndex = 0;
-            this.video = active || null;
-
-            staleVideos.forEach((video) => {
+            /* Defensive cleanup for any standby node left by an older runtime
+               before this HTML was reloaded. The new player never creates one. */
+            Array.from(this.parent.querySelectorAll('.motion-video-layer')).forEach((layer) => {
+                if (layer === video) return;
                 try {
-                    video.pause();
-                    video.loop = false;
+                    layer.pause();
+                    layer.removeAttribute('src');
+                    layer.load();
                 } catch (_) {}
-                video.style.opacity = '0';
-                video.style.zIndex = '0';
-                video.classList.remove('is-active');
-                try { video.remove(); } catch (_) {}
-                try {
-                    video.removeAttribute('src');
-                    video.load();
-                } catch (_) {}
+                layer.remove();
             });
 
+            this.videos = video ? [video] : [];
+            this.activeIndex = 0;
             this.playing = false;
             this.item.classList.remove('is-playing', 'has-frozen-poster');
             this.clearCanvas();
@@ -7782,11 +7523,17 @@ window.addEventListener('resize', () => {
                 this.item.classList.remove('mobile-video-frozen');
                 this.parent.classList.remove('has-frame');
             }
+
             return heldFrame;
         }
 
-        pause() { return this.freezeAndUnload(); }
-        stop() { return this.freezeAndUnload(); }
+        pause() {
+            return this.freezeAndUnload();
+        }
+
+        stop() {
+            return this.freezeAndUnload();
+        }
 
         toggle() {
             if (this.playing) {
