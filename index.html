@@ -1957,21 +1957,27 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
    preserving the artwork's full portrait framing. */
 .motion-video-stage {
     position: relative;
-    width: min(92vw, 51.75vh);
-    width: min(92vw, 51.75dvh);
-    height: min(92vh, 163.56vw);
-    height: min(92dvh, 163.56vw);
-    max-width: 100vw;
-    max-height: 100vh;
-    max-height: 100dvh;
+    width: 96vw;
+    height: 96vh;
+    height: 96dvh;
+    max-width: 96vw;
+    max-height: 96vh;
+    max-height: 96dvh;
     overflow: hidden;
-    background: #000;
+    background: transparent;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    contain: layout paint;
 }
+
+/* Fullscreen videos are decoder-only. Safari's promoted native video surface
+   is never made visible, so it cannot flash black when a differently shaped
+   MP4 replaces it. All moving output is painted into the canvas instead. */
 .motion-video-stage .motion-video-layer {
-    transform: scale(1.075);
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: none !important;
 }
 .motion-transition-canvas {
     position: absolute;
@@ -1999,26 +2005,22 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
    frame at its original pixel dimensions. The hidden stage is free to resize
    for the incoming MP4 behind it, so Safari can never stretch the old video
    into the new aspect ratio and the viewer never has to flash black. */
-.motion-viewer-bridge {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: none;
-    overflow: hidden;
+.motion-viewer-safety {
+    position: absolute;
+    inset: 0;
     z-index: 7;
-    max-width: 96vw;
-    max-height: 96vh;
-    max-height: 96dvh;
-    background: transparent;
+    display: block;
+    overflow: hidden;
+    background: var(--bg-color);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.12s linear;
 }
-.motion-viewer-bridge.is-visible {
+.motion-viewer-safety.is-visible {
     opacity: 1;
+    visibility: visible;
 }
-.motion-viewer-bridge img {
+.motion-viewer-safety-image {
     position: absolute;
     inset: 0;
     display: block;
@@ -2026,16 +2028,22 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     height: 100%;
     max-width: none;
     max-height: none;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     transform: scale(1.075);
     transform-origin: center;
+    opacity: 0;
+    visibility: hidden;
     border: 0;
     border-radius: 0;
-    filter: none;
+    background: transparent;
     pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
+}
+.motion-viewer-safety-image.is-active {
+    opacity: 1;
+    visibility: visible;
 }
 
 .motion-viewer-hold {
@@ -2045,18 +2053,20 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     transform: translate(-50%, -50%);
     display: none;
     z-index: 8;
+    width: 96vw;
+    height: 96vh;
+    height: 96dvh;
     max-width: 96vw;
     max-height: 96vh;
     max-height: 96dvh;
-    width: auto;
-    height: auto;
     background: transparent;
-    opacity: 1;
     pointer-events: none;
     image-rendering: auto;
-    transition: opacity 0.12s linear;
 }
 
+/* The outgoing canvas snapshot or decoded incoming WebP remains above the
+   decoder canvas throughout a source change. The stage itself is never the
+   only visible surface. */
 .motion-video-stage.is-switching .motion-video-layer,
 .motion-video-stage.is-switching .motion-transition-canvas,
 .motion-video-stage.is-switching .motion-freeze-frame {
@@ -3299,9 +3309,10 @@ body.adhd-mode #ios-brush-selector {
         <video id="motion-viewer-video-a" class="motion-video-layer is-active" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
         <video id="motion-viewer-video-b" class="motion-video-layer" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
         <canvas id="motion-viewer-freeze" class="motion-freeze-frame" aria-hidden="true"></canvas>
-    </div>
-    <div id="motion-viewer-bridge" class="motion-viewer-bridge" aria-hidden="true">
-        <img id="motion-viewer-bridge-image" alt="" decoding="async" draggable="false">
+        <div id="motion-viewer-safety" class="motion-viewer-safety" aria-hidden="true">
+            <img id="motion-viewer-safety-a" class="motion-viewer-safety-image is-active" alt="" decoding="async" draggable="false">
+            <img id="motion-viewer-safety-b" class="motion-viewer-safety-image" alt="" decoding="async" draggable="false">
+        </div>
     </div>
     <canvas id="motion-viewer-hold" class="motion-viewer-hold" aria-hidden="true"></canvas>
 </div>
@@ -6848,11 +6859,15 @@ window.addEventListener('resize', () => {
     let viewerSession = 0;
     let viewerCloseTimer = 0;
     const viewerFreeze = document.getElementById('motion-viewer-freeze');
-    const viewerBridge = document.getElementById('motion-viewer-bridge');
-    const viewerBridgeImage = document.getElementById('motion-viewer-bridge-image');
+    const viewerSafety = document.getElementById('motion-viewer-safety');
+    const viewerSafetyImages = [
+        document.getElementById('motion-viewer-safety-a'),
+        document.getElementById('motion-viewer-safety-b')
+    ];
     const viewerHold = document.getElementById('motion-viewer-hold');
+    let viewerSafetyIndex = 0;
+    let viewerSafetyToken = 0;
     let viewerDisplayedIndex = -1;
-    let viewerBridgeToken = 0;
     let motionRowLayoutFrame = 0;
 
     function motionRowGap() {
@@ -7573,10 +7588,19 @@ window.addEventListener('resize', () => {
                 this.canvas.setAttribute('aria-hidden', 'true');
                 this.parent.appendChild(this.canvas);
             }
-            this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
-            /* Match the canvas crop exactly to the CSS transform on the native
-               video layers. A mismatch here caused the visible iOS tap zoom-out. */
-            this.scale = this.parent.classList.contains('motion-video-stage') ? 1.075 : 1.08;
+            this.canvasOnly = options.canvasOnly === true;
+            this.canvasAlpha = options.canvasAlpha === true;
+            this.fitMode = options.fitMode === 'contain' ? 'contain' : 'cover';
+            this.ctx = this.canvas.getContext('2d', {
+                alpha: this.canvasAlpha,
+                desynchronized: true
+            });
+            /* Thumbnail players retain their established cover crop. The
+               fullscreen player explicitly requests contain + canvas-only. */
+            const requestedScale = Number(options.scale);
+            this.scale = Number.isFinite(requestedScale)
+                ? requestedScale
+                : (this.parent.classList.contains('motion-video-stage') ? 1.075 : 1.08);
             this.lastGoodFrame = false;
             this.isTouchThumbnail = touchCapable && !this.parent.classList.contains('motion-video-stage');
 
@@ -7611,7 +7635,10 @@ window.addEventListener('resize', () => {
                     if (this.onMetadata) this.onMetadata(video);
                 });
                 video.addEventListener('loadeddata', () => {
-                    if (!this.playing && index === this.activeIndex && !this.lastGoodFrame) {
+                    if (!this.canvasOnly &&
+                        !this.playing &&
+                        index === this.activeIndex &&
+                        !this.lastGoodFrame) {
                         video.style.opacity = '1';
                         video.classList.add('is-active');
                     }
@@ -7641,15 +7668,30 @@ window.addEventListener('resize', () => {
         drawVideo(video, alpha = 1, replace = false) {
             if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
             const size = this.resizeCanvas();
-            const scale = Math.max(size.width / video.videoWidth, size.height / video.videoHeight) * this.scale;
+            const baseScale = this.fitMode === 'contain'
+                ? Math.min(size.width / video.videoWidth, size.height / video.videoHeight)
+                : Math.max(size.width / video.videoWidth, size.height / video.videoHeight);
+            const scale = baseScale * this.scale;
             const drawWidth = video.videoWidth * scale;
             const drawHeight = video.videoHeight * scale;
             const x = (size.width - drawWidth) / 2;
             const y = (size.height - drawHeight) / 2;
             try {
                 this.ctx.save();
+
+                /* Clear transparent fullscreen pixels before drawing a new
+                   aspect ratio. Never replace the unused canvas area with
+                   opaque black. */
+                if (replace && this.canvasAlpha) {
+                    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+
                 this.ctx.globalAlpha = alpha;
-                this.ctx.globalCompositeOperation = replace ? 'copy' : 'source-over';
+                this.ctx.globalCompositeOperation =
+                    replace && !this.canvasAlpha ? 'copy' : 'source-over';
                 this.ctx.drawImage(video, x, y, drawWidth, drawHeight);
                 this.ctx.restore();
                 this.lastGoodFrame = true;
@@ -7669,6 +7711,15 @@ window.addEventListener('resize', () => {
         }
 
         showDirectVideo(index = this.activeIndex) {
+            if (this.canvasOnly) {
+                this.videos.forEach((video) => {
+                    video.style.opacity = '0';
+                    video.style.visibility = 'hidden';
+                    video.classList.remove('is-active');
+                });
+                return;
+            }
+
             this.hideCanvas();
             this.videos.forEach((video, videoIndex) => {
                 const active = videoIndex === index;
@@ -7710,8 +7761,9 @@ window.addEventListener('resize', () => {
                 video.muted = true;
                 video.defaultMuted = true;
                 video.volume = 0;
-                video.style.opacity = index === 0 ? '1' : '0';
-                video.classList.toggle('is-active', index === 0);
+                video.style.opacity = this.canvasOnly ? '0' : (index === 0 ? '1' : '0');
+                video.style.visibility = this.canvasOnly ? 'hidden' : 'visible';
+                video.classList.toggle('is-active', !this.canvasOnly && index === 0);
             });
         }
 
@@ -7801,8 +7853,9 @@ window.addEventListener('resize', () => {
             active.volume = 1;
             active.defaultPlaybackRate = 1;
             active.playbackRate = 1;
-            active.style.opacity = '1';
-            active.classList.add('is-active');
+            active.style.opacity = this.canvasOnly ? '0' : '1';
+            active.style.visibility = this.canvasOnly ? 'hidden' : 'visible';
+            active.classList.toggle('is-active', !this.canvasOnly);
 
             /* Call play synchronously from the tap/hover activation path.
                Awaiting a seek first can lose iOS's transient user activation. */
@@ -9112,61 +9165,23 @@ window.addEventListener('resize', () => {
 
     window.ensureMotionPageLoaded = ensureMotionPageLoaded;
 
-    function viewerSurfaceDimensions(width, height) {
-        const numericWidth = Number(width);
-        const numericHeight = Number(height);
-        if (!Number.isFinite(numericWidth) || !Number.isFinite(numericHeight) ||
-            numericWidth <= 0 || numericHeight <= 0) return null;
-
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.visualViewport
-            ? window.visualViewport.height
-            : window.innerHeight;
-        const maxWidth = viewportWidth * (viewportWidth <= 768 ? 0.96 : 0.92);
-        const maxHeight = viewportHeight * (viewportWidth <= 768 ? 0.96 : 0.92);
-        const ratio = numericWidth / numericHeight;
-        let fittedWidth = maxWidth;
-        let fittedHeight = fittedWidth / ratio;
-        if (fittedHeight > maxHeight) {
-            fittedHeight = maxHeight;
-            fittedWidth = fittedHeight * ratio;
-        }
-
-        return {
-            width: Math.max(1, Math.ceil(fittedWidth)),
-            height: Math.max(1, Math.ceil(fittedHeight))
-        };
-    }
-
-    function applyViewerSurfaceDimensions(dimensions) {
-        if (!dimensions) return;
-        const width = dimensions.width + 'px';
-        const height = dimensions.height + 'px';
-        viewerStage.style.width = width;
-        viewerStage.style.height = height;
-        if (viewerBridge) {
-            viewerBridge.style.width = width;
-            viewerBridge.style.height = height;
-        }
-    }
-
     function fitViewerStage(video) {
-        if (!video.videoWidth || !video.videoHeight) return;
+        if (!video || !video.videoWidth || !video.videoHeight) return;
 
-        /* Safari may dispatch a late loadedmetadata event after an arrow has
-           already selected another source. Only the current navigation
-           session is allowed to resize the fullscreen stage. */
+        /* Deliberately do not resize the fullscreen stage. Aspect-ratio
+           changes are handled by object-fit/contain inside one permanent
+           viewport-sized shell. */
         if (viewerStage.dataset.viewerSession !== String(viewerSession) ||
             viewerStage.dataset.viewerSource !== viewerSource) return;
-
-        applyViewerSurfaceDimensions(
-            viewerSurfaceDimensions(video.videoWidth, video.videoHeight)
-        );
     }
 
     const viewerLooper = new CanvasLoopPlayer(viewerVideos, {
         muted: false,
-        onMetadata: fitViewerStage
+        onMetadata: fitViewerStage,
+        canvasOnly: true,
+        canvasAlpha: true,
+        fitMode: 'contain',
+        scale: 1.075
     });
 
     function hideViewerFreeze() {
@@ -9176,88 +9191,64 @@ window.addEventListener('resize', () => {
         if (ctx) ctx.clearRect(0, 0, viewerFreeze.width, viewerFreeze.height);
     }
 
-    function nextAnimationFrames(count = 2) {
+    function waitViewerPaints(count = 2) {
         return new Promise((resolve) => {
             const step = () => {
-                if (--count <= 0) {
-                    resolve();
-                } else {
-                    requestAnimationFrame(step);
-                }
+                count--;
+                if (count <= 0) resolve();
+                else requestAnimationFrame(step);
             };
             requestAnimationFrame(step);
         });
     }
 
-    function hideViewerHold(immediate = true) {
+    function hideViewerHold() {
         if (!viewerHold) return;
-        if (immediate) {
-            viewerHold.style.transition = 'none';
-            viewerHold.style.opacity = '0';
-            viewerHold.style.display = 'none';
-            viewerHold.style.removeProperty('width');
-            viewerHold.style.removeProperty('height');
-            const context = viewerHold.getContext('2d');
-            if (context) {
-                context.clearRect(
-                    0,
-                    0,
-                    viewerHold.width || 1,
-                    viewerHold.height || 1
-                );
+        viewerHold.style.display = 'none';
+        const context = viewerHold.getContext('2d');
+        if (context) {
+            context.clearRect(
+                0,
+                0,
+                viewerHold.width || 1,
+                viewerHold.height || 1
+            );
+        }
+    }
+
+    function hideViewerSafety(clearSources = false) {
+        if (!viewerSafety) return;
+        viewerSafety.classList.remove('is-visible');
+
+        if (clearSources) {
+            viewerSafetyToken++;
+            viewerSafetyImages.forEach((image) => {
+                image.classList.remove('is-active');
+                image.removeAttribute('src');
+            });
+            viewerSafetyIndex = 0;
+            if (viewerSafetyImages[0]) {
+                viewerSafetyImages[0].classList.add('is-active');
             }
-            requestAnimationFrame(() => {
-                viewerHold.style.removeProperty('transition');
-                viewerHold.style.opacity = '1';
-            });
-            return;
         }
-
-        viewerHold.style.opacity = '0';
-        setTimeout(() => {
-            if (viewerHold.style.opacity !== '0') return;
-            viewerHold.style.display = 'none';
-            viewerHold.style.removeProperty('width');
-            viewerHold.style.removeProperty('height');
-        }, 150);
     }
 
-    function hideViewerBridge(immediate = true) {
-        if (!viewerBridge || !viewerBridgeImage) return;
-        viewerBridgeToken++;
-        if (immediate) {
-            viewerBridge.style.transition = 'none';
-            viewerBridge.classList.remove('is-visible');
-            viewerBridge.style.display = 'none';
-            viewerBridgeImage.removeAttribute('src');
-            requestAnimationFrame(() => {
-                viewerBridge.style.removeProperty('transition');
-            });
-            return;
-        }
-
-        viewerBridge.classList.remove('is-visible');
-        setTimeout(() => {
-            if (viewerBridge.classList.contains('is-visible')) return;
-            viewerBridge.style.display = 'none';
-            viewerBridgeImage.removeAttribute('src');
-        }, 150);
-    }
-
-    function drawCoverSource(context, source, stageWidth, stageHeight, scaleBoost = 1.075) {
+    function drawContainedSource(context, source, width, height, scaleBoost = 1.075) {
         if (!context || !source) return false;
-        const sourceWidth = source.videoWidth || source.naturalWidth || source.width;
-        const sourceHeight = source.videoHeight || source.naturalHeight || source.height;
+        const sourceWidth =
+            source.videoWidth || source.naturalWidth || source.width;
+        const sourceHeight =
+            source.videoHeight || source.naturalHeight || source.height;
         if (!sourceWidth || !sourceHeight) return false;
 
-        const scale = Math.max(
-            stageWidth / sourceWidth,
-            stageHeight / sourceHeight
+        const scale = Math.min(
+            width / sourceWidth,
+            height / sourceHeight
         ) * scaleBoost;
         const drawWidth = sourceWidth * scale;
         const drawHeight = sourceHeight * scale;
-        const x = (stageWidth - drawWidth) / 2;
-        const y = (stageHeight - drawHeight) / 2;
+        const x = (width - drawWidth) / 2;
+        const y = (height - drawHeight) / 2;
         context.drawImage(source, x, y, drawWidth, drawHeight);
         return true;
     }
@@ -9265,72 +9256,59 @@ window.addEventListener('resize', () => {
     function showViewerHold(fallbackIndex = viewerDisplayedIndex) {
         if (!viewerHold) return false;
 
-        /* Rapid arrow taps keep the already-visible hold surface. Restore its
-           opacity immediately rather than capturing an intermediate blank
-           decoder state. */
+        /* During rapid navigation retain the existing visible snapshot. */
         if (viewerHold.style.display === 'block' &&
-            viewerHold.width && viewerHold.height) {
-            viewerHold.style.transition = 'none';
-            viewerHold.style.opacity = '1';
-            requestAnimationFrame(() => {
-                viewerHold.style.removeProperty('transition');
-            });
+            viewerHold.width &&
+            viewerHold.height) {
             return true;
         }
 
-        const stageWidth = Math.max(1, Math.round(viewerStage.clientWidth));
-        const stageHeight = Math.max(1, Math.round(viewerStage.clientHeight));
+        const width = Math.max(1, Math.round(viewerStage.clientWidth));
+        const height = Math.max(1, Math.round(viewerStage.clientHeight));
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const context = viewerHold.getContext('2d', { alpha: false });
+        const context = viewerHold.getContext('2d', { alpha: true });
         if (!context) return false;
 
-        viewerHold.width = Math.max(1, Math.round(stageWidth * dpr));
-        viewerHold.height = Math.max(1, Math.round(stageHeight * dpr));
-        viewerHold.style.width = stageWidth + 'px';
-        viewerHold.style.height = stageHeight + 'px';
+        viewerHold.width = Math.max(1, Math.round(width * dpr));
+        viewerHold.height = Math.max(1, Math.round(height * dpr));
 
         try {
             context.setTransform(dpr, 0, 0, dpr, 0, 0);
-            context.globalCompositeOperation = 'copy';
-            context.fillStyle = '#000';
-            context.fillRect(0, 0, stageWidth, stageHeight);
-
+            context.clearRect(0, 0, width, height);
             let captured = false;
+
             const transitionCanvas =
                 viewerStage.querySelector('.motion-transition-canvas');
-
             if (transitionCanvas &&
                 transitionCanvas.style.display !== 'none' &&
                 transitionCanvas.width &&
-                transitionCanvas.height) {
+                transitionCanvas.height &&
+                viewerLooper.lastGoodFrame) {
                 context.drawImage(
                     transitionCanvas,
                     0,
                     0,
-                    stageWidth,
-                    stageHeight
+                    width,
+                    height
                 );
                 captured = true;
             }
 
             if (!captured) {
-                const activeVideo = viewerLooper.activeVideo;
-                if (activeVideo &&
-                    activeVideo.readyState >= 2 &&
-                    activeVideo.videoWidth &&
-                    activeVideo.videoHeight) {
-                    captured = drawCoverSource(
+                const safetyImage =
+                    viewerSafetyImages[viewerSafetyIndex];
+                if (safetyImage &&
+                    safetyImage.complete &&
+                    safetyImage.naturalWidth) {
+                    captured = drawContainedSource(
                         context,
-                        activeVideo,
-                        stageWidth,
-                        stageHeight
+                        safetyImage,
+                        width,
+                        height
                     );
                 }
             }
 
-            /* Safari occasionally exposes neither canvas nor video pixels at
-               the exact arrow-tap moment. Fall back synchronously to the
-               checked-in poster already present in the grid. */
             if (!captured && fallbackIndex >= 0) {
                 const fallbackItem = grid.querySelector(
                     '.motion-item[data-motion-index="' +
@@ -9342,50 +9320,49 @@ window.addEventListener('resize', () => {
 
                 if (fallbackPoster &&
                     fallbackPoster.complete &&
-                    fallbackPoster.naturalWidth &&
-                    fallbackPoster.naturalHeight) {
-                    captured = drawCoverSource(
+                    fallbackPoster.naturalWidth) {
+                    captured = drawContainedSource(
                         context,
                         fallbackPoster,
-                        stageWidth,
-                        stageHeight
+                        width,
+                        height
                     );
                 }
             }
 
+            /* Never display an empty or black-filled hold surface. */
             if (!captured) {
-                hideViewerHold(true);
+                hideViewerHold();
                 return false;
             }
 
-            viewerHold.style.transition = 'none';
-            viewerHold.style.opacity = '1';
             viewerHold.style.display = 'block';
-            requestAnimationFrame(() => {
-                viewerHold.style.removeProperty('transition');
-            });
             return true;
         } catch (_) {
-            hideViewerHold(true);
+            hideViewerHold();
             return false;
         }
     }
 
-    async function prepareViewerBridge(index, session, src) {
-        if (!viewerBridge || !viewerBridgeImage) return false;
+    async function prepareViewerSafety(index, session, src) {
+        if (!viewerSafety || viewerSafetyImages.some((image) => !image)) {
+            return false;
+        }
+
         const filename = MOTION_FILES[index];
         if (!filename) return false;
 
-        const token = ++viewerBridgeToken;
+        const token = ++viewerSafetyToken;
+        const incomingIndex = 1 - viewerSafetyIndex;
+        const incoming = viewerSafetyImages[incomingIndex];
+        const outgoing = viewerSafetyImages[viewerSafetyIndex];
         const posterURL = motionPosterURL(filename);
 
-        viewerBridge.classList.remove('is-visible');
-        viewerBridge.style.display = 'none';
-        viewerBridgeImage.src = posterURL;
+        incoming.classList.remove('is-active');
+        incoming.src = posterURL;
 
         try {
-            if (!viewerBridgeImage.complete ||
-                !viewerBridgeImage.naturalWidth) {
+            if (!incoming.complete || !incoming.naturalWidth) {
                 await new Promise((resolve, reject) => {
                     const onLoad = () => {
                         cleanup();
@@ -9393,77 +9370,67 @@ window.addEventListener('resize', () => {
                     };
                     const onError = () => {
                         cleanup();
-                        reject(new Error('Viewer poster failed'));
+                        reject(new Error('Motion poster failed'));
                     };
                     const cleanup = () => {
-                        viewerBridgeImage.removeEventListener('load', onLoad);
-                        viewerBridgeImage.removeEventListener('error', onError);
+                        incoming.removeEventListener('load', onLoad);
+                        incoming.removeEventListener('error', onError);
                     };
-                    viewerBridgeImage.addEventListener('load', onLoad);
-                    viewerBridgeImage.addEventListener('error', onError);
+                    incoming.addEventListener('load', onLoad);
+                    incoming.addEventListener('error', onError);
                 });
             }
 
-            if (typeof viewerBridgeImage.decode === 'function') {
-                try {
-                    await viewerBridgeImage.decode();
-                } catch (_) {}
+            if (typeof incoming.decode === 'function') {
+                try { await incoming.decode(); } catch (_) {}
             }
         } catch (_) {
             return false;
         }
 
-        if (token !== viewerBridgeToken ||
+        if (token !== viewerSafetyToken ||
             session !== viewerSession ||
             viewerSource !== src) return false;
 
-        const dimensions = viewerSurfaceDimensions(
-            viewerBridgeImage.naturalWidth,
-            viewerBridgeImage.naturalHeight
-        );
-        applyViewerSurfaceDimensions(dimensions);
+        viewerSafety.classList.add('is-visible');
+        incoming.classList.add('is-active');
+        await waitViewerPaints(2);
+
+        if (token !== viewerSafetyToken ||
+            session !== viewerSession ||
+            viewerSource !== src) return false;
+
+        outgoing.classList.remove('is-active');
+        viewerSafetyIndex = incomingIndex;
         return true;
     }
 
-    async function revealViewerBridge(session, src) {
-        if (!viewerBridge ||
-            session !== viewerSession ||
-            viewerSource !== src ||
-            !viewerBridgeImage.naturalWidth) return false;
-
-        viewerBridge.style.display = 'block';
-        viewerBridge.classList.remove('is-visible');
-        await nextAnimationFrames(1);
-        if (session !== viewerSession || viewerSource !== src) return false;
-        viewerBridge.classList.add('is-visible');
-        await nextAnimationFrames(2);
-        return session === viewerSession && viewerSource === src;
-    }
-
-    async function waitForVerifiedViewerFrame(video, session, src, timeoutMs = 3200) {
-        if (!video) return false;
+    async function waitForFullscreenCanvasFrame(session, src, timeoutMs = 3600) {
         const startedAt = performance.now();
 
         while (performance.now() - startedAt < timeoutMs) {
-            if (session !== viewerSession || viewerSource !== src) return false;
+            if (session !== viewerSession || viewerSource !== src) {
+                return false;
+            }
 
-            if (video.readyState >= 2 &&
+            const video = viewerLooper.activeVideo;
+            if (video &&
+                video.readyState >= 2 &&
                 video.videoWidth &&
-                video.videoHeight) {
-                fitViewerStage(video);
-                const drew = viewerLooper.drawVideo(video, 1, true);
-                if (drew &&
-                    viewerLooper.canvas &&
-                    canvasContainsVisibleFrame(viewerLooper.canvas)) {
-                    viewerLooper.showCanvas();
-                    await nextAnimationFrames(2);
-                    if (session === viewerSession && viewerSource === src) {
-                        return true;
-                    }
+                video.videoHeight &&
+                viewerLooper.drawVideo(video, 1, true)) {
+                viewerLooper.showCanvas();
+                await waitViewerPaints(3);
+
+                if (session === viewerSession &&
+                    viewerSource === src &&
+                    viewerLooper.lastGoodFrame) {
+                    return true;
                 }
             }
 
             await new Promise((resolve) => {
+                const video = viewerLooper.activeVideo;
                 let settled = false;
                 const finish = () => {
                     if (settled) return;
@@ -9472,7 +9439,9 @@ window.addEventListener('resize', () => {
                     resolve();
                 };
                 const timer = setTimeout(finish, 90);
-                if (typeof video.requestVideoFrameCallback === 'function') {
+
+                if (video &&
+                    typeof video.requestVideoFrameCallback === 'function') {
                     try {
                         video.requestVideoFrameCallback(finish);
                     } catch (_) {}
@@ -9486,11 +9455,10 @@ window.addEventListener('resize', () => {
     }
 
     function beginViewerSourceChange(src, session, fallbackIndex) {
-        /* The outgoing surface is captured before either decoder is reset.
-           It remains visible until the incoming poster or a verified decoded
-           frame has been committed. */
+        /* Snapshot the current canvas before changing either decoder. The
+           snapshot is transparent and fixed-size; it never contains a black
+           fill and never changes geometry for a new aspect ratio. */
         showViewerHold(fallbackIndex);
-        hideViewerBridge(true);
 
         viewerStage.dataset.viewerSession = String(session);
         viewerStage.dataset.viewerSource = src;
@@ -9498,27 +9466,10 @@ window.addEventListener('resize', () => {
 
         hideViewerFreeze();
         viewerLooper.pause();
-        viewerLooper.hideCanvas();
-        viewerLooper.lastGoodFrame = false;
-
-        const transitionCanvas =
-            viewerStage.querySelector('.motion-transition-canvas');
-        if (transitionCanvas) {
-            transitionCanvas.style.display = 'none';
-            const transitionContext =
-                transitionCanvas.getContext('2d');
-            if (transitionContext) {
-                transitionContext.clearRect(
-                    0,
-                    0,
-                    transitionCanvas.width || 1,
-                    transitionCanvas.height || 1
-                );
-            }
-        }
 
         viewerVideos.forEach((video) => {
             video.style.opacity = '0';
+            video.style.visibility = 'hidden';
             video.classList.remove('is-active');
             video.dataset.viewerSession = String(session);
             video.dataset.viewerSource = src;
@@ -9583,78 +9534,77 @@ window.addEventListener('resize', () => {
 
         const previousSource = viewerSource;
         viewerSource = src;
-        beginViewerSourceChange(src, session, fallbackIndex);
+        beginViewerSourceChange(
+            src,
+            session,
+            fallbackIndex
+        );
 
         if (previousSource && previousSource !== src) {
             releaseResolvedSource(previousSource);
         }
 
-        /* Start both paths together. The lightweight checked-in WebP normally
-           wins and becomes an immediate bridge; the MP4 continues decoding
-           behind it. If the video wins first, the old held frame hands off
-           directly to the verified video surface. */
-        const bridgePromise = prepareViewerBridge(index, session, src);
+        /* Decode the still poster and the MP4 concurrently. The outgoing
+           snapshot remains visible until the new poster is physically painted. */
+        const safetyPromise =
+            prepareViewerSafety(index, session, src);
 
         viewerLooper.setSource(bestSource(src));
-        const videoPromise = (async () => {
-            const played = await viewerLooper.play();
-            if (!played ||
-                session !== viewerSession ||
-                viewerSource !== src) return false;
+        const playPromise = viewerLooper.play();
 
-            return waitForVerifiedViewerFrame(
-                viewerLooper.activeVideo,
+        const safetyReady = await safetyPromise;
+        if (session !== viewerSession || viewerSource !== src) return;
+
+        if (safetyReady) {
+            viewerDisplayedIndex = index;
+            if (revealWhenReady) viewer.classList.add('active');
+
+            /* At this point the new poster has completed two paints underneath
+               the snapshot, so removing the snapshot cannot expose black. */
+            hideViewerHold();
+        }
+
+        const played = await playPromise;
+        if (session !== viewerSession || viewerSource !== src) return;
+
+        let canvasReady = false;
+        if (played) {
+            canvasReady = await waitForFullscreenCanvasFrame(
                 session,
                 src,
                 3600
             );
-        })();
-
-        const bridgeReady = await bridgePromise;
-        if (session !== viewerSession || viewerSource !== src) return;
-
-        if (bridgeReady) {
-            const bridgeVisible = await revealViewerBridge(session, src);
-            if (bridgeVisible) {
-                viewerDisplayedIndex = index;
-                if (revealWhenReady) viewer.classList.add('active');
-                hideViewerHold(false);
-            }
         }
 
-        const videoReady = await videoPromise;
         if (session !== viewerSession || viewerSource !== src) return;
 
-        if (videoReady) {
+        if (canvasReady) {
             viewerStage.classList.remove('is-switching');
-            await nextAnimationFrames(2);
+
+            /* The moving canvas stays under the poster for three additional
+               paints. Only then is the poster removed. Native video remains
+               permanently hidden, so Safari has no black hardware surface to
+               expose during an aspect-ratio change. */
+            await waitViewerPaints(3);
             if (session !== viewerSession || viewerSource !== src) return;
 
             viewerDisplayedIndex = index;
             if (revealWhenReady) viewer.classList.add('active');
-
-            /* The next MP4 is now physically painted. Fade whichever bridge
-               surface is still above it; there is no frame where the black
-               viewer background can become exposed. */
-            hideViewerHold(false);
-            hideViewerBridge(false);
-        } else if (bridgeReady) {
-            /* A decoded poster is preferable to a black flash if Safari delays
-               or rejects the MP4. Keep it visible and allow a later source
-               upgrade/retry without exposing the viewer background. */
+            hideViewerHold();
+            hideViewerSafety(false);
+        } else if (safetyReady) {
+            /* Keep the decoded poster visible rather than exposing a failed
+               or delayed decoder. */
             viewerStage.classList.add('is-switching');
-            viewerDisplayedIndex = index;
-            if (revealWhenReady) viewer.classList.add('active');
         } else {
-            /* Both incoming surfaces failed. Retain the outgoing held frame
-               rather than ever presenting a black viewer. */
-            if (revealWhenReady && viewerHold.style.display === 'block') {
-                viewer.classList.add('active');
-            }
+            /* If both incoming paths fail, retain the outgoing snapshot. */
+            viewerStage.classList.add('is-switching');
         }
 
         primeSource(src).then((resolved) => {
-            if (viewerSource === src) viewerLooper.upgradeSource(resolved);
+            if (viewerSource === src) {
+                viewerLooper.upgradeSource(resolved);
+            }
         });
     }
 
@@ -9667,8 +9617,8 @@ window.addEventListener('resize', () => {
         suspendThumbnailsForViewer(index);
         const session = ++viewerSession;
         hideViewerFreeze();
-        hideViewerHold(true);
-        hideViewerBridge(true);
+        hideViewerHold();
+        hideViewerSafety(true);
         viewerDisplayedIndex = -1;
         motionViewerIndex = index;
         document.body.style.overflow = 'hidden';
@@ -9693,8 +9643,8 @@ window.addEventListener('resize', () => {
             });
             releaseResolvedSource(closingSource);
             hideViewerFreeze();
-            hideViewerHold(true);
-            hideViewerBridge(true);
+            hideViewerHold();
+            hideViewerSafety(true);
             viewerDisplayedIndex = -1;
             viewerStage.classList.remove('is-switching');
             viewerStage.removeAttribute('data-viewer-session');
@@ -9735,13 +9685,8 @@ window.addEventListener('resize', () => {
     });
 
     const refitViewer = () => {
-        const metadataVideo = viewerVideos.find((video) =>
-            video.videoWidth &&
-            video.videoHeight &&
-            video.dataset.viewerSession === String(viewerSession) &&
-            video.dataset.viewerSource === viewerSource
-        );
-        if (metadataVideo) fitViewerStage(metadataVideo);
+        /* The fullscreen shell is fixed by CSS. No MP4 metadata is allowed to
+           resize it during navigation or orientation changes. */
     };
     window.addEventListener('resize', () => {
         refitViewer();
