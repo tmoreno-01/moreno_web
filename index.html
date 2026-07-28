@@ -1267,7 +1267,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 white-space: nowrap;
                 text-align: center;
             }
-            /* Keep the iPhone Gallery submenu compact: Sketches and Paint
+            /* Keep the iPhone Gallery submenu compact: Studies and Paint
                should read as two closely grouped choices, not oversized rows. */
             .dropdown-content { padding-top: 6px; gap: 0; }
             .dropdown-content a {
@@ -1333,114 +1333,105 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
         margin-left: 0 !important;
     }
 }
-/* --- SKETCHES SPECIFIC --- */
-.sketch-item {
-    cursor: grab; /* Shows they can be dragged but not clicked */
-}
-.sketch-item:active {
-    cursor: grabbing;
-}
-.sketch-item:has(.work-image:hover) {
-    transform: var(--base-transform) scale(1.02) !important; /* Calmer hover effect */
-}
-/* --- SKETCHES SPECIFIC RESPONSIVE & LAYOUT FIXES --- */
-
-/* Ensure the layout controls respond specifically when the sketches view is active */
-#page-sketches:not(.visible) ~ .footer #zoom-toggle,
-#page-sketches.visible ~ .footer #zoom-toggle {
-    /* Let JS or default styles handle it, but hide explicitly when on sketches tab */
-}
-/* Force hide zoom on sketches regardless of screen size */
-body:has(#page-sketches.visible) #zoom-toggle {
-    display: none !important;
-}
-
-/* --- SKETCHES ASYMMETRIC COLLAGE OVERRIDES --- */
-#page-sketches .works-grid.mode-collage {
-    margin-top: -50px !important;
-    padding-top: 0px !important;
-    grid-template-columns: repeat(12, 1fr) !important;
-    grid-auto-flow: row dense !important;   /* ← add this */
-    gap: 6px !important;
-    justify-items: center;
-    align-items: center;
-}
-
-#page-sketches .works-grid.mode-collage .sketch-item .work-image {
-    width: calc(var(--sketch-jitter-size, 1) * 100%) !important;
-    max-width: 40vw !important;
-    margin: 0 auto;
-}
+/* --- STUDIES PAGE: ORDERED JUSTIFIED ROWS --- */
+/* Studies is a curated still-image section, not a second draggable collage.
+   It follows the Motion page's visual rhythm: natural image ratios, shared
+   row heights, and consistent gaps across desktop, iPad and iPhone. */
 #page-sketches .overlay-content {
-    padding-top: 110px !important;
+    padding-top: 88px !important;
 }
-@media (max-width: 1024px) {
-    #page-sketches .overlay-content { padding-top: 70px !important; }
+#page-sketches .works-container {
+    padding-left: 1.2vw !important;
+    padding-right: 1.2vw !important;
 }
-@media (max-width: 768px) {
-    #page-sketches .overlay-content { padding-top: 80px !important; }
+#page-sketches .works-grid.mode-studies {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 22px !important;
+    width: 100% !important;
+    margin: -16px 0 0 !important;
+    padding: 0 !important;
+}
+#page-sketches .works-grid.mode-studies .sketch-item {
+    flex: 0 0 var(--study-item-width, 100%) !important;
+    width: var(--study-item-width, 100%) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    transform: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+    cursor: default !important;
+    contain: layout style paint;
+}
+#page-sketches .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
+    transform: none !important;
+    opacity: 1 !important;
+    z-index: auto !important;
+}
+#page-sketches .works-grid.mode-studies .sketch-item .work-image {
+    position: relative;
+    width: 100% !important;
+    height: var(--study-row-height, auto) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+#page-sketches .works-grid.mode-studies .sketch-item .work-image img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    border-radius: 0 !important;
+    filter: none !important;
+    transform: none !important;
+    pointer-events: none !important;
 }
 
 @media (max-width: 1024px) {
-    #page-sketches .works-grid.mode-collage {
-        margin-top: -20px !important;
-        grid-template-columns: repeat(12, 1fr) !important;
-        gap: 10px 12px !important;
+    #page-sketches .overlay-content {
+        padding-top: 76px !important;
     }
-    #page-sketches .works-grid.mode-collage .sketch-item {
-        transform: var(--base-transform) scale(0.95) !important;
+    #page-sketches .works-container {
+        padding-left: 1vw !important;
+        padding-right: 1vw !important;
     }
-    #page-sketches .works-grid.mode-collage .sketch-item .work-image {
-        max-width: 32vw !important;
-    }
-}
-
-@media (max-width: 768px) {
-    #page-sketches .works-grid.mode-collage {
+    #page-sketches .works-grid.mode-studies {
+        gap: 16px !important;
         margin-top: -10px !important;
-        grid-template-columns: repeat(6, 1fr) !important;
-        gap: 10px !important;
-    }
-    #page-sketches .works-grid.mode-collage .sketch-item .work-image {
-        max-width: 42vw !important;
     }
 }
 
-/* 1. Rows Mode: 4 per line for Sketches */
-#page-sketches .works-grid.mode-rows {
-    grid-template-columns: repeat(4, 1fr);
-}
-@media (max-width: 1024px) {
-    #page-sketches .works-grid.mode-rows {
-        grid-template-columns: repeat(3, 1fr) !important; 
-    }
-}
 @media (max-width: 768px) {
-    #page-sketches .works-grid.mode-rows {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 20px;
+    #page-sketches .overlay-content {
+        padding-top: 58px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
     }
-}
-/* 2. Collage Mode: Way smaller for Sketches */
-.works-grid.mode-collage .sketch-item .work-image {
-    max-width: 60vw !important; /* Way smaller base size */
-}
-@media (min-width: 1025px) {
-    .works-grid.mode-collage .sketch-item .work-image {
-min-width: 300px !important;
-        max-width: 60vw !important; /* Even smaller on large screens */
+    #page-sketches .works-container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
-}
-@media (max-width: 1024px) {
-    .works-grid.mode-collage .sketch-item .work-image {
-min-width: 320px !important;
-        max-width: 50vw !important; /* Keep slightly bigger on mobile so they are visible */
-    }
-}
-@media (max-width: 768px) {
-    .works-grid.mode-collage .sketch-item .work-image {
-min-width: 130px !important;
-        max-width: 65vw !important; /* Keep slightly bigger on mobile so they are visible */
+    #page-sketches .works-grid.mode-studies {
+        gap: 14px !important;
+        margin-top: -8px !important;
     }
 }
 /* --- MOTION PAGE (AI motion / experimental video works) --- */
@@ -1631,7 +1622,7 @@ min-width: 130px !important;
     background: transparent;
     aspect-ratio: var(--motion-ratio, 0.5625);
     overflow: hidden;
-    border-radius: 6px;
+    border-radius: 0 !important;
     cursor: pointer;
     touch-action: pan-y;
     -webkit-user-select: none;
@@ -1786,6 +1777,19 @@ min-width: 130px !important;
     aspect-ratio: inherit;
 }
 
+/* Studies and Motion use clean, square-edged presentation. This is scoped to
+   these two sections only; Gallery artwork and all other site elements retain
+   their existing corner treatment. */
+#page-sketches .works-grid.mode-studies .work-image,
+#page-sketches .works-grid.mode-studies .work-image img,
+#page-motion .works-grid.mode-collage .motion-item .work-image,
+#page-motion .works-grid.mode-collage .motion-item .motion-poster,
+#page-motion .works-grid.mode-collage .motion-item .motion-video-stack,
+#page-motion .works-grid.mode-collage .motion-item .motion-video-layer,
+#page-motion .works-grid.mode-collage .motion-item .motion-transition-canvas {
+    border-radius: 0 !important;
+}
+
 /* --- Per-video fullscreen button, bottom right of each thumbnail --- */
 .motion-fullscreen-btn {
     position: absolute;
@@ -1891,10 +1895,27 @@ min-width: 130px !important;
     pointer-events: none;
 }
 
-/* Never resize a frame from the previous MP4 into the next MP4's aspect
-   ratio. While a fullscreen source is changing, every old video/canvas
-   surface is hidden and the stage remains black. The new source is revealed
-   only after its own decoded frame has been painted at its own dimensions. */
+/* During next/previous navigation, this independent canvas holds the outgoing
+   frame at its original pixel dimensions. The hidden stage is free to resize
+   for the incoming MP4 behind it, so Safari can never stretch the old video
+   into the new aspect ratio and the viewer never has to flash black. */
+.motion-viewer-hold {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 7;
+    max-width: 96vw;
+    max-height: 96vh;
+    max-height: 96dvh;
+    width: auto;
+    height: auto;
+    background: #000;
+    pointer-events: none;
+    image-rendering: auto;
+}
+
 .motion-video-stage.is-switching .motion-video-layer,
 .motion-video-stage.is-switching .motion-transition-canvas,
 .motion-video-stage.is-switching .motion-freeze-frame {
@@ -2726,7 +2747,7 @@ body.adhd-mode #ios-brush-selector {
                 </div>
             </a>
             <div class="dropdown-content">
-                <a href="/sketches/" id="btn-sketches">Sketches</a>
+                <a href="/studies/" id="btn-sketches">Studies</a>
                 <a href="/paint/" id="btn-paint">Paint</a>
                 <a href="/exhibitions/" id="btn-exhibitions" style="display: none;">Exhibitions</a>
                 <a href="/press/" id="btn-press" style="display: none;">Press</a>
@@ -3138,53 +3159,54 @@ body.adhd-mode #ios-brush-selector {
         <video id="motion-viewer-video-b" class="motion-video-layer" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
         <canvas id="motion-viewer-freeze" class="motion-freeze-frame" aria-hidden="true"></canvas>
     </div>
+    <canvas id="motion-viewer-hold" class="motion-viewer-hold" aria-hidden="true"></canvas>
 </div>
 <div id="page-sketches" class="page-overlay">
     <div class="overlay-content">
         <div class="works-container">
-            <div class="works-grid mode-collage">
+            <div class="works-grid mode-studies">
                 
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_01.webp" alt="Sketch 1" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_01.webp" alt="Study 1" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_02.webp" alt="Sketch 2" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_02.webp" alt="Study 2" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_03.webp" alt="Sketch 3" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_03.webp" alt="Study 3" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_04.webp" alt="Sketch 4" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_04.webp" alt="Study 4" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_05.webp" alt="Sketch 5" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_05.webp" alt="Study 5" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_06.webp" alt="Sketch 6" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_06.webp" alt="Study 6" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_07.webp" alt="Sketch 7" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_07.webp" alt="Study 7" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_08.webp" alt="Sketch 8" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_08.webp" alt="Study 8" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_09.webp" alt="Sketch 9" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_09.webp" alt="Study 9" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_10.webp" alt="Sketch 10" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_10.webp" alt="Study 10" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_11.webp" alt="Sketch 11" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_11.webp" alt="Study 11" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/sketch/sketch_12.webp" alt="Sketch 12" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/sketch/sketch_12.webp" alt="Study 12" loading="lazy"></div>
                 </div>
 <div class="work-item sketch-item">
-    <div class="work-image"><img src="/artwork/sketch/sketch_13.webp" alt="Sketch 13" loading="lazy"></div>
+    <div class="work-image"><img src="/artwork/sketch/sketch_13.webp" alt="Study 13" loading="lazy"></div>
 </div>
 <div class="work-item sketch-item">
-    <div class="work-image"><img src="/artwork/sketch/sketch_14.webp" alt="Sketch 14" loading="lazy"></div>
+    <div class="work-image"><img src="/artwork/sketch/sketch_14.webp" alt="Study 14" loading="lazy"></div>
 </div>
 
                 </div>
@@ -3384,8 +3406,11 @@ function handleRouting() {
                 const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
                 if (target) target.click();
             }
-        } else if (normalizedPath.includes('/sketches')) {
-            updatePageMeta("Tyrone Moreno | Sketches"); // <-- ADDED
+        } else if (normalizedPath.includes('/studies') || normalizedPath.includes('/sketches')) {
+            if (normalizedPath.includes('/sketches')) {
+                window.history.replaceState(null, '', '/studies/');
+            }
+            updatePageMeta("Tyrone Moreno | Studies");
             openSketches();
         } else if (normalizedPath.includes('/motion')) {
             updatePageMeta("Tyrone Moreno | Motion");
@@ -3720,18 +3745,17 @@ themeToggleBtn.addEventListener('click', (e) => {
     const btnDownload = document.getElementById('btn-download');
     const layoutToggle = document.getElementById('layout-toggle');
     const zoomToggle = document.getElementById('zoom-toggle');
-    const pageSketchesVisible = document.getElementById('page-sketches').classList.contains('visible');
 
     if (activePage === 'paint') {
-        btnDownload.style.display = ''; 
+        btnDownload.style.display = '';
         layoutToggle.style.display = 'none';
         zoomToggle.style.display = 'none';
     } else if (activePage === 'gallery') {
         btnDownload.style.display = 'none';
         layoutToggle.style.display = 'flex';
-        // Force hide zoom-toggle if the currently visible view block is sketches
-        zoomToggle.style.display = (isCollageMode && !pageSketchesVisible) ? 'flex' : 'none';
+        zoomToggle.style.display = isCollageMode ? 'flex' : 'none';
     } else {
+        /* Studies, Motion and the information pages use fixed layouts. */
         btnDownload.style.display = 'none';
         layoutToggle.style.display = 'none';
         zoomToggle.style.display = 'none';
@@ -3800,6 +3824,117 @@ const btnSketches = document.getElementById('btn-sketches');
         const pageWorks = document.getElementById('page-works');
 const pageSketches = document.getElementById('page-sketches');
 const pageMotion = document.getElementById('page-motion');
+
+let studiesLayoutFrame = 0;
+
+function studiesRowGap() {
+    if (window.innerWidth <= 768) return 14;
+    if (window.innerWidth <= 1024) return 16;
+    return 22;
+}
+
+function studiesTargetRowHeight(containerWidth) {
+    if (window.innerWidth <= 768) {
+        return Math.min(290, Math.max(185, containerWidth * 0.54));
+    }
+    if (window.innerWidth <= 1024) {
+        return Math.min(390, Math.max(260, containerWidth * 0.36));
+    }
+    if (window.innerWidth >= 1400) {
+        return Math.min(430, Math.max(330, containerWidth * 0.245));
+    }
+    return Math.min(400, Math.max(300, containerWidth * 0.29));
+}
+
+function readStudyRatio(item) {
+    const image = item && item.querySelector('img');
+    if (image && image.naturalWidth && image.naturalHeight) {
+        const ratio = image.naturalWidth / image.naturalHeight;
+        item.dataset.studyRatio = String(ratio);
+        return ratio;
+    }
+    const stored = Number(item && item.dataset.studyRatio);
+    return Number.isFinite(stored) && stored > 0 ? stored : 0.75;
+}
+
+function applyStudiesRow(row, containerWidth, gap, targetHeight, justify) {
+    if (!row.length) return;
+    const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
+    const gapTotal = gap * Math.max(0, row.length - 1);
+    const fitAllowance = justify ? 4 : 0;
+    const available = Math.max(1, containerWidth - gapTotal - fitAllowance);
+    let height = justify && row.length > 1
+        ? available / ratioTotal
+        : Math.min(targetHeight, available / ratioTotal);
+    height = Math.max(1, height);
+
+    row.forEach((entry) => {
+        const width = Math.max(1, entry.ratio * height);
+        entry.item.style.setProperty('--study-item-width', width.toFixed(3) + 'px');
+        entry.item.style.setProperty('--study-row-height', height.toFixed(3) + 'px');
+    });
+}
+
+function layoutStudiesRows() {
+    studiesLayoutFrame = 0;
+    if (!pageSketches) return;
+    const grid = pageSketches.querySelector('.works-grid.mode-studies');
+    if (!grid) return;
+
+    const items = Array.from(grid.querySelectorAll('.sketch-item'));
+    const containerWidth = grid.clientWidth;
+    if (!items.length || !containerWidth) return;
+
+    const gap = studiesRowGap();
+    const targetHeight = studiesTargetRowHeight(containerWidth);
+    let row = [];
+    let ratioTotal = 0;
+
+    const flush = (justify) => {
+        if (!row.length) return;
+        applyStudiesRow(row, containerWidth, gap, targetHeight, justify);
+        row = [];
+        ratioTotal = 0;
+    };
+
+    items.forEach((item) => {
+        const ratio = readStudyRatio(item);
+        const projectedCount = row.length + 1;
+        const projectedWidth =
+            (ratioTotal + ratio) * targetHeight +
+            gap * Math.max(0, projectedCount - 1);
+
+        if (row.length && projectedWidth > containerWidth + 4) {
+            flush(row.length > 1);
+        }
+
+        row.push({ item, ratio });
+        ratioTotal += ratio;
+    });
+
+    /* Keep the final sparse row at the established visual scale rather than
+       enlarging it to fill the complete width. */
+    flush(false);
+}
+
+function scheduleStudiesRowLayout() {
+    if (studiesLayoutFrame) cancelAnimationFrame(studiesLayoutFrame);
+    studiesLayoutFrame = requestAnimationFrame(() => {
+        requestAnimationFrame(layoutStudiesRows);
+    });
+}
+
+if (pageSketches) {
+    pageSketches.querySelectorAll('.sketch-item img').forEach((image) => {
+        if (image.complete && image.naturalWidth) {
+            image.closest('.sketch-item').dataset.studyRatio =
+                String(image.naturalWidth / image.naturalHeight);
+        } else {
+            image.addEventListener('load', scheduleStudiesRowLayout, { once: true });
+        }
+    });
+}
+window.addEventListener('resize', scheduleStudiesRowLayout);
         const pageExhibitions = document.getElementById('page-exhibitions');
         const pagePress = document.getElementById('page-press');
         const pageContact = document.getElementById('page-contact');
@@ -3939,16 +4074,20 @@ function openAdhdPage() {
 }
 function openSketches() {
 isPaintingActive = false;
-saveLastPage('sketches');
-    if (pageSketches.classList.contains('visible')) return;
+saveLastPage('studies');
+    if (pageSketches.classList.contains('visible')) {
+        scheduleStudiesRowLayout();
+        return;
+    }
     clearNavigation();
     pageSketches.classList.add('visible');
     btnSketches.classList.add('active');
-    btnGallery.classList.add('active'); // Keep gallery root active
+    btnGallery.classList.add('active'); // Studies remains grouped under Gallery
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
-    updateFooterIcons('gallery'); // Triggers the layout and zoom toggles to appear
+    updateFooterIcons('studies');
+    scheduleStudiesRowLayout();
 }
 function openMotion() {
 isPaintingActive = false;
@@ -3984,7 +4123,7 @@ saveLastPage('motion');
         btnPaint.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/paint/'); clearNavigation(); });
         
         btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
-btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/sketches/'); openSketches(); });
+btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/studies/'); openSketches(); });
 btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/motion/'); openMotion(); });
         btnGallery.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/gallery/'); openWorks(); });
         btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/gallery/'); openWorks(); }});
@@ -4905,6 +5044,7 @@ function initDragSystem() {
     let originalRotation = 0;
 
     document.querySelectorAll('.work-item').forEach(item => {
+        if (item.closest('#page-sketches')) return;
         if (!item.dataset.dragX) item.dataset.dragX = 0;
         if (!item.dataset.dragY) item.dataset.dragY = 0;
 
@@ -5157,8 +5297,12 @@ function updateGalleryLayout() {
     // CSS (#page-motion .works-grid.mode-collage) and must never be flipped
     // to rows mode by the Sketches page's rows/collage toggle — excluding
     // it here is what keeps the two pages' layouts independent.
-    const grids = Array.from(document.querySelectorAll('.works-grid')).filter(g => !g.closest('#page-motion'));
-    const items = Array.from(document.querySelectorAll('.work-item')).filter(i => !i.closest('#page-motion'));
+    const grids = Array.from(document.querySelectorAll('.works-grid')).filter(
+        (grid) => !grid.closest('#page-motion') && !grid.closest('#page-sketches')
+    );
+    const items = Array.from(document.querySelectorAll('.work-item')).filter(
+        (item) => !item.closest('#page-motion') && !item.closest('#page-sketches')
+    );
 
     let columnsCss = '1fr';
     let dampener = 1;
@@ -6027,7 +6171,10 @@ window.addEventListener('popstate', (event) => {
     if (normalizedPath.endsWith('/about')) {
         openAbout();
     } 
-    else if (normalizedPath.endsWith('/sketches')) {
+    else if (normalizedPath.endsWith('/studies') || normalizedPath.endsWith('/sketches')) {
+        if (normalizedPath.endsWith('/sketches')) {
+            window.history.replaceState(null, '', '/studies/');
+        }
         openSketches();
     } 
     else if (normalizedPath.endsWith('/motion')) {
@@ -6223,6 +6370,7 @@ window.addEventListener('resize', () => {
     let viewerSession = 0;
     let viewerCloseTimer = 0;
     const viewerFreeze = document.getElementById('motion-viewer-freeze');
+    const viewerHold = document.getElementById('motion-viewer-hold');
     let motionRowLayoutFrame = 0;
 
     function motionRowGap() {
@@ -8510,7 +8658,82 @@ window.addEventListener('resize', () => {
         if (ctx) ctx.clearRect(0, 0, viewerFreeze.width, viewerFreeze.height);
     }
 
+    function hideViewerHold() {
+        if (!viewerHold) return;
+        viewerHold.style.display = 'none';
+        viewerHold.style.removeProperty('width');
+        viewerHold.style.removeProperty('height');
+        const context = viewerHold.getContext('2d');
+        if (context) context.clearRect(0, 0, viewerHold.width || 1, viewerHold.height || 1);
+    }
+
+    function showViewerHold() {
+        if (!viewerHold) return false;
+
+        /* Rapid arrow taps retain the already-captured outgoing frame while
+           only the latest requested MP4 continues loading. */
+        if (viewerHold.style.display === 'block' && viewerHold.width && viewerHold.height) {
+            return true;
+        }
+
+        const stageWidth = Math.max(1, Math.round(viewerStage.clientWidth));
+        const stageHeight = Math.max(1, Math.round(viewerStage.clientHeight));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const context = viewerHold.getContext('2d', { alpha: false });
+        if (!context) return false;
+
+        viewerHold.width = Math.max(1, Math.round(stageWidth * dpr));
+        viewerHold.height = Math.max(1, Math.round(stageHeight * dpr));
+        viewerHold.style.width = stageWidth + 'px';
+        viewerHold.style.height = stageHeight + 'px';
+
+        try {
+            context.setTransform(dpr, 0, 0, dpr, 0, 0);
+            context.globalCompositeOperation = 'copy';
+            context.fillStyle = '#000';
+            context.fillRect(0, 0, stageWidth, stageHeight);
+
+            const transitionCanvas = viewerStage.querySelector('.motion-transition-canvas');
+            if (transitionCanvas &&
+                transitionCanvas.style.display !== 'none' &&
+                transitionCanvas.width &&
+                transitionCanvas.height) {
+                context.drawImage(transitionCanvas, 0, 0, stageWidth, stageHeight);
+            } else {
+                const activeVideo = viewerLooper.activeVideo;
+                if (!activeVideo || activeVideo.readyState < 2 ||
+                    !activeVideo.videoWidth || !activeVideo.videoHeight) {
+                    hideViewerHold();
+                    return false;
+                }
+
+                /* Match the viewer's 1.075 cover crop when the native video,
+                   rather than the transition canvas, owns the visible frame. */
+                const scale = Math.max(
+                    stageWidth / activeVideo.videoWidth,
+                    stageHeight / activeVideo.videoHeight
+                ) * 1.075;
+                const drawWidth = activeVideo.videoWidth * scale;
+                const drawHeight = activeVideo.videoHeight * scale;
+                const x = (stageWidth - drawWidth) / 2;
+                const y = (stageHeight - drawHeight) / 2;
+                context.drawImage(activeVideo, x, y, drawWidth, drawHeight);
+            }
+
+            viewerHold.style.display = 'block';
+            return true;
+        } catch (_) {
+            hideViewerHold();
+            return false;
+        }
+    }
+
     function beginViewerSourceChange(src, session) {
+        /* Capture before pausing or replacing either decoder. The hold canvas
+           is outside the resizable stage, so it cannot inherit the incoming
+           MP4's aspect ratio. */
+        showViewerHold();
+
         viewerStage.dataset.viewerSession = String(session);
         viewerStage.dataset.viewerSource = src;
         viewerStage.classList.add('is-switching');
@@ -8520,9 +8743,6 @@ window.addEventListener('resize', () => {
         viewerLooper.hideCanvas();
         viewerLooper.lastGoodFrame = false;
 
-        /* A canvas keeps its previous bitmap even after display:none. Clear it
-           explicitly so resizing for a differently shaped MP4 can never
-           stretch stale pixels back into view. */
         const transitionCanvas = viewerStage.querySelector('.motion-transition-canvas');
         if (transitionCanvas) {
             transitionCanvas.style.display = 'none';
@@ -8625,15 +8845,16 @@ window.addEventListener('resize', () => {
 
         hideViewerFreeze();
 
-        /* Commit the new surface only after layout and compositing have both
-           received a paint opportunity. Until then the stage stays black,
-           never showing a stretched frame from the previous MP4. */
+        /* Keep the independent outgoing frame visible until the incoming MP4
+           has been sized, decoded and committed. Removing the switching state
+           and the hold surface in the same paint reveals only the new video. */
         await new Promise((resolve) => {
             requestAnimationFrame(() => requestAnimationFrame(resolve));
         });
         if (session !== viewerSession || viewerSource !== src) return;
 
         viewerStage.classList.remove('is-switching');
+        hideViewerHold();
         if (revealWhenReady) viewer.classList.add('active');
 
         primeSource(src).then((resolved) => {
@@ -8650,6 +8871,7 @@ window.addEventListener('resize', () => {
         suspendThumbnailsForViewer(index);
         const session = ++viewerSession;
         hideViewerFreeze();
+        hideViewerHold();
         motionViewerIndex = index;
         document.body.style.overflow = 'hidden';
         renderViewer(true, session);
@@ -8673,6 +8895,7 @@ window.addEventListener('resize', () => {
             });
             releaseResolvedSource(closingSource);
             hideViewerFreeze();
+            hideViewerHold();
             viewerStage.classList.remove('is-switching');
             viewerStage.removeAttribute('data-viewer-session');
             viewerStage.removeAttribute('data-viewer-source');
