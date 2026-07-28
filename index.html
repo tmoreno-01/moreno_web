@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tyrone Moreno</title>
+<link rel="canonical" href="https://tyronemoreno.com/">
 
 <!-- SEO Meta -->
 <meta name="description" content="Tyrone Moreno is a mixed media creator.">
@@ -34,11 +35,20 @@
 </script>
 <link rel="preconnect" href="https://store.tyronemoreno.com" crossorigin>
 <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&family=Bungee&family=Caveat:wght@700&family=Rubik+Mono+One&family=Playfair+Display:ital@1&family=Amatic+SC:wght@700&family=Righteous&family=VT323&family=Shadows+Into+Light&family=Anton&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<!-- ADHD fonts are loaded only when the ADHD page opens. -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
     <style>
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
 #page-works:not(.visible) .works-container {
     pointer-events: none !important;
 }
@@ -2872,6 +2882,8 @@ body.adhd-mode #ios-brush-selector {
     }
 })();
 </script>
+
+<h1 class="visually-hidden">Tyrone Moreno — Mixed Media Artist and Creator</h1>
 <!-- New Duck Page -->
 <div id="page-duck" class="page-overlay">
     <div class="overlay-content">
@@ -4424,6 +4436,54 @@ window.addEventListener('resize', scheduleStudiesRowLayout);
         const pageTime = document.getElementById('page-time');
         const pageAdhd = document.getElementById('page-adhd');
 
+const ADHD_FONT_STYLESHEET = 'https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&family=Bungee&family=Caveat:wght@700&family=Rubik+Mono+One&family=Playfair+Display:ital@1&family=Amatic+SC:wght@700&family=Righteous&family=VT323&family=Shadows+Into+Light&family=Anton&family=UnifrakturMaguntia&display=swap';
+let adhdFontLoadPromise = null;
+
+function loadAdhdFonts() {
+    if (adhdFontLoadPromise) return adhdFontLoadPromise;
+
+    adhdFontLoadPromise = new Promise((resolve) => {
+        const existing = document.querySelector(
+            'link[data-adhd-font-stylesheet]'
+        );
+
+        if (existing) {
+            if (existing.sheet) {
+                resolve();
+            } else {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', resolve, { once: true });
+            }
+            return;
+        }
+
+        const addPreconnect = (href, crossOrigin = false) => {
+            if (document.querySelector(
+                'link[rel="preconnect"][href="' + href + '"]'
+            )) return;
+
+            const link = document.createElement('link');
+            link.rel = 'preconnect';
+            link.href = href;
+            if (crossOrigin) link.crossOrigin = 'anonymous';
+            document.head.appendChild(link);
+        };
+
+        addPreconnect('https://fonts.googleapis.com');
+        addPreconnect('https://fonts.gstatic.com', true);
+
+        const stylesheet = document.createElement('link');
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = ADHD_FONT_STYLESHEET;
+        stylesheet.dataset.adhdFontStylesheet = 'true';
+        stylesheet.addEventListener('load', resolve, { once: true });
+        stylesheet.addEventListener('error', resolve, { once: true });
+        document.head.appendChild(stylesheet);
+    });
+
+    return adhdFontLoadPromise;
+}
+
 function clearNavigation() {
     /* Stop hidden motion decoders/render loops before changing sections. */
     if (typeof window.pauseMotionPage === 'function') window.pauseMotionPage();
@@ -4543,6 +4603,7 @@ function openAdhdPage() {
     saveLastPage('adhd');
     clearNavigation();
     isPaintingActive = false; // clearNavigation() resets this true, so re-disable painting for /adhd
+    loadAdhdFonts();
     document.body.classList.add('adhd-mode');
     pageAdhd.classList.add('visible');
     document.body.classList.add('overlay-open');
