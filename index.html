@@ -1821,6 +1821,13 @@ min-width: 130px !important;
     pointer-events: auto;
 }
 
+/* Desktop uses the complete thumbnail as the fullscreen control. The small
+   corner button remains available on touch devices such as iPhone and iPad,
+   where tapping the thumbnail itself still controls play/pause. */
+#page-motion.desktop-click-fullscreen .motion-fullscreen-btn {
+    display: none !important;
+}
+
 /* --- MOTION FULLSCREEN VIEWER --- */
 .motion-viewer {
     position: fixed;
@@ -1882,6 +1889,17 @@ min-width: 130px !important;
     display: none;
     z-index: 6;
     pointer-events: none;
+}
+
+/* Never resize a frame from the previous MP4 into the next MP4's aspect
+   ratio. While a fullscreen source is changing, every old video/canvas
+   surface is hidden and the stage remains black. The new source is revealed
+   only after its own decoded frame has been painted at its own dimensions. */
+.motion-video-stage.is-switching .motion-video-layer,
+.motion-video-stage.is-switching .motion-transition-canvas,
+.motion-video-stage.is-switching .motion-freeze-frame {
+    opacity: 0 !important;
+    visibility: hidden !important;
 }
 
 /* Native media controls are intentionally disabled in this custom viewer.
@@ -6145,7 +6163,6 @@ window.addEventListener('resize', () => {
 'moneyman.mp4',
 'threesome_01.mp4',
 'puzzleface_01.mp4',
-'partywood.mp4',
 'tattoogirl.mp4',
         '3dglasses.mp4',
 'graffitiwoman.mp4',
@@ -6192,6 +6209,9 @@ window.addEventListener('resize', () => {
     let renderedMotionCount = 0;
     let viewerSource = '';
     const motionPage = document.getElementById('page-motion');
+    if (motionPage) {
+        motionPage.classList.toggle('desktop-click-fullscreen', !touchCapable);
+    }
     /* Mobile Safari has a much smaller practical decoder budget than desktop.
        Keep only the viewport and a narrow pre-roll area hydrated on touch
        devices, and unload them quickly after they leave that area. */
@@ -6382,9 +6402,12 @@ window.addEventListener('resize', () => {
             ? ' src="' + motionPosterURL(filename) + '" loading="eager"' +
               (index < 6 ? ' fetchpriority="high"' : '')
             : '';
+        const cardActionLabel = touchCapable
+            ? 'Play or pause motion video'
+            : 'Open motion video fullscreen';
         return (
             '<div class="' + cardClass + '" data-motion-index="' + index + '">' +
-                '<div class="work-image" role="button" tabindex="0" aria-label="Play or pause motion video">' +
+                '<div class="work-image" role="button" tabindex="0" aria-label="' + cardActionLabel + '">' +
                     '<img class="motion-poster" alt="" aria-hidden="true" decoding="async" draggable="false"' + posterAttributes + '>' +
                     /* Desktop injects its dual-decoder player only when needed.
                        iOS injects one decoder after an intentional tap/press. */
@@ -8348,10 +8371,22 @@ window.addEventListener('resize', () => {
             }, { passive: true });
         }
 
-        if (touchCapable) bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
-        else {
+        if (touchCapable) {
+            bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
+        } else {
             item.addEventListener('mouseenter', play);
             item.addEventListener('mouseleave', stop);
+
+            /* The desktop thumbnail itself is now the fullscreen target.
+               Hover playback remains unchanged; the click simply opens the
+               existing Motion viewer for this card. */
+            workImage.addEventListener('click', (event) => {
+                window.openMotionViewer(event, index);
+            });
+            workImage.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                window.openMotionViewer(event, index);
+            });
         }
         if (motionObserver) motionObserver.observe(item);
     }
@@ -8441,6 +8476,13 @@ window.addEventListener('resize', () => {
 
     function fitViewerStage(video) {
         if (!video.videoWidth || !video.videoHeight) return;
+
+        /* Safari may dispatch a late loadedmetadata event after an arrow has
+           already selected another source. Only the current navigation
+           session is allowed to resize the fullscreen stage. */
+        if (viewerStage.dataset.viewerSession !== String(viewerSession) ||
+            viewerStage.dataset.viewerSource !== viewerSource) return;
+
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         const maxWidth = viewportWidth * (viewportWidth <= 768 ? 0.96 : 0.92);
@@ -8466,6 +8508,41 @@ window.addEventListener('resize', () => {
         viewerFreeze.style.display = 'none';
         const ctx = viewerFreeze.getContext('2d');
         if (ctx) ctx.clearRect(0, 0, viewerFreeze.width, viewerFreeze.height);
+    }
+
+    function beginViewerSourceChange(src, session) {
+        viewerStage.dataset.viewerSession = String(session);
+        viewerStage.dataset.viewerSource = src;
+        viewerStage.classList.add('is-switching');
+
+        hideViewerFreeze();
+        viewerLooper.pause();
+        viewerLooper.hideCanvas();
+        viewerLooper.lastGoodFrame = false;
+
+        /* A canvas keeps its previous bitmap even after display:none. Clear it
+           explicitly so resizing for a differently shaped MP4 can never
+           stretch stale pixels back into view. */
+        const transitionCanvas = viewerStage.querySelector('.motion-transition-canvas');
+        if (transitionCanvas) {
+            transitionCanvas.style.display = 'none';
+            const transitionContext = transitionCanvas.getContext('2d');
+            if (transitionContext) {
+                transitionContext.clearRect(
+                    0,
+                    0,
+                    transitionCanvas.width || 1,
+                    transitionCanvas.height || 1
+                );
+            }
+        }
+
+        viewerVideos.forEach((video) => {
+            video.style.opacity = '0';
+            video.classList.remove('is-active');
+            video.dataset.viewerSession = String(session);
+            video.dataset.viewerSource = src;
+        });
     }
 
     function captureViewerFrame() {
@@ -8518,14 +8595,47 @@ window.addEventListener('resize', () => {
     async function renderViewer(revealWhenReady = false, session = viewerSession) {
         const src = motionVideoList[motionViewerIndex];
         if (!src) return;
+
         const previousSource = viewerSource;
-        if (previousSource && previousSource !== src) releaseResolvedSource(previousSource);
         viewerSource = src;
+        beginViewerSourceChange(src, session);
+
+        if (previousSource && previousSource !== src) {
+            releaseResolvedSource(previousSource);
+        }
+
         viewerLooper.setSource(bestSource(src));
-        await viewerLooper.play();
+        const played = await viewerLooper.play();
         if (session !== viewerSession || viewerSource !== src) return;
+
+        const activeVideo = viewerLooper.activeVideo;
+        if (activeVideo && activeVideo.videoWidth && activeVideo.videoHeight) {
+            /* setSource() can change the stage ratio through loadedmetadata.
+               Redraw after that resize so the visible canvas contains only the
+               newly selected MP4 at its own dimensions. */
+            fitViewerStage(activeVideo);
+            if (viewerLooper.drawVideo(activeVideo, 1, true)) {
+                viewerLooper.showCanvas();
+            } else {
+                viewerLooper.showDirectVideo(viewerLooper.activeIndex);
+            }
+        } else if (!played) {
+            viewerLooper.showDirectVideo(viewerLooper.activeIndex);
+        }
+
         hideViewerFreeze();
+
+        /* Commit the new surface only after layout and compositing have both
+           received a paint opportunity. Until then the stage stays black,
+           never showing a stretched frame from the previous MP4. */
+        await new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+        });
+        if (session !== viewerSession || viewerSource !== src) return;
+
+        viewerStage.classList.remove('is-switching');
         if (revealWhenReady) viewer.classList.add('active');
+
         primeSource(src).then((resolved) => {
             if (viewerSource === src) viewerLooper.upgradeSource(resolved);
         });
@@ -8563,6 +8673,9 @@ window.addEventListener('resize', () => {
             });
             releaseResolvedSource(closingSource);
             hideViewerFreeze();
+            viewerStage.classList.remove('is-switching');
+            viewerStage.removeAttribute('data-viewer-session');
+            viewerStage.removeAttribute('data-viewer-source');
             if (isMotionPageActive()) requestAnimationFrame(refreshMotionViewport);
         }, VIEWER_FADE_CLEANUP_MS);
     }
@@ -8570,7 +8683,6 @@ window.addEventListener('resize', () => {
     function showNext() {
         if (!motionVideoList.length) return;
         const session = ++viewerSession;
-        captureViewerFrame();
         motionViewerIndex = (motionViewerIndex + 1) % motionVideoList.length;
         renderViewer(false, session);
     }
@@ -8578,7 +8690,6 @@ window.addEventListener('resize', () => {
     function showPrev() {
         if (!motionVideoList.length) return;
         const session = ++viewerSession;
-        captureViewerFrame();
         motionViewerIndex = (motionViewerIndex - 1 + motionVideoList.length) % motionVideoList.length;
         renderViewer(false, session);
     }
@@ -8592,7 +8703,12 @@ window.addEventListener('resize', () => {
     });
 
     const refitViewer = () => {
-        const metadataVideo = viewerVideos.find((video) => video.videoWidth && video.videoHeight);
+        const metadataVideo = viewerVideos.find((video) =>
+            video.videoWidth &&
+            video.videoHeight &&
+            video.dataset.viewerSession === String(viewerSession) &&
+            video.dataset.viewerSource === viewerSource
+        );
         if (metadataVideo) fitViewerStage(metadataVideo);
     };
     window.addEventListener('resize', () => {
