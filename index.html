@@ -6850,6 +6850,7 @@ window.addEventListener('resize', () => {
 // --- MOTION PAGE: adaptive aspect-ratio cards and canvas-rendered seamless loops. ---
 (function () {
     const MOTION_FOLDER = '/artwork/motion/';
+    const MOTION_PHONE_FOLDER = MOTION_FOLDER + 'phone/';
     const MOTION_POSTER_FOLDER = MOTION_FOLDER + 'posters/';
 
     /* Static GitHub Pages file list. Add any future MP4 filename here after
@@ -6907,7 +6908,10 @@ window.addEventListener('resize', () => {
     const useIOSLeanThumbnails = isIOS;
     const VIEWER_FADE_CLEANUP_MS = 360;
 
+    /* Originals are always used by fullscreen. iPhone and iPad use the
+       matching /phone/ encodes only for Motion-grid playback. */
     let motionVideoList = [];
+    let motionThumbnailVideoList = [];
     let motionViewerIndex = 0;
     let motionLoadPromise = null;
     let motionLoopers = [];
@@ -7156,6 +7160,13 @@ window.addEventListener('resize', () => {
             .join('/');
     }
 
+    function motionPhoneFileURL(filename) {
+        return MOTION_PHONE_FOLDER + String(filename)
+            .split('/')
+            .map((part) => encodeURIComponent(part))
+            .join('/');
+    }
+
     function motionPosterURL(filename) {
         const posterName = String(filename).replace(/\.[^/.]+$/, '.webp');
         return MOTION_POSTER_FOLDER + posterName
@@ -7230,14 +7241,14 @@ window.addEventListener('resize', () => {
         });
     }
 
-    function normalizedMotionIndex(index) {
-        if (!motionVideoList.length) return -1;
-        return (index % motionVideoList.length + motionVideoList.length) %
-            motionVideoList.length;
+    function normalizedMotionIndex(index, sourceList = motionVideoList) {
+        if (!sourceList.length) return -1;
+        return (index % sourceList.length + sourceList.length) %
+            sourceList.length;
     }
 
-    function prewarmMotionIndices(indices) {
-        if (!canPrewarmMotion() || !motionVideoList.length) return;
+    function prewarmMotionIndices(indices, sourceList = motionVideoList) {
+        if (!canPrewarmMotion() || !sourceList.length) return;
 
         const connection = navigator.connection ||
             navigator.mozConnection ||
@@ -7251,9 +7262,9 @@ window.addEventListener('resize', () => {
         const seen = new Set();
 
         Array.from(indices || []).forEach((rawIndex) => {
-            const index = normalizedMotionIndex(Number(rawIndex));
+            const index = normalizedMotionIndex(Number(rawIndex), sourceList);
             if (index < 0) return;
-            const src = motionVideoList[index];
+            const src = sourceList[index];
             if (!src || src === viewerSource || seen.has(src)) return;
             seen.add(src);
             sources.push(src);
@@ -7310,31 +7321,54 @@ window.addEventListener('resize', () => {
         });
     }
 
-    function scheduleMotionPrewarm(indices, delay = MOTION_PREWARM_DELAY_MS) {
+    function scheduleMotionPrewarm(
+        indices,
+        delay = MOTION_PREWARM_DELAY_MS,
+        sourceList = motionVideoList
+    ) {
         clearTimeout(motionPrewarmTimer);
         motionPrewarmTimer = setTimeout(() => {
             if (!isMotionPageActive() && !viewer.classList.contains('active')) {
                 return;
             }
-            prewarmMotionIndices(indices);
+            prewarmMotionIndices(indices, sourceList);
         }, Math.max(0, delay));
     }
 
     function prewarmInitialMotionClips() {
-        scheduleMotionPrewarm([0, 1, 2], MOTION_PREWARM_DELAY_MS);
+        const sourceList = motionThumbnailVideoList.length
+            ? motionThumbnailVideoList
+            : motionVideoList;
+        scheduleMotionPrewarm(
+            [0, 1, 2],
+            MOTION_PREWARM_DELAY_MS,
+            sourceList
+        );
     }
 
     function prewarmAroundMotionIndex(index, includeCurrent = false) {
         if (!motionVideoList.length) return;
-        const current = normalizedMotionIndex(index);
+        const current = normalizedMotionIndex(index, motionVideoList);
         const likely = includeCurrent
             ? [current, current + 1, current - 1]
             : [current + 1, current - 1, current + 2];
-        scheduleMotionPrewarm(likely, includeCurrent ? 0 : 80);
+
+        /* Fullscreen always uses and prewarms the original high-resolution
+           sources, including on iPhone and iPad. */
+        scheduleMotionPrewarm(
+            likely,
+            includeCurrent ? 0 : 80,
+            motionVideoList
+        );
     }
 
     function buildGrid(filenames) {
         motionVideoList = filenames.map(motionFileURL);
+        motionThumbnailVideoList = filenames.map((filename) =>
+            isIOS
+                ? motionPhoneFileURL(filename)
+                : motionFileURL(filename)
+        );
         grid.innerHTML = '';
         renderedMotionCount = 0;
         setupMotionObservers();
@@ -7749,7 +7783,7 @@ window.addEventListener('resize', () => {
     }
 
     function requestMotionPoster(item, index) {
-        const src = motionVideoList[index];
+        const src = motionThumbnailVideoList[index] || motionVideoList[index];
         if (!item || !src || item.dataset.posterReady === 'true') return;
         const cached = POSTER_CACHE.get(src);
         if (cached) {
@@ -8925,7 +8959,7 @@ window.addEventListener('resize', () => {
         if (item.motionLooper) return item.motionLooper;
 
         const stack = item.querySelector('.motion-video-stack');
-        const src = motionVideoList[index];
+        const src = motionThumbnailVideoList[index] || motionVideoList[index];
         if (!stack || !src) return null;
 
         clearTimeout(item.motionUnloadTimer);
@@ -9165,7 +9199,7 @@ window.addEventListener('resize', () => {
         if (!item || item.dataset.motionBound === 'true') return;
         const index = Number(item.dataset.motionIndex);
         const workImage = item.querySelector('.work-image');
-        const src = motionVideoList[index];
+        const src = motionThumbnailVideoList[index] || motionVideoList[index];
         if (!workImage || !Number.isInteger(index) || !src) return;
 
         item.dataset.motionBound = 'true';
