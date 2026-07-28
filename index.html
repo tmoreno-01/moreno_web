@@ -1718,7 +1718,41 @@ min-width: 130px !important;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
 }
-.motion-video-layer.is-active { opacity: 1; }
+.motion-video-layer.is-active {
+    opacity: 1;
+    z-index: 2;
+}
+
+/* iPhone/iPad native video layers must always inherit the complete card box.
+   This is especially important for square MP4s displayed in the custom
+   full-row mobile height, where Safari otherwise may briefly fall back to an
+   intrinsic-size hardware layer during rapid pause/resume cycles. */
+@supports (-webkit-touch-callout: none) {
+    #page-motion .motion-video-stack .motion-video-layer {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 100% !important;
+        min-height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        object-fit: cover !important;
+        object-position: 50% 50% !important;
+    }
+
+    #page-motion .motion-video-stack .motion-video-layer:not(.is-active) {
+        z-index: 0 !important;
+    }
+
+    #page-motion .motion-item.mobile-video-frozen .motion-video-layer.is-active {
+        z-index: 3 !important;
+        opacity: 1 !important;
+        transform: scale(1.08) !important;
+        transform-origin: 50% 50% !important;
+        will-change: auto !important;
+    }
+}
 
 /* The card box owns the native MP4 ratio. Every visual layer fills that box
    without ever supplying geometry back to the layout, preventing a later
@@ -7275,6 +7309,19 @@ window.addEventListener('resize', () => {
             video.setAttribute('webkit-playsinline', '');
             video.setAttribute('disablepictureinpicture', '');
             video.setAttribute('disableremoteplayback', '');
+            video.style.position = 'absolute';
+            video.style.inset = '0';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.minWidth = '100%';
+            video.style.minHeight = '100%';
+            video.style.maxWidth = 'none';
+            video.style.maxHeight = 'none';
+            video.style.objectFit = 'cover';
+            video.style.objectPosition = '50% 50%';
+            video.style.transform = 'scale(1.08)';
+            video.style.transformOrigin = '50% 50%';
+            video.style.zIndex = active ? '2' : '0';
             video.style.opacity = active ? '1' : '0';
             video.style.pointerEvents = 'none';
             video.classList.toggle('is-active', active);
@@ -7309,9 +7356,20 @@ window.addEventListener('resize', () => {
         }
 
         ensureStandby() {
-            if (this.videos.length > 1) return this.standbyVideo;
+            const currentStandby = this.standbyVideo;
+            if (currentStandby && currentStandby.isConnected &&
+                currentStandby.parentElement === this.parent) {
+                return currentStandby;
+            }
+
+            const active = this.activeVideo || this.video;
+            this.videos = active ? [active] : [];
+            this.activeIndex = 0;
+            this.video = active || null;
+
             const standby = createMotionVideoLayer(false);
             this.configureVideo(standby, false);
+            standby.style.zIndex = '0';
             this.parent.insertBefore(standby, this.canvas);
             this.videos.push(standby);
             this.ensureVideoSource(standby, 'auto');
@@ -7538,8 +7596,10 @@ window.addEventListener('resize', () => {
                 /* The standby is now already moving. Swap compositor layers in
                    one frame, then leave the outgoing surface alive for two
                    animation frames before recycling it. */
+                to.style.zIndex = '2';
                 to.style.opacity = '1';
                 to.classList.add('is-active');
+                from.style.zIndex = '0';
                 from.style.opacity = '0';
                 from.classList.remove('is-active');
                 this.activeIndex = toIndex;
@@ -7602,6 +7662,19 @@ window.addEventListener('resize', () => {
             active.muted = true;
             active.defaultMuted = true;
             active.volume = 0;
+            active.style.position = 'absolute';
+            active.style.inset = '0';
+            active.style.width = '100%';
+            active.style.height = '100%';
+            active.style.minWidth = '100%';
+            active.style.minHeight = '100%';
+            active.style.maxWidth = 'none';
+            active.style.maxHeight = 'none';
+            active.style.objectFit = 'cover';
+            active.style.objectPosition = '50% 50%';
+            active.style.transform = 'scale(1.08)';
+            active.style.transformOrigin = '50% 50%';
+            active.style.zIndex = '2';
             active.style.opacity = '1';
             active.classList.add('is-active');
             this.parent.classList.add('has-frame');
@@ -7640,38 +7713,62 @@ window.addEventListener('resize', () => {
             this.primed = [false, false];
             this.priming = [null, null];
 
-            /* Mobile Safari tone-maps a video differently when it is copied
-               into a canvas, which is why every canvas/WebP freeze looked
-               darker than the moving MP4. Keep the actual visible video layer
-               paused on its current frame instead. This is the only handoff
-               that preserves Safari's exact colour, crop and brightness. */
+            /* Keep Safari's real paused video frame, but collapse the player
+               back to exactly one video layer. Previously the hidden standby
+               remained inside the thumbnail while removeAttribute('src') and
+               load() reset it. On repeatedly tapped square cards, WebKit could
+               briefly composite that resetting sibling at its intrinsic tiny
+               size along the top edge. Detaching it first removes that race. */
             const active = this.activeVideo;
+            const staleVideos = this.videos.filter((video) => video && video !== active);
             let heldFrame = false;
 
-            this.videos.forEach((video, index) => {
+            if (active) {
+                try {
+                    active.pause();
+                    active.loop = false;
+                } catch (_) {}
+
+                if (active.readyState >= 2 && active.videoWidth > 0 && active.videoHeight > 0) {
+                    active.style.position = 'absolute';
+                    active.style.inset = '0';
+                    active.style.width = '100%';
+                    active.style.height = '100%';
+                    active.style.minWidth = '100%';
+                    active.style.minHeight = '100%';
+                    active.style.maxWidth = 'none';
+                    active.style.maxHeight = 'none';
+                    active.style.objectFit = 'cover';
+                    active.style.objectPosition = '50% 50%';
+                    active.style.transform = 'scale(1.08)';
+                    active.style.transformOrigin = '50% 50%';
+                    active.style.zIndex = '2';
+                    active.style.opacity = '1';
+                    active.style.willChange = 'auto';
+                    active.classList.add('is-active');
+                    heldFrame = true;
+                }
+            }
+
+            /* Update the player state before touching stale nodes so an
+               overlapping tap can never select a video that is being reset. */
+            this.videos = active ? [active] : [];
+            this.activeIndex = 0;
+            this.video = active || null;
+
+            staleVideos.forEach((video) => {
                 try {
                     video.pause();
                     video.loop = false;
                 } catch (_) {}
-
-                if (video === active && video.readyState >= 2 &&
-                    video.videoWidth > 0 && video.videoHeight > 0) {
-                    video.style.opacity = '1';
-                    video.classList.add('is-active');
-                    heldFrame = true;
-                    return;
-                }
-
-                /* The hidden loop standby is no longer needed while paused.
-                   Releasing only that source keeps decoder use controlled
-                   without touching the visible frozen video frame. */
+                video.style.opacity = '0';
+                video.style.zIndex = '0';
+                video.classList.remove('is-active');
+                try { video.remove(); } catch (_) {}
                 try {
                     video.removeAttribute('src');
                     video.load();
                 } catch (_) {}
-                video.style.opacity = '0';
-                video.classList.remove('is-active');
-                if (index > 0) video.preload = 'none';
             });
 
             this.playing = false;
