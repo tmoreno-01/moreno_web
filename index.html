@@ -6885,6 +6885,16 @@ window.addEventListener('resize', () => {
 
     const SOURCE_CACHE = new Map();
     const RESOLVED_SOURCES = new Map();
+
+    /* Keep a tiny browser-native media prewarm rack. Unlike Blob fetching,
+       these off-screen <video> elements preserve Safari's own byte-range and
+       media-cache behaviour. Only the three most likely clips are retained. */
+    const MOTION_PREWARM_SLOTS = 3;
+    const MOTION_PREWARM_DELAY_MS = 180;
+    const motionPrewarmVideos = [];
+    let motionPrewarmTimer = 0;
+    let motionPrewarmGeneration = 0;
+
     const POSTER_CACHE = new Map();
     const POSTER_REQUESTS = new Map();
     const POSTER_QUEUE = [];
@@ -7152,6 +7162,175 @@ window.addEventListener('resize', () => {
             .split('/')
             .map((part) => encodeURIComponent(part))
             .join('/');
+    }
+
+    function canPrewarmMotion() {
+        const connection = navigator.connection ||
+            navigator.mozConnection ||
+            navigator.webkitConnection;
+
+        if (connection && connection.saveData) return false;
+        return true;
+    }
+
+    function createMotionPrewarmVideo() {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.defaultMuted = true;
+        video.volume = 0;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.controls = false;
+        video.disablePictureInPicture = true;
+        video.disableRemotePlayback = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.setAttribute('disablepictureinpicture', '');
+        video.setAttribute('disableremoteplayback', '');
+        video.setAttribute('aria-hidden', 'true');
+        video.tabIndex = -1;
+
+        /* Do not use display:none: WebKit may decline to fetch media for a
+           non-rendered element. Keep it rendered as a transparent 1px surface
+           completely outside the viewport. */
+        Object.assign(video.style, {
+            position: 'fixed',
+            left: '-10000px',
+            top: '0',
+            width: '1px',
+            height: '1px',
+            opacity: '0.001',
+            pointerEvents: 'none',
+            zIndex: '-1'
+        });
+
+        document.body.appendChild(video);
+        return video;
+    }
+
+    function ensureMotionPrewarmSlots() {
+        while (motionPrewarmVideos.length < MOTION_PREWARM_SLOTS) {
+            motionPrewarmVideos.push(createMotionPrewarmVideo());
+        }
+        return motionPrewarmVideos;
+    }
+
+    function clearMotionPrewarmers() {
+        clearTimeout(motionPrewarmTimer);
+        motionPrewarmGeneration++;
+
+        motionPrewarmVideos.forEach((video) => {
+            video.__motionWarmSource = '';
+            video.__motionWarmGeneration = 0;
+            try {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            } catch (_) {}
+        });
+    }
+
+    function normalizedMotionIndex(index) {
+        if (!motionVideoList.length) return -1;
+        return (index % motionVideoList.length + motionVideoList.length) %
+            motionVideoList.length;
+    }
+
+    function prewarmMotionIndices(indices) {
+        if (!canPrewarmMotion() || !motionVideoList.length) return;
+
+        const connection = navigator.connection ||
+            navigator.mozConnection ||
+            navigator.webkitConnection;
+        const effectiveType = connection && connection.effectiveType;
+        const slotLimit = /(^|-)2g$|slow-2g/.test(effectiveType || '')
+            ? 1
+            : MOTION_PREWARM_SLOTS;
+
+        const sources = [];
+        const seen = new Set();
+
+        Array.from(indices || []).forEach((rawIndex) => {
+            const index = normalizedMotionIndex(Number(rawIndex));
+            if (index < 0) return;
+            const src = motionVideoList[index];
+            if (!src || src === viewerSource || seen.has(src)) return;
+            seen.add(src);
+            sources.push(src);
+        });
+
+        const slots = ensureMotionPrewarmSlots();
+        const generation = ++motionPrewarmGeneration;
+
+        slots.forEach((video, slotIndex) => {
+            const src = slotIndex < slotLimit ? (sources[slotIndex] || '') : '';
+
+            if (!src) {
+                if (video.__motionWarmSource) {
+                    video.__motionWarmSource = '';
+                    try {
+                        video.pause();
+                        video.removeAttribute('src');
+                        video.load();
+                    } catch (_) {}
+                }
+                return;
+            }
+
+            if (video.__motionWarmSource === src && video.getAttribute('src') === src) {
+                return;
+            }
+
+            video.__motionWarmSource = src;
+            video.__motionWarmGeneration = generation;
+            video.preload = 'auto';
+
+            const seekOpeningFrame = () => {
+                if (video.__motionWarmGeneration !== generation ||
+                    video.__motionWarmSource !== src) return;
+                try {
+                    const start = safeStart(video);
+                    if (Number.isFinite(start) &&
+                        Math.abs((video.currentTime || 0) - start) > 0.0005) {
+                        video.currentTime = start;
+                    }
+                } catch (_) {}
+            };
+
+            video.addEventListener(
+                'loadedmetadata',
+                seekOpeningFrame,
+                { once: true }
+            );
+
+            try {
+                video.setAttribute('src', src);
+                video.load();
+            } catch (_) {}
+        });
+    }
+
+    function scheduleMotionPrewarm(indices, delay = MOTION_PREWARM_DELAY_MS) {
+        clearTimeout(motionPrewarmTimer);
+        motionPrewarmTimer = setTimeout(() => {
+            if (!isMotionPageActive() && !viewer.classList.contains('active')) {
+                return;
+            }
+            prewarmMotionIndices(indices);
+        }, Math.max(0, delay));
+    }
+
+    function prewarmInitialMotionClips() {
+        scheduleMotionPrewarm([0, 1, 2], MOTION_PREWARM_DELAY_MS);
+    }
+
+    function prewarmAroundMotionIndex(index, includeCurrent = false) {
+        if (!motionVideoList.length) return;
+        const current = normalizedMotionIndex(index);
+        const likely = includeCurrent
+            ? [current, current + 1, current - 1]
+            : [current + 1, current - 1, current + 2];
+        scheduleMotionPrewarm(likely, includeCurrent ? 0 : 80);
     }
 
     function buildGrid(filenames) {
@@ -9123,6 +9302,13 @@ window.addEventListener('resize', () => {
             }, { passive: true });
         }
 
+        const fullscreenButton = item.querySelector('.motion-fullscreen-btn');
+        if (fullscreenButton) {
+            fullscreenButton.addEventListener('pointerdown', () => {
+                prewarmAroundMotionIndex(index, true);
+            }, { passive: true });
+        }
+
         if (touchCapable) {
             bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
         } else {
@@ -9221,6 +9407,7 @@ window.addEventListener('resize', () => {
         }
         scheduleMotionRowLayout();
         requestAnimationFrame(() => requestAnimationFrame(refreshMotionViewport));
+        prewarmInitialMotionClips();
         return motionLoadPromise || Promise.resolve(motionVideoList);
     }
 
@@ -9667,6 +9854,10 @@ window.addEventListener('resize', () => {
                 viewerLooper.upgradeSource(resolved);
             }
         });
+
+        /* The current clip is already owned by the real viewer. Use the three
+           prewarm slots for next, previous, and next-after-next. */
+        prewarmAroundMotionIndex(index, false);
     }
 
     window.openMotionViewer = function (event, index) {
@@ -9683,6 +9874,7 @@ window.addEventListener('resize', () => {
         viewerDisplayedIndex = -1;
         motionViewerIndex = index;
         document.body.style.overflow = 'hidden';
+        prewarmAroundMotionIndex(index, true);
         renderViewer(true, session, -1);
     };
 
@@ -9722,6 +9914,7 @@ window.addEventListener('resize', () => {
         const session = ++viewerSession;
         motionViewerIndex =
             (motionViewerIndex + 1) % motionVideoList.length;
+        prewarmAroundMotionIndex(motionViewerIndex, false);
         renderViewer(false, session, outgoingIndex);
     }
 
@@ -9734,6 +9927,7 @@ window.addEventListener('resize', () => {
         motionViewerIndex =
             (motionViewerIndex - 1 + motionVideoList.length) %
             motionVideoList.length;
+        prewarmAroundMotionIndex(motionViewerIndex, false);
         renderViewer(false, session, outgoingIndex);
     }
 
@@ -9769,6 +9963,7 @@ window.addEventListener('resize', () => {
     window.pauseMotionPage = function () {
         activeThumbnailItem = null;
         activeThumbnailLooper = null;
+        clearMotionPrewarmers();
         Array.from(grid.querySelectorAll('.motion-item')).forEach(dehydrateMotionItem);
         if (viewer.classList.contains('active')) closeViewer();
     };
@@ -9779,6 +9974,7 @@ window.addEventListener('resize', () => {
             runPosterWorker();
             scheduleMotionRowLayout();
             requestAnimationFrame(refreshMotionViewport);
+            prewarmInitialMotionClips();
         }
     });
 
@@ -9790,6 +9986,7 @@ window.addEventListener('resize', () => {
     }
 
     window.addEventListener('beforeunload', () => {
+        clearMotionPrewarmers();
         RESOLVED_SOURCES.forEach((url) => {
             if (url.startsWith('blob:')) URL.revokeObjectURL(url);
         });
