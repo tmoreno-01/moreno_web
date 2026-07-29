@@ -5710,8 +5710,9 @@ btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.
         });
 
         /* Reliable iPhone/iPad dropdown behaviour.
-           First tap opens the submenu; tapping the main label again opens its
-           page. Submenu links stay clickable, and tapping elsewhere closes it. */
+           A single tap on Gallery or Digital both opens that page and reveals
+           its submenu. Submenu links stay clickable, and tapping elsewhere
+           closes the open menu. */
         const navDropdowns = Array.from(document.querySelectorAll('.nav-links .dropdown'));
         const usesTouchDropdowns = () =>
             window.matchMedia('(hover: none), (pointer: coarse)').matches ||
@@ -5735,21 +5736,13 @@ btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.
             const menuLinks = dropdown.querySelectorAll('.dropdown-content a');
             if (!trigger) return;
 
-            /* Capture phase prevents the existing route handler from firing on
-               the first tap, while allowing it normally on the second tap. */
-            trigger.addEventListener('click', (event) => {
+            /* On touch devices the trigger keeps its normal page-navigation
+               handler. Capture phase only reveals the submenu before that route
+               handler runs, so one tap performs both actions. */
+            trigger.addEventListener('click', () => {
                 if (!usesTouchDropdowns()) return;
-
-                const isOpen = dropdown.classList.contains('is-open');
-                if (!isOpen) {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    closeNavDropdowns(dropdown);
-                    setNavDropdownOpen(dropdown, true);
-                    return;
-                }
-
-                setNavDropdownOpen(dropdown, false);
+                closeNavDropdowns(dropdown);
+                setNavDropdownOpen(dropdown, true);
             }, true);
 
             menuLinks.forEach((link) => {
