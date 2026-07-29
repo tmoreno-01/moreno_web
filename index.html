@@ -394,13 +394,37 @@ body:has(#lightbox.active) #art-praiseyou .sliced-container img {
             box-sizing: border-box;
         }
 
-        .dropdown:hover .dropdown-content {
+        /* Desktop hover menus only. Restricting hover to a real mouse avoids
+           Safari's sticky :hover state trapping the menu on iPhone/iPad. */
+        @media (hover: hover) and (pointer: fine) {
+            .dropdown:hover .dropdown-content {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .dropdown:hover .dropbtn {
+                opacity: 1;
+            }
+        }
+
+        /* Touch menus are controlled explicitly by JavaScript. */
+        .dropdown.is-open .dropdown-content {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .dropdown:hover .dropbtn {
+        .dropdown.is-open .dropbtn {
             opacity: 1;
+        }
+
+        .dropdown-content {
+            z-index: 270;
+        }
+
+        .dropbtn,
+        .dropdown-content a {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* --- FOOTER, COPYRIGHT & THEME TOGGLE --- */
@@ -1195,6 +1219,37 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 
 }
 
+/* Persistent decoded image buffer used during front/back swaps. It sits above
+   the main image only while the replacement frame is being painted. There is
+   deliberately no opacity transition: cross-fading GPU layers caused an
+   occasional blue flash in Safari/Chromium. */
+#lb-img {
+    position: relative;
+    z-index: 20;
+}
+#lb-img-buffer {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    display: none;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 95vh;
+    margin: auto;
+    object-fit: contain;
+    object-position: center;
+    opacity: 1 !important;
+    transition: none !important;
+    transform: none !important;
+    pointer-events: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
 .lightbox-right { 
     flex: 1; /* Keep text column slim */
     display: flex; flex-direction: column; text-align: left; 
@@ -1288,7 +1343,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 white-space: nowrap;
                 text-align: center;
             }
-            /* Keep the iPhone Gallery submenu compact: Studies and Paint
+            /* Keep the iPhone Gallery submenu compact: Notes and Play
                should read as two closely grouped choices, not oversized rows. */
             .dropdown-content { padding-top: 6px; gap: 0; }
             .dropdown-content a {
@@ -1354,18 +1409,18 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
         margin-left: 0 !important;
     }
 }
-/* --- STUDIES PAGE: ORDERED JUSTIFIED ROWS --- */
-/* Studies is a curated still-image section, not a second draggable collage.
-   It follows the Motion page's visual rhythm: natural image ratios, shared
+/* --- NOTES / DIGITAL STUDIES: ORDERED JUSTIFIED ROWS --- */
+/* Notes and Digital Studies are curated still-image sections, not a second draggable collage.
+   It follows the Digital page's visual rhythm: natural image ratios, shared
    row heights, and consistent gaps across desktop, iPad and iPhone. */
-#page-sketches .overlay-content {
+.still-grid-page .overlay-content {
     padding-top: 88px !important;
 }
-#page-sketches .works-container {
+.still-grid-page .works-container {
     padding-left: 1.2vw !important;
     padding-right: 1.2vw !important;
 }
-#page-sketches .works-grid.mode-studies {
+.still-grid-page .works-grid.mode-studies {
     display: flex !important;
     flex-wrap: wrap !important;
     align-items: flex-start !important;
@@ -1375,7 +1430,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     margin: -16px 0 0 !important;
     padding: 0 !important;
 }
-#page-sketches .works-grid.mode-studies .sketch-item {
+.still-grid-page .works-grid.mode-studies .sketch-item {
     flex: 0 0 var(--study-item-width, 100%) !important;
     width: var(--study-item-width, 100%) !important;
     max-width: none !important;
@@ -1397,23 +1452,23 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     will-change: transform;
     -webkit-tap-highlight-color: transparent;
 }
-#page-sketches .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
+.still-grid-page .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
     opacity: 0.985 !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    #page-sketches .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
+    .still-grid-page .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
         transform: scale(1.035) !important;
         z-index: 20 !important;
     }
 }
 
 @media (hover: none), (pointer: coarse) {
-    #page-sketches .works-grid.mode-studies .sketch-item:active {
+    .still-grid-page .works-grid.mode-studies .sketch-item:active {
         transform: scale(1.015) !important;
     }
 }
-#page-sketches .works-grid.mode-studies .sketch-item .work-image {
+.still-grid-page .works-grid.mode-studies .sketch-item .work-image {
     position: relative;
     width: 100% !important;
     height: var(--study-row-height, auto) !important;
@@ -1426,7 +1481,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     background: transparent !important;
     box-shadow: none !important;
 }
-#page-sketches .works-grid.mode-studies .sketch-item .work-image img {
+.still-grid-page .works-grid.mode-studies .sketch-item .work-image img {
     display: block !important;
     width: 100% !important;
     height: 100% !important;
@@ -1442,30 +1497,30 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 }
 
 @media (max-width: 1024px) {
-    #page-sketches .overlay-content {
+    .still-grid-page .overlay-content {
         padding-top: 76px !important;
     }
-    #page-sketches .works-container {
+    .still-grid-page .works-container {
         padding-left: 1vw !important;
         padding-right: 1vw !important;
     }
-    #page-sketches .works-grid.mode-studies {
+    .still-grid-page .works-grid.mode-studies {
         gap: 16px !important;
         margin-top: -10px !important;
     }
 }
 
 @media (max-width: 768px) {
-    #page-sketches .overlay-content {
+    .still-grid-page .overlay-content {
         padding-top: 58px !important;
         padding-left: 6px !important;
         padding-right: 6px !important;
     }
-    #page-sketches .works-container {
+    .still-grid-page .works-container {
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
-    #page-sketches .works-grid.mode-studies {
+    .still-grid-page .works-grid.mode-studies {
         gap: 14px !important;
         margin-top: -8px !important;
     }
@@ -1604,7 +1659,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     .studies-viewer .left-arrow { left: 18px; }
     .studies-viewer .right-arrow { right: 18px; }
 }
-/* --- MOTION PAGE (AI motion / experimental video works) --- */
+/* --- DIGITAL PAGE (motion / experimental video works) --- */
 #page-motion .overlay-content {
     padding-top: 88px !important;
 }
@@ -1947,11 +2002,11 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     aspect-ratio: inherit;
 }
 
-/* Studies and Motion use clean, square-edged presentation. This is scoped to
+/* Notes, Digital Studies and Digital motion use clean, square-edged presentation. This is scoped to
    these two sections only; Gallery artwork and all other site elements retain
    their existing corner treatment. */
-#page-sketches .works-grid.mode-studies .work-image,
-#page-sketches .works-grid.mode-studies .work-image img,
+.still-grid-page .works-grid.mode-studies .work-image,
+.still-grid-page .works-grid.mode-studies .work-image img,
 #page-motion .works-grid.mode-collage .motion-item .work-image,
 #page-motion .works-grid.mode-collage .motion-item .motion-poster,
 #page-motion .works-grid.mode-collage .motion-item .motion-video-stack,
@@ -2963,20 +3018,25 @@ body.adhd-mode #ios-brush-selector {
 <div class="nav-links">
 
         <div class="dropdown">
-            <a href="/gallery/" class="dropbtn" id="btn-gallery" style="cursor:pointer">
+            <a href="/gallery/" class="dropbtn" id="btn-gallery" style="cursor:pointer" aria-haspopup="true" aria-expanded="false">
                 <div class="gallery-wrapper">
                     <span id="btn-gallery-text">Gallery</span>
                     <img src="/random/galleryglitch.webp" id="btn-gallery-img" class="gallery-glitch-img">
                 </div>
             </a>
             <div class="dropdown-content">
-                <a href="/studies/" id="btn-sketches">Studies</a>
+                <a href="/notes/" id="btn-notes">Notes</a>
                 <a href="/play/" id="btn-paint">Play</a>
                 <a href="/exhibitions/" id="btn-exhibitions" style="display: none;">Exhibitions</a>
                 <a href="/press/" id="btn-press" style="display: none;">Press</a>
             </div>
         </div>
-        <a href="/motion/" id="btn-motion">Motion</a>
+        <div class="dropdown">
+            <a href="/digital/" class="dropbtn" id="btn-motion" aria-haspopup="true" aria-expanded="false">Digital</a>
+            <div class="dropdown-content">
+                <a href="/studies/" id="btn-digital-studies">Studies</a>
+            </div>
+        </div>
         <a href="#store" id="btn-store">Store</a>
         <a href="/about/" id="btn-about">About</a>
         <a href="/contact/" id="btn-contact">Contact</a>
@@ -3174,186 +3234,186 @@ body.adhd-mode #ios-brush-selector {
             <div class="works-container">
      <div class="works-grid mode-collage">
     <!-- Vanquish -->
-    <a class="work-item" data-slug="vanquish" onclick="event.preventDefault(); openLightbox('/artwork/small/vanquish_front.webp', 'Vanquish', '2026', '38 x 26 cm, Mixed media on cotton paper', '', '/artwork/small/vanquish_back.webp', false); window.history.pushState(null, '', '/gallery/vanquish/');" href="/gallery/vanquish/">
-        <div class="work-image"><img src="/artwork/thumbnails/vanquish_front_thumbnail.webp" alt="Vanquish" loading="lazy"></div>
+    <a class="work-item" data-slug="vanquish" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/vanquish_front.webp', 'Vanquish', '2026', '38 x 26 cm, Mixed media on cotton paper', '', '/artwork/gallery/work/vanquish_back.webp', false); window.history.pushState(null, '', '/gallery/vanquish/');" href="/gallery/vanquish/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/vanquish_front_thumbnail.webp" alt="Vanquish" loading="lazy"></div>
         <div class="work-caption"><span>Vanquish</span><span>2026</span></div>
     </a>
     <!-- I like to praise you like I SHOULD (Skateboard Triptych) -->
-    <a class="work-item" id="art-praiseyou" data-slug="i-like-to-praise-you-like-i-should" onclick="event.preventDefault(); openLightbox('/artwork/small/praiseyou_front.webp', 'I like to praise you like I SHOULD', '2026', 'Mixed media on my old skateboards', 'Dive deep head first&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/praiseyou_back.webp', false); window.history.pushState(null, '', '/gallery/i-like-to-praise-you-like-i-should/');" href="/gallery/i-like-to-praise-you-like-i-should/">
+    <a class="work-item" id="art-praiseyou" data-slug="i-like-to-praise-you-like-i-should" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/praiseyou_front.webp', 'I like to praise you like I SHOULD', '2026', 'Mixed media on my old skateboards', 'Dive deep head first&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', ['/artwork/gallery/work/praiseyou_back.webp'], false); window.history.pushState(null, '', '/gallery/i-like-to-praise-you-like-i-should/');" href="/gallery/i-like-to-praise-you-like-i-should/">
         <div class="work-image no-shadow">
-            <img class="single-fallback" src="/artwork/individual/skateboardmiddle.webp" alt="I like to praise you like I SHOULD" loading="lazy">
+            <img class="single-fallback" src="/artwork/gallery/individual/skateboardmiddle.webp" alt="I like to praise you like I SHOULD" loading="lazy">
             <div class="sliced-container">
-                <img src="/artwork/individual/skateboardleft.webp" alt="Skateboard Left">
-                <img src="/artwork/individual/skateboardmiddle.webp" alt="Skateboard Middle">
-                <img src="/artwork/individual/skateboardright.webp" alt="Skateboard Right">
+                <img src="/artwork/gallery/individual/skateboardleft.webp" alt="Skateboard Left">
+                <img src="/artwork/gallery/individual/skateboardmiddle.webp" alt="Skateboard Middle">
+                <img src="/artwork/gallery/individual/skateboardright.webp" alt="Skateboard Right">
             </div>
         </div>
         <div class="work-caption"><span>I like to praise you like I SHOULD</span><span>2026</span></div>
     </a>
 
     <!-- 2. Splinter -->
-    <a class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="event.preventDefault(); openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/splinter/');" href="/gallery/splinter/">
-        <div class="work-image"><img src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
+    <a class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/splinter/');" href="/gallery/splinter/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
         <div class="work-caption"><span>Splinter</span><span>2026</span></div>
     </a>
 
     <!-- 3. Rubik -->
-<a class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="event.preventDefault(); openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it', null, false); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');" href="/gallery/an-unsolved-constant/">
-        <div class="work-image"><img src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
+<a class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="event.preventDefault(); openLightbox('/artwork/gallery/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it', null, false); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');" href="/gallery/an-unsolved-constant/">
+        <div class="work-image"><img src="/artwork/gallery/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
         <div class="work-caption"><span>An Unsolved Constant</span><span>2026</span></div>
     </a>
 
     <!-- 1. No time 4 overthinking -->
-    <a class="work-item" data-slug="no-time-4-overthinking" onclick="event.preventDefault(); openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp', false); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');" href="/gallery/no-time-4-overthinking/">
-        <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
+    <a class="work-item" data-slug="no-time-4-overthinking" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/gallery/work/notimeforoverthinkingback.webp', false); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');" href="/gallery/no-time-4-overthinking/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
     </a>
 
     <!-- 4. Seven of Hearts (Sliced Grid) -->
-    <a class="work-item" id="art-sevenofhearts" data-slug="seven-of-hearts" onclick="event.preventDefault(); openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp', false); window.history.pushState(null, '', '/gallery/seven-of-hearts/');" href="/gallery/seven-of-hearts/">
+    <a class="work-item" id="art-sevenofhearts" data-slug="seven-of-hearts" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/gallery/work/sevenofhearts_smallback.webp', false); window.history.pushState(null, '', '/gallery/seven-of-hearts/');" href="/gallery/seven-of-hearts/">
         <div class="work-image no-shadow">
-            <img class="single-fallback" src="/artwork/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
+            <img class="single-fallback" src="/artwork/gallery/work/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
             <div class="sliced-container">
-                    <img src="/artwork/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
-                <img src="/artwork/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
-                <img src="/artwork/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
-                <img src="/artwork/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
-                <img src="/artwork/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
-                <img src="/artwork/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
-                <img src="/artwork/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
-                <img src="/artwork/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
-                <img src="/artwork/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
-                <img src="/artwork/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
-                <img src="/artwork/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
-                <img src="/artwork/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
-                <img src="/artwork/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
-                <img src="/artwork/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
-                <img src="/artwork/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
-                <img src="/artwork/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
-                <img src="/artwork/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
-                <img src="/artwork/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
-                <img src="/artwork/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
-                <img src="/artwork/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
-                <img src="/artwork/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
-                <img src="/artwork/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
-                <img src="/artwork/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
-                <img src="/artwork/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
-                <img src="/artwork/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
-                <img src="/artwork/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
-                <img src="/artwork/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
-                <img src="/artwork/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
-                <img src="/artwork/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
-                <img src="/artwork/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
-                <img src="/artwork/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
-                <img src="/artwork/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
-                <img src="/artwork/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
-                <img src="/artwork/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
-                <img src="/artwork/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
-                <img src="/artwork/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
+                    <img src="/artwork/gallery/individual/seveonofhearts_solo_01.webp" alt="Card Slice 1">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_02.webp" alt="Card Slice 2">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_03.webp" alt="Card Slice 3">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_04.webp" alt="Card Slice 4">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_05.webp" alt="Card Slice 5">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_06.webp" alt="Card Slice 6">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_07.webp" alt="Card Slice 7">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_08.webp" alt="Card Slice 8">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_09.webp" alt="Card Slice 9">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_10.webp" alt="Card Slice 10">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_11.webp" alt="Card Slice 11">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_12.webp" alt="Card Slice 12">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_13.webp" alt="Card Slice 13">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_14.webp" alt="Card Slice 14">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_15.webp" alt="Card Slice 15">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_16.webp" alt="Card Slice 16">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_17.webp" alt="Card Slice 17">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_18.webp" alt="Card Slice 18">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_19.webp" alt="Card Slice 19">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_20.webp" alt="Card Slice 20">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_21.webp" alt="Card Slice 21">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_22.webp" alt="Card Slice 22">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_23.webp" alt="Card Slice 23">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_24.webp" alt="Card Slice 24">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_25.webp" alt="Card Slice 25">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_26.webp" alt="Card Slice 26">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_27.webp" alt="Card Slice 27">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_28.webp" alt="Card Slice 28">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_29.webp" alt="Card Slice 29">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_30.webp" alt="Card Slice 30">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_31.webp" alt="Card Slice 31">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_32.webp" alt="Card Slice 32">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_33.webp" alt="Card Slice 33">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_34.webp" alt="Card Slice 34">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_35.webp" alt="Card Slice 35">
+                <img src="/artwork/gallery/individual/seveonofhearts_solo_36.webp" alt="Card Slice 36">
             </div>
         </div>
         <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
     </a>
 
     <!-- 5. Dairy Pirates -->
-    <a class="work-item" data-slug="dairy-pirates" onclick="event.preventDefault(); openLightbox('/artwork/small/dairypirates_small.webp', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/dairy-pirates/');" href="/gallery/dairy-pirates/">
-        <div class="work-image"><img src="/artwork/thumbnails/dairypirates_small_thumbnail.webp" alt="Dairy Pirates"></div>
+    <a class="work-item" data-slug="dairy-pirates" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/dairypirates_small.webp', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/dairy-pirates/');" href="/gallery/dairy-pirates/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/dairypirates_small_thumbnail.webp" alt="Dairy Pirates"></div>
         <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
     </a>
 
     <!-- 6. From the Chest -->
-    <a class="work-item" data-slug="from-the-chest" onclick="event.preventDefault(); openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/from-the-chest/');" href="/gallery/from-the-chest/">
-        <div class="work-image"><img src="/artwork/thumbnails/fromthechest_small_thumbnail.webp" alt="From the Chest" loading="lazy"></div>
+    <a class="work-item" data-slug="from-the-chest" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/from-the-chest/');" href="/gallery/from-the-chest/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/fromthechest_small_thumbnail.webp" alt="From the Chest" loading="lazy"></div>
         <div class="work-caption"><span>From the Chest</span><span>2026</span></div>
     </a>
 
     <!-- 7. Soul of an Old Telephone Box -->
-    <a class="work-item" data-slug="soul-of-an-old-telephone-box" onclick="event.preventDefault(); openLightbox('/artwork/small/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/soulofatelephone_smallback.jpg', false); window.history.pushState(null, '', '/gallery/soul-of-an-old-telephone-box/');" href="/gallery/soul-of-an-old-telephone-box/">
-        <div class="work-image"><img src="/artwork/thumbnails/soulofatelephone_small_thumbnail.webp" alt="Soul of an Old Telephone Box" loading="lazy"></div>
+    <a class="work-item" data-slug="soul-of-an-old-telephone-box" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/gallery/work/soulofatelephone_smallback.jpg', false); window.history.pushState(null, '', '/gallery/soul-of-an-old-telephone-box/');" href="/gallery/soul-of-an-old-telephone-box/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/soulofatelephone_small_thumbnail.webp" alt="Soul of an Old Telephone Box" loading="lazy"></div>
         <div class="work-caption"><span>Soul of an Old Telephone Box</span><span>2026</span></div>
     </a>
 
     <!-- 8. BFEC -->
-    <a class="work-item" data-slug="bfec" onclick="event.preventDefault(); openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/bfec/');" href="/gallery/bfec/">
-        <div class="work-image"><img src="/artwork/thumbnails/bfec_small_thumbnail.webp" alt="BFEC" loading="lazy"></div>
+    <a class="work-item" data-slug="bfec" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/bfec/');" href="/gallery/bfec/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/bfec_small_thumbnail.webp" alt="BFEC" loading="lazy"></div>
         <div class="work-caption"><span>BFEC</span><span>2026</span></div>
     </a>
 
     <!-- 9. Liminal some Time -->
-    <a class="work-item" data-slug="liminal-some-time" onclick="event.preventDefault(); openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg', false); window.history.pushState(null, '', '/gallery/liminal-some-time/');" href="/gallery/liminal-some-time/">
-        <div class="work-image"><img src="/artwork/thumbnails/liminalsometime_small_thumbnail.webp" alt="Liminal some Time" loading="lazy"></div>
+    <a class="work-item" data-slug="liminal-some-time" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/gallery/work/liminalsometime_smallback.jpg', false); window.history.pushState(null, '', '/gallery/liminal-some-time/');" href="/gallery/liminal-some-time/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/liminalsometime_small_thumbnail.webp" alt="Liminal some Time" loading="lazy"></div>
         <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
     </a>
 
     <!-- 10. Nice day off, Peanut butter luck -->
-    <a class="work-item" data-slug="nice-day-off-peanut-butter-luck" onclick="event.preventDefault(); openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/nice-day-off-peanut-butter-luck/');" href="/gallery/nice-day-off-peanut-butter-luck/">
-        <div class="work-image"><img src="/artwork/thumbnails/nicedayoff_small_thumbnail.webp" alt="Nice day off, Peanut butter luck" loading="lazy"></div>
+    <a class="work-item" data-slug="nice-day-off-peanut-butter-luck" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/nice-day-off-peanut-butter-luck/');" href="/gallery/nice-day-off-peanut-butter-luck/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/nicedayoff_small_thumbnail.webp" alt="Nice day off, Peanut butter luck" loading="lazy"></div>
         <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
     </a>
 
     <!-- 11. AB+ -->
-    <a class="work-item" data-slug="ab-plus" onclick="event.preventDefault(); openLightbox('/artwork/small/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/ab-plus/');" href="/gallery/ab-plus/">
-        <div class="work-image"><img src="/artwork/thumbnails/ab_small_thumbnail.webp" alt="AB+" loading="lazy"></div>
+    <a class="work-item" data-slug="ab-plus" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/ab-plus/');" href="/gallery/ab-plus/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/ab_small_thumbnail.webp" alt="AB+" loading="lazy"></div>
         <div class="work-caption"><span>AB+</span><span>2026</span></div>
     </a>
 
     <!-- 12. Midsummer -->
-    <a class="work-item" data-slug="midsummer" onclick="event.preventDefault(); openLightbox('/artwork/small/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/midsummer/');" href="/gallery/midsummer/">
-        <div class="work-image"><img src="/artwork/thumbnails/midsummer_small_thumbnail.webp" alt="Midsummer" loading="lazy"></div>
+    <a class="work-item" data-slug="midsummer" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/midsummer/');" href="/gallery/midsummer/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/midsummer_small_thumbnail.webp" alt="Midsummer" loading="lazy"></div>
         <div class="work-caption"><span>Midsummer</span><span>2026</span></div>
     </a>
 
     <!-- 13. Seize the Lighthouse -->
-    <a class="work-item" data-slug="seize-the-lighthouse" onclick="event.preventDefault(); openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/seize-the-lighthouse/');" href="/gallery/seize-the-lighthouse/">
-        <div class="work-image"><img src="/artwork/thumbnails/seizethelighthouse_small_thumbnail.webp" alt="Seize the Lighthouse" loading="lazy"></div>
+    <a class="work-item" data-slug="seize-the-lighthouse" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/seize-the-lighthouse/');" href="/gallery/seize-the-lighthouse/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/seizethelighthouse_small_thumbnail.webp" alt="Seize the Lighthouse" loading="lazy"></div>
         <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
     </a>
 
     <!-- 14. Pedestrian Crossing -->
-    <a class="work-item" data-slug="pedestrian-crossing" onclick="event.preventDefault(); openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/pedestrian-crossing/');" href="/gallery/pedestrian-crossing/">
-        <div class="work-image"><img src="/artwork/thumbnails/pedestriancrossing_small_thumbnail.webp" alt="Pedestrian Crossing" loading="lazy"></div>
+    <a class="work-item" data-slug="pedestrian-crossing" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/pedestrian-crossing/');" href="/gallery/pedestrian-crossing/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/pedestriancrossing_small_thumbnail.webp" alt="Pedestrian Crossing" loading="lazy"></div>
         <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
     </a>
 
     <!-- 15. Is the Grass Greener? -->
-    <a class="work-item" data-slug="is-the-grass-greener" onclick="event.preventDefault(); openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/is-the-grass-greener/');" href="/gallery/is-the-grass-greener/">
-        <div class="work-image"><img src="/artwork/thumbnails/isthegrassgreener_square_small_thumbnail.webp" alt="Is the Grass Greener?" loading="lazy"></div>
+    <a class="work-item" data-slug="is-the-grass-greener" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/is-the-grass-greener/');" href="/gallery/is-the-grass-greener/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/isthegrassgreener_square_small_thumbnail.webp" alt="Is the Grass Greener?" loading="lazy"></div>
         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
     </a>
 
     <!-- 16. Give ur Mum some flowers -->
-    <a class="work-item" data-slug="give-ur-mum-some-flowers" onclick="event.preventDefault(); openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/give-ur-mum-some-flowers/');" href="/gallery/give-ur-mum-some-flowers/">
-        <div class="work-image"><img src="/artwork/thumbnails/mumflowers_small_thumbnail.webp" alt="Give ur Mum some flowers" loading="lazy"></div>
+    <a class="work-item" data-slug="give-ur-mum-some-flowers" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/give-ur-mum-some-flowers/');" href="/gallery/give-ur-mum-some-flowers/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/mumflowers_small_thumbnail.webp" alt="Give ur Mum some flowers" loading="lazy"></div>
         <div class="work-caption"><span>Give ur Mum some flowers</span><span>2026</span></div>
     </a>
 
     <!-- 17. Zennor -->
-    <a class="work-item" data-slug="zennor" onclick="event.preventDefault(); openLightbox('/artwork/small/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/zennor/');" href="/gallery/zennor/">
-        <div class="work-image"><img src="/artwork/thumbnails/zennor_small_thumbnail.webp" alt="Zennor" loading="lazy"></div>
+    <a class="work-item" data-slug="zennor" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/zennor/');" href="/gallery/zennor/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/zennor_small_thumbnail.webp" alt="Zennor" loading="lazy"></div>
         <div class="work-caption"><span>Zennor</span><span>2025</span></div>
     </a>
 
     <!-- 18. Something about next week -->
-    <a class="work-item" data-slug="something-about-next-week" onclick="event.preventDefault(); openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/something-about-next-week/');" href="/gallery/something-about-next-week/">
-        <div class="work-image"><img src="/artwork/thumbnails/somethingaboutnextweek_small_thumbnail.webp" alt="Something about next week" loading="lazy"></div>
+    <a class="work-item" data-slug="something-about-next-week" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/something-about-next-week/');" href="/gallery/something-about-next-week/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/somethingaboutnextweek_small_thumbnail.webp" alt="Something about next week" loading="lazy"></div>
         <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
     </a>
 
     <!-- 19. Mealticket -->
-    <a class="work-item" data-slug="mealticket" onclick="event.preventDefault(); openLightbox('/artwork/small/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mealticket/');" href="/gallery/mealticket/">
-        <div class="work-image"><img src="/artwork/thumbnails/mealticket_small_thumbnail.webp" alt="Mealticket" loading="lazy"></div>
+    <a class="work-item" data-slug="mealticket" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mealticket/');" href="/gallery/mealticket/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/mealticket_small_thumbnail.webp" alt="Mealticket" loading="lazy"></div>
         <div class="work-caption"><span>Mealticket</span><span>2025</span></div>
     </a>
 
     <!-- 20. Mayonnaise on the Roof -->
-    <a class="work-item" data-slug="mayonnaise-on-the-roof" onclick="event.preventDefault(); openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mayonnaise-on-the-roof/');" href="/gallery/mayonnaise-on-the-roof/">
-        <div class="work-image"><img src="/artwork/thumbnails/001_small_thumbnail.webp" alt="Mayonnaise on the Roof" loading="lazy"></div>
+    <a class="work-item" data-slug="mayonnaise-on-the-roof" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mayonnaise-on-the-roof/');" href="/gallery/mayonnaise-on-the-roof/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/001_small_thumbnail.webp" alt="Mayonnaise on the Roof" loading="lazy"></div>
         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
     </a>
 
     <!-- 21. Notitle -->
-    <a class="work-item" data-slug="notitle" onclick="event.preventDefault(); openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/notitle/');" href="/gallery/notitle/">
-        <div class="work-image"><img src="/artwork/thumbnails/notitle_small_thumbnail.webp" alt="Notitle" loading="lazy"></div>
+    <a class="work-item" data-slug="notitle" onclick="event.preventDefault(); openLightbox('/artwork/gallery/work/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/notitle/');" href="/gallery/notitle/">
+        <div class="work-image"><img src="/artwork/gallery/work/thumbnails/notitle_small_thumbnail.webp" alt="Notitle" loading="lazy"></div>
         <div class="work-caption"><span>Notitle</span><span>2023</span></div>
     </a>
 
@@ -3365,7 +3425,7 @@ body.adhd-mode #ios-brush-selector {
     <div class="overlay-content">
         <div class="works-container">
             <!-- Cards are generated automatically by JS from whatever .mp4 files
-                 are found in /artwork/motion/ — see the MOTION PAGE script near
+                 are loaded from /artwork/digital/motion/ — see the DIGITAL PAGE script near
                  the bottom of the file. Nothing to hardcode here. -->
             <div class="works-grid mode-collage" id="motion-grid"></div>
         </div>
@@ -3389,70 +3449,55 @@ body.adhd-mode #ios-brush-selector {
     </div>
     <canvas id="motion-viewer-hold" class="motion-viewer-hold" aria-hidden="true"></canvas>
 </div>
-<div id="page-sketches" class="page-overlay">
+<div id="page-notes" class="page-overlay still-grid-page">
     <div class="overlay-content">
         <div class="works-container">
             <div class="works-grid mode-studies">
           
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_01.webp" alt="Study 1" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_01.webp" alt="Note 1" loading="lazy"></div>
                 </div>
         <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_05.webp" alt="Study 5" loading="lazy"></div>
-                </div>
-      <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/motionnewyork_01.webp" alt="motionnewyork_02" loading="lazy"></div>
-                </div>
-              <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/warpsmoke.webp" alt="warpsmoke" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_05.webp" alt="Note 5" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_02.webp" alt="Study 2" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_02.webp" alt="Note 2" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_03.webp" alt="Study 3" loading="lazy"></div>
-                </div>
- <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/motionnewyork_02.webp" alt="motionnewyork" loading="lazy"></div>
-                </div>
-           <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/computerstudy_02.webp" alt="computerstudy_02" loading="lazy"></div>
-                </div>
-                         <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/falling_03.webp" alt="falling_03" loading="lazy"></div>
-                </div>
-             <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/computerstudy_01.webp" alt="computerstudy" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_03.webp" alt="Note 3" loading="lazy"></div>
+      </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_04.webp" alt="Note 4" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_04.webp" alt="Study 4" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_06.webp" alt="Note 6" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_06.webp" alt="Study 6" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_07.webp" alt="Note 7" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_07.webp" alt="Study 7" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_08.webp" alt="Note 8" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_08.webp" alt="Study 8" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_09.webp" alt="Note 9" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_09.webp" alt="Study 9" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_10.webp" alt="Note 10" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_10.webp" alt="Study 10" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_11.webp" alt="Note 11" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_11.webp" alt="Study 11" loading="lazy"></div>
-                </div>
-                <div class="work-item sketch-item">
-                    <div class="work-image"><img src="/artwork/studies/sketch_12.webp" alt="Study 12" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/gallery/notes/sketch_12.webp" alt="Note 12" loading="lazy"></div>
                 </div>
 <div class="work-item sketch-item">
-    <div class="work-image"><img src="/artwork/studies/sketch_13.webp" alt="Study 13" loading="lazy"></div>
+    <div class="work-image"><img src="/artwork/gallery/notes/sketch_13.webp" alt="Note 13" loading="lazy"></div>
 </div>
 <div class="work-item sketch-item">
-    <div class="work-image"><img src="/artwork/studies/sketch_14.webp" alt="Study 14" loading="lazy"></div>
+    <div class="work-image"><img src="/artwork/gallery/notes/sketch_14.webp" alt="Note 14" loading="lazy"></div>
+</div>
+<div class="work-item sketch-item">
+    <div class="work-image"><img src="/artwork/gallery/notes/warpsmoke.webp" alt="Warp Smoke" loading="lazy"></div>
 </div>
 
                 </div>
@@ -3462,11 +3507,96 @@ body.adhd-mode #ios-brush-selector {
     </div>
 </div>
 
-<!-- Fullscreen viewer for Studies still images. -->
+<div id="page-digital-studies" class="page-overlay still-grid-page">
+    <div class="overlay-content">
+        <div class="works-container">
+            <div class="works-grid mode-studies">
+                <div class="work-item sketch-item" data-tall-feature="true">
+                    <div class="work-image"><img src="/artwork/digital/studies/warpsmoke.webp" alt="Warp Smoke" loading="lazy"></div>
+                </div>
+
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/motionnewyork_01.webp" alt="New York Study 1" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/aliceswirl.webp" alt="Alice Swirl" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/pinkhorse.webp" alt="Pink Horse" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/computerstudy_01.webp" alt="Computer Study 1" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/falling_03.webp" alt="Falling" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/neonvibe.webp" alt="Neon Vibe" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/rainbowman.webp" alt="Rainbow Man" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/carpeople.webp" alt="Car People" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/trex.webp" alt="T-Rex" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/motionnewyork_02.webp" alt="New York Study 2" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/concretejungle.webp" alt="Concrete Jungle" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/computerstudy_02.webp" alt="Computer Study 2" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/hotelpink.webp" alt="Hotel Pink" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/pillowflump.webp" alt="Pillow Flump" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/buildingyellow.webp" alt="Building Yellow" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/fishguts.webp" alt="Fish Guts" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/unicorn.webp" alt="Unicorn" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/lighttree.webp" alt="Light Tree" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/neonvibe_01.webp" alt="Neon Vibe 1" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/neonvibe_02.webp" alt="Neon Vibe 2" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/neonvibe_03.webp" alt="Neon Vibe 3" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/neonvibe_04.webp" alt="Neon Vibe 4" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/fireman.webp" alt="Fireman" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/digital/studies/fireman02.webp" alt="Fireman 2" loading="lazy"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen viewer shared by Notes and Digital Studies. -->
 <div id="studies-viewer" class="studies-viewer" aria-hidden="true">
-    <div class="lightbox-close" id="studies-viewer-close" role="button" tabindex="0" aria-label="Close Studies viewer">×</div>
-    <div class="slider-arrow left-arrow" id="studies-viewer-prev" role="button" tabindex="0" aria-label="Previous Study"></div>
-    <div class="slider-arrow right-arrow" id="studies-viewer-next" role="button" tabindex="0" aria-label="Next Study"></div>
+    <div class="lightbox-close" id="studies-viewer-close" role="button" tabindex="0" aria-label="Close image viewer">×</div>
+    <div class="slider-arrow left-arrow" id="studies-viewer-prev" role="button" tabindex="0" aria-label="Previous image"></div>
+    <div class="slider-arrow right-arrow" id="studies-viewer-next" role="button" tabindex="0" aria-label="Next image"></div>
     <div class="studies-image-stage" id="studies-image-stage">
         <img id="studies-viewer-image-a" class="studies-viewer-image is-active" alt="">
         <img id="studies-viewer-image-b" class="studies-viewer-image" alt="">
@@ -3526,6 +3656,7 @@ body.adhd-mode #ios-brush-selector {
             <div class="lightbox-left">
                 <div id="lb-prev" class="slider-arrow left-arrow" onclick="prevLbImage(event)" style="display:none; left: 20px; z-index: 20;"></div>
                 
+                <img id="lb-img-buffer" src="" alt="" aria-hidden="true">
                 <img id="lb-img" src="" alt="Artwork">
 <div id="lb-img-loader" class="img-loader" style="display:none;"><div class="img-loader-bar"></div></div>
 <model-viewer id="lb-model" style="display:none; width:100%; height:90vh; min-width:400px; min-height:400px;" auto-rotate camera-controls shadow-intensity="1" interaction-prompt="none"></model-viewer>
@@ -3886,14 +4017,20 @@ function handleRouting() {
                 const target = document.querySelector(`[data-slug="${gallerySlugMatch[1]}"]`);
                 if (target) target.click();
             }
-        } else if (normalizedPath.includes('/studies') || normalizedPath.includes('/sketches')) {
+        } else if (normalizedPath === '/studies') {
+            updatePageMeta("Tyrone Moreno | Digital Studies");
+            openDigitalStudies();
+        } else if (normalizedPath.includes('/notes') || normalizedPath.includes('/sketches')) {
             if (normalizedPath.includes('/sketches')) {
-                window.history.replaceState(null, '', '/studies/');
+                window.history.replaceState(null, '', '/notes/');
             }
-            updatePageMeta("Tyrone Moreno | Studies");
-            openSketches();
-        } else if (normalizedPath.includes('/motion')) {
-            updatePageMeta("Tyrone Moreno | Motion");
+            updatePageMeta("Tyrone Moreno | Notes");
+            openNotes();
+        } else if (normalizedPath.includes('/digital') || normalizedPath.includes('/motion')) {
+            if (normalizedPath.includes('/motion')) {
+                window.history.replaceState(null, '', '/digital/');
+            }
+            updatePageMeta("Tyrone Moreno | Digital");
             openMotion();
         } else if (normalizedPath.includes('/contact')) {
             updatePageMeta("Tyrone Moreno | Contact"); // <-- ADDED
@@ -4292,7 +4429,8 @@ btnStore.addEventListener('click', (e) => {
         const btnGalleryLogo = document.getElementById('btn-gallery-logo');
         const btnPaint = document.getElementById('btn-paint');
         const btnMotion = document.getElementById('btn-motion');
-const btnSketches = document.getElementById('btn-sketches');
+const btnDigitalStudies = document.getElementById('btn-digital-studies');
+const btnNotes = document.getElementById('btn-notes');
         const btnAbout = document.getElementById('btn-about');
         const btnGallery = document.getElementById('btn-gallery');
         const btnExhibitions = document.getElementById('btn-exhibitions');
@@ -4301,7 +4439,8 @@ const btnSketches = document.getElementById('btn-sketches');
         
         const pageAbout = document.getElementById('page-about');
         const pageWorks = document.getElementById('page-works');
-const pageSketches = document.getElementById('page-sketches');
+const pageNotes = document.getElementById('page-notes');
+const pageDigitalStudies = document.getElementById('page-digital-studies');
 const pageMotion = document.getElementById('page-motion');
 
 let pendingGallerySeoItem = null;
@@ -4539,6 +4678,106 @@ function planMediaTallCluster(
     };
 }
 
+function planForcedStudiesTallCluster(
+    tallEntry,
+    sideEntries,
+    containerWidth,
+    gap,
+    targetHeight
+) {
+    if (!tallEntry || sideEntries.length < 2) return null;
+
+    const candidates = sideEntries.slice();
+    let best = null;
+
+    /* Try every consecutive two-row split and keep the most balanced one.
+       Unlike the generic planner, this intentionally uses all remaining
+       Digital Studies images so the tall work and its neighbours form one
+       compact feature block with no dead space. */
+    for (let split = 1; split < candidates.length; split++) {
+        const rows = [
+            candidates.slice(0, split),
+            candidates.slice(split)
+        ];
+        let clusterHeight = targetHeight * 2 + gap;
+        let metrics = null;
+        let tallWidth = 0;
+        let sideWidth = 0;
+        let valid = true;
+
+        for (let iteration = 0; iteration < 8; iteration++) {
+            tallWidth = tallEntry.ratio * clusterHeight;
+            sideWidth = containerWidth - gap - tallWidth;
+
+            if (
+                sideWidth <= containerWidth * 0.44 ||
+                tallWidth >= containerWidth * 0.46
+            ) {
+                valid = false;
+                break;
+            }
+
+            metrics = rows.map((row) =>
+                mediaTallRowMetrics(row, sideWidth, gap)
+            );
+            if (metrics.some((metric) => !Number.isFinite(metric.height))) {
+                valid = false;
+                break;
+            }
+
+            const nextHeight =
+                metrics[0].height + gap + metrics[1].height;
+            if (Math.abs(nextHeight - clusterHeight) < 0.5) {
+                clusterHeight = nextHeight;
+                break;
+            }
+            clusterHeight = nextHeight;
+        }
+
+        if (!valid || !metrics) continue;
+
+        tallWidth = tallEntry.ratio * clusterHeight;
+        sideWidth = containerWidth - gap - tallWidth;
+        metrics = rows.map((row) =>
+            mediaTallRowMetrics(row, sideWidth, gap)
+        );
+        clusterHeight = metrics[0].height + gap + metrics[1].height;
+        tallWidth = tallEntry.ratio * clusterHeight;
+        sideWidth = containerWidth - gap - tallWidth;
+
+        const minSideItemWidth = Math.min(
+            ...metrics.flatMap((metric) => metric.widths)
+        );
+        const balance = Math.abs(
+            Math.log(Math.max(0.01, metrics[0].height / metrics[1].height))
+        );
+        const targetError = metrics.reduce(
+            (sum, metric) =>
+                sum + Math.abs(
+                    Math.log(Math.max(0.01, metric.height / targetHeight))
+                ),
+            0
+        );
+        const narrowPenalty = minSideItemWidth < containerWidth * 0.12
+            ? 8
+            : 0;
+        const score = balance * 2.2 + targetError + narrowPenalty;
+
+        if (!best || score < best.score) {
+            best = {
+                score,
+                count: candidates.length,
+                rows,
+                clusterHeight,
+                tallWidth,
+                sideWidth
+            };
+        }
+    }
+
+    return best;
+}
+
 function buildMediaTallCluster({
     grid,
     tallEntry,
@@ -4605,7 +4844,10 @@ function layoutMediaTallSequence({
 
     while (index < entries.length) {
         const entry = entries[index];
-        if (entry.ratio > MEDIA_TALL_RATIO_THRESHOLD) {
+        const isTallFeature =
+            entry.ratio <= MEDIA_TALL_RATIO_THRESHOLD ||
+            entry.item.dataset.tallFeature === 'true';
+        if (!isTallFeature) {
             segment.push(entry);
             index++;
             continue;
@@ -5018,10 +5260,9 @@ function layoutStudySegment(
     );
 }
 
-function layoutStudiesRows() {
-    studiesLayoutFrame = 0;
-    if (!pageSketches) return;
-    const grid = pageSketches.querySelector('.works-grid.mode-studies');
+function layoutStillImagePage(page) {
+    if (!page) return;
+    const grid = page.querySelector('.works-grid.mode-studies');
     if (!grid) return;
 
     unwrapMediaTallClusters(grid, '.sketch-item');
@@ -5040,8 +5281,72 @@ function layoutStudiesRows() {
         };
     });
 
+    /* Extra-tall images are handled by the shared bounded cluster planner below.
+       This keeps only a small group beside the portrait and lets the remaining
+       studies continue in normal justified rows. */
+
+    const hasSpanningStudy = entries.some(
+        (entry) => Number(entry.item.dataset.studySpan || 1) > 1
+    );
+
+    if (hasSpanningStudy) {
+        let segment = [];
+
+        const flushSegment = (closeBoundary) => {
+            if (!segment.length) return;
+            layoutStudySegment(
+                segment,
+                containerWidth,
+                gap,
+                targetHeight,
+                closeBoundary
+            );
+            segment = [];
+        };
+
+        entries.forEach((entry) => {
+            const span = Math.max(
+                1,
+                Number(entry.item.dataset.studySpan || 1)
+            );
+
+            if (span <= 1) {
+                segment.push(entry);
+                return;
+            }
+
+            flushSegment(true);
+
+            /* Keep the source image uncropped. On desktop/iPad this gives the
+               portrait the visual width of two normal columns; on phones it
+               becomes a natural-aspect full-width feature. */
+            const naturalColumnWidth = entry.ratio * targetHeight;
+            const featureWidth = window.innerWidth <= 768
+                ? containerWidth
+                : Math.min(
+                    containerWidth,
+                    naturalColumnWidth * span + gap * (span - 1)
+                );
+            const featureHeight = featureWidth / Math.max(0.01, entry.ratio);
+
+            applyStudiesRow(
+                [entry],
+                featureWidth,
+                0,
+                targetHeight,
+                true,
+                featureHeight
+            );
+        });
+
+        flushSegment(false);
+        return;
+    }
+
     const hasExtraTallMedia = entries.some(
-        (entry) => entry.ratio <= MEDIA_TALL_RATIO_THRESHOLD
+        (entry) =>
+            entry.ratio <= MEDIA_TALL_RATIO_THRESHOLD ||
+            entry.item.dataset.tallFeature === 'true'
     );
 
     if (hasExtraTallMedia) {
@@ -5083,6 +5388,11 @@ function layoutStudiesRows() {
     );
 }
 
+function layoutStudiesRows() {
+    studiesLayoutFrame = 0;
+    document.querySelectorAll('.still-grid-page').forEach(layoutStillImagePage);
+}
+
 
 function scheduleStudiesRowLayout() {
     if (studiesLayoutFrame) cancelAnimationFrame(studiesLayoutFrame);
@@ -5091,16 +5401,14 @@ function scheduleStudiesRowLayout() {
     });
 }
 
-if (pageSketches) {
-    pageSketches.querySelectorAll('.sketch-item img').forEach((image) => {
-        if (image.complete && image.naturalWidth) {
-            image.closest('.sketch-item').dataset.studyRatio =
-                String(image.naturalWidth / image.naturalHeight);
-        } else {
-            image.addEventListener('load', scheduleStudiesRowLayout, { once: true });
-        }
-    });
-}
+document.querySelectorAll('.still-grid-page .sketch-item img').forEach((image) => {
+    if (image.complete && image.naturalWidth) {
+        image.closest('.sketch-item').dataset.studyRatio =
+            String(image.naturalWidth / image.naturalHeight);
+    } else {
+        image.addEventListener('load', scheduleStudiesRowLayout, { once: true });
+    }
+});
 window.addEventListener('resize', scheduleStudiesRowLayout);
         const pageExhibitions = document.getElementById('page-exhibitions');
         const pagePress = document.getElementById('page-press');
@@ -5162,9 +5470,11 @@ function clearNavigation() {
     if (typeof window.pauseMotionPage === 'function') window.pauseMotionPage();
     pageAbout.classList.remove('visible');
     pageWorks.classList.remove('visible');
-    pageSketches.classList.remove('visible');
+    pageNotes.classList.remove('visible');
+    pageDigitalStudies.classList.remove('visible');
     pageMotion.classList.remove('visible');
     btnMotion.classList.remove('active');
+    btnDigitalStudies.classList.remove('active');
     pageExhibitions.classList.remove('visible');
     pagePress.classList.remove('visible');
     pageContact.classList.remove('visible');
@@ -5180,7 +5490,7 @@ function clearNavigation() {
     isPaintingActive = true;
             
     btnAbout.classList.remove('active');
-    btnSketches.classList.remove('active');
+    btnNotes.classList.remove('active');
     btnGallery.classList.remove('active');
     btnExhibitions.classList.remove('active');
     btnPress.classList.remove('active');
@@ -5298,28 +5608,48 @@ function openAdhdPage() {
     adhdStartWikiFeed();
     requestAnimationFrame(adhdTick);
 }
-function openSketches() {
-isPaintingActive = false;
-saveLastPage('studies');
-    if (pageSketches.classList.contains('visible')) {
+function openNotes() {
+    isPaintingActive = false;
+    saveLastPage('notes');
+    updatePageMeta("Tyrone Moreno | Notes");
+    if (pageNotes.classList.contains('visible')) {
         scheduleStudiesRowLayout();
         return;
     }
     clearNavigation();
-    pageSketches.classList.add('visible');
-    btnSketches.classList.add('active');
-    btnGallery.classList.add('active'); // Studies remains grouped under Gallery
+    pageNotes.classList.add('visible');
+    btnNotes.classList.add('active');
+    btnGallery.classList.add('active');
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
-    updateFooterIcons('studies');
+    updateFooterIcons('other');
+    scheduleStudiesRowLayout();
+}
+function openDigitalStudies() {
+    isPaintingActive = false;
+    saveLastPage('digital-studies');
+    updatePageMeta("Tyrone Moreno | Digital Studies");
+    if (pageDigitalStudies.classList.contains('visible')) {
+        scheduleStudiesRowLayout();
+        return;
+    }
+    clearNavigation();
+    pageDigitalStudies.classList.add('visible');
+    btnDigitalStudies.classList.add('active');
+    btnMotion.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+    if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
+    updateFooterIcons('other');
     scheduleStudiesRowLayout();
 }
 function openMotion() {
 isPaintingActive = false;
-saveLastPage('motion');
-    /* Motion has its own navigation state. Gallery should remain at the
-       normal grey opacity whenever Motion is the selected page. */
+saveLastPage('digital');
+updatePageMeta("Tyrone Moreno | Digital");
+    /* Digital has its own navigation state. Gallery should remain at the
+       normal grey opacity whenever Digital is the selected page. */
     btnGallery.classList.remove('active');
     if (pageMotion.classList.contains('visible')) {
         btnMotion.classList.add('active');
@@ -5335,7 +5665,7 @@ saveLastPage('motion');
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other'); // No zoom/layout toggles needed for a fixed video grid
 
-    /* Motion media is deliberately initialized only when this page is opened. */
+    /* Digital motion media is deliberately initialized only when this page is opened. */
     if (typeof window.ensureMotionPageLoaded === 'function') window.ensureMotionPageLoaded();
     else window.__motionOpenRequested = true;
 }
@@ -5349,17 +5679,79 @@ saveLastPage('motion');
         btnPaint.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/play/'); clearNavigation(); updatePageMeta("Tyrone Moreno | Play"); });
         
         btnAbout.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/about/'); openAbout(); });
-btnSketches.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/studies/'); openSketches(); });
-btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/motion/'); openMotion(); });
+btnNotes.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/notes/'); openNotes(); });
+btnDigitalStudies.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/studies/'); openDigitalStudies(); });
+btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/digital/'); openMotion(); });
         btnGallery.addEventListener('click', (e) => { e.preventDefault(); window.history.pushState(null, '', '/gallery/'); openWorks(); });
-        btnGallery.addEventListener('mouseenter', () => { if (window.innerWidth > 1024) { window.history.replaceState(null, '', '/gallery/'); openWorks(); }});
-        btnGallery.addEventListener('touchend', (e) => {
-            if (window.innerWidth <= 1024) {
-                e.preventDefault();
-                window.history.pushState(null, '', '/gallery/');
+        btnGallery.addEventListener('mouseenter', () => {
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                window.history.replaceState(null, '', '/gallery/');
                 openWorks();
             }
         });
+
+        /* Reliable iPhone/iPad dropdown behaviour.
+           First tap opens the submenu; tapping the main label again opens its
+           page. Submenu links stay clickable, and tapping elsewhere closes it. */
+        const navDropdowns = Array.from(document.querySelectorAll('.nav-links .dropdown'));
+        const usesTouchDropdowns = () =>
+            window.matchMedia('(hover: none), (pointer: coarse)').matches ||
+            navigator.maxTouchPoints > 0;
+
+        function setNavDropdownOpen(dropdown, shouldOpen) {
+            if (!dropdown) return;
+            dropdown.classList.toggle('is-open', shouldOpen);
+            const trigger = dropdown.querySelector(':scope > .dropbtn');
+            if (trigger) trigger.setAttribute('aria-expanded', String(shouldOpen));
+        }
+
+        function closeNavDropdowns(except = null) {
+            navDropdowns.forEach((dropdown) => {
+                if (dropdown !== except) setNavDropdownOpen(dropdown, false);
+            });
+        }
+
+        navDropdowns.forEach((dropdown) => {
+            const trigger = dropdown.querySelector(':scope > .dropbtn');
+            const menuLinks = dropdown.querySelectorAll('.dropdown-content a');
+            if (!trigger) return;
+
+            /* Capture phase prevents the existing route handler from firing on
+               the first tap, while allowing it normally on the second tap. */
+            trigger.addEventListener('click', (event) => {
+                if (!usesTouchDropdowns()) return;
+
+                const isOpen = dropdown.classList.contains('is-open');
+                if (!isOpen) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    closeNavDropdowns(dropdown);
+                    setNavDropdownOpen(dropdown, true);
+                    return;
+                }
+
+                setNavDropdownOpen(dropdown, false);
+            }, true);
+
+            menuLinks.forEach((link) => {
+                link.addEventListener('click', () => {
+                    if (!usesTouchDropdowns()) return;
+                    setNavDropdownOpen(dropdown, false);
+                }, true);
+            });
+        });
+
+        document.addEventListener('pointerdown', (event) => {
+            if (!usesTouchDropdowns()) return;
+            if (event.target.closest('.nav-links .dropdown')) return;
+            closeNavDropdowns();
+        }, true);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeNavDropdowns();
+        });
+
+        window.addEventListener('orientationchange', () => closeNavDropdowns());
 
         btnExhibitions.addEventListener('click', (e) => {
             e.preventDefault();
@@ -5448,23 +5840,29 @@ isPaintingActive = false;
         let currentLbIndex = 0;
         let currentContinuousScale = 1; // Tracks exact scale for pinch-to-zoom
 
+        let lightboxMediaRenderToken = 0;
+        let lightboxPaintedSrc = '';
+
         function renderLightboxMedia(src) {
+            const renderToken = ++lightboxMediaRenderToken;
             const lbImg = document.getElementById('lb-img');
+            const lbImgBuffer = document.getElementById('lb-img-buffer');
             const lbModel = document.getElementById('lb-model');
             const fsBtn = document.getElementById('lb-fullscreen-btn');
             const lbLoader = document.getElementById('lb-model-loader');
             const lbImgLoader = document.getElementById('lb-img-loader');
-            
+
             if (src && src.toLowerCase().endsWith('.glb')) {
                 lbImg.style.display = 'none';
+                lbImgBuffer.style.display = 'none';
+                lightboxPaintedSrc = '';
                 lbImgLoader.style.display = 'none';
                 lbModel.style.display = 'block';
-                fsBtn.style.display = 'none'; // Hide button for 3D
-                
-                // Small centered loading bar while the model streams in, hidden once it's ready
+                fsBtn.style.display = 'none';
+
                 lbLoader.style.display = 'block';
                 lbModel.style.opacity = '0';
-                
+
                 if (!lbModel.dataset.loadListenerAttached) {
                     lbModel.addEventListener('load', () => {
                         lbLoader.style.display = 'none';
@@ -5472,30 +5870,92 @@ isPaintingActive = false;
                     });
                     lbModel.dataset.loadListenerAttached = 'true';
                 }
-                
+
                 lbModel.src = null;
                 requestAnimationFrame(() => { lbModel.src = src; });
-            } else {
-                lbModel.style.display = 'none';
-                lbModel.src = null;
-                lbLoader.style.display = 'none';
-                lbImg.style.display = 'block';
-                fsBtn.style.display = 'block'; // Show button for Images
-
-                // Same small loading bar treatment as the .glb model, shown
-                // while the (often high-res) art image loads in, hidden once ready.
-                lbImgLoader.style.display = 'block';
-                lbImg.style.opacity = '0';
-                lbImg.onload = () => {
-                    lbImgLoader.style.display = 'none';
-                    lbImg.style.opacity = '1';
-                };
-                lbImg.onerror = () => {
-                    lbImgLoader.style.display = 'none';
-                    lbImg.style.opacity = '1';
-                };
-                lbImg.src = src;
+                return;
             }
+
+            lbModel.style.display = 'none';
+            lbModel.src = null;
+            lbLoader.style.display = 'none';
+            lbImg.style.display = 'block';
+            fsBtn.style.display = 'block';
+
+            const currentSrc = lightboxPaintedSrc || lbImg.currentSrc || lbImg.src || '';
+            const hasVisibleArtwork = Boolean(lightboxPaintedSrc) || (
+                lbImg.naturalWidth > 1 && !currentSrc.startsWith('data:image/gif')
+            );
+
+            lbImgLoader.style.display = hasVisibleArtwork ? 'none' : 'block';
+            lbImg.style.opacity = '1';
+            lbImg.onload = null;
+            lbImg.onerror = null;
+
+            // Decode the target completely before touching the visible image.
+            const preloadedImage = new Image();
+            preloadedImage.decoding = 'async';
+
+            const commitImage = () => {
+                if (renderToken !== lightboxMediaRenderToken) return;
+
+                // The buffer already holds the current decoded artwork. Showing it
+                // synchronously covers the main image while its source is replaced.
+                // We then remove it without a fade only after the new frame has
+                // decoded and survived two paint cycles, avoiding black or blue GPU
+                // compositing flashes when rapidly switching front/back images.
+                if (hasVisibleArtwork) {
+                    lbImgBuffer.src = currentSrc;
+                    lbImgBuffer.style.display = 'block';
+                } else {
+                    lbImgBuffer.style.display = 'none';
+                }
+
+                lbImg.src = src;
+                lbImg.style.opacity = '1';
+                lbImgLoader.style.display = 'none';
+
+                const revealReplacement = () => {
+                    if (renderToken !== lightboxMediaRenderToken) return;
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            if (renderToken !== lightboxMediaRenderToken) return;
+                            lbImgBuffer.style.display = 'none';
+                            lightboxPaintedSrc = src;
+                            // Keep the newly decoded frame warm for the next swap.
+                            lbImgBuffer.src = src;
+                        });
+                    });
+                };
+
+                if (typeof lbImg.decode === 'function') {
+                    lbImg.decode().catch(() => {}).finally(revealReplacement);
+                } else if (lbImg.complete && lbImg.naturalWidth > 1) {
+                    revealReplacement();
+                } else {
+                    lbImg.onload = revealReplacement;
+                    lbImg.onerror = () => {
+                        if (renderToken !== lightboxMediaRenderToken) return;
+                        // Keep the previous frame visible if the replacement fails.
+                        lbImgBuffer.style.display = hasVisibleArtwork ? 'block' : 'none';
+                    };
+                }
+            };
+
+            preloadedImage.onload = () => {
+                if (typeof preloadedImage.decode === 'function') {
+                    preloadedImage.decode().catch(() => {}).finally(commitImage);
+                } else {
+                    commitImage();
+                }
+            };
+
+            preloadedImage.onerror = () => {
+                if (renderToken !== lightboxMediaRenderToken) return;
+                lbImgLoader.style.display = 'none';
+            };
+
+            preloadedImage.src = src;
         }
 
         function toggleFullscreen(e) {
@@ -5524,7 +5984,11 @@ isPaintingActive = false;
             const prevArrow = document.getElementById('lb-prev');
             const nextArrow = document.getElementById('lb-next');
 
-             if (altSrc) {
+             if (Array.isArray(altSrc) && altSrc.length) {
+                lightboxImages = [src, ...altSrc].filter(Boolean);
+                prevArrow.style.display = lightboxImages.length > 1 ? 'block' : 'none';
+                nextArrow.style.display = lightboxImages.length > 1 ? 'block' : 'none';
+            } else if (altSrc) {
                 lightboxImages = [src, altSrc];
                 prevArrow.style.display = 'block';
                 nextArrow.style.display = 'block';
@@ -6119,7 +6583,8 @@ if (e.touches.length === 2 && initialPinchDistance) {
     if(
         pageAbout.classList.contains('visible') || 
         pageWorks.classList.contains('visible') || 
-        pageSketches.classList.contains('visible') || // Added Sketches
+        pageNotes.classList.contains('visible') ||
+        pageDigitalStudies.classList.contains('visible') ||
         pageMotion.classList.contains('visible') || // Added Motion
         pageExhibitions.classList.contains('visible') ||
         pagePress.classList.contains('visible') ||
@@ -6244,7 +6709,8 @@ window.addEventListener('mousemove', e => {
     if(
         !pageAbout.classList.contains('visible') && 
         !pageWorks.classList.contains('visible') && 
-        !pageSketches.classList.contains('visible') && // Added Sketches
+        !pageNotes.classList.contains('visible') &&
+        !pageDigitalStudies.classList.contains('visible') &&
         !pageMotion.classList.contains('visible') && // Added Motion
         !pageExhibitions.classList.contains('visible') &&
         !pagePress.classList.contains('visible') &&
@@ -6310,7 +6776,7 @@ function initDragSystem() {
     let originalRotation = 0;
 
     document.querySelectorAll('.work-item').forEach(item => {
-        if (item.closest('#page-sketches')) return;
+        if (item.closest('.still-grid-page')) return;
         if (!item.dataset.dragX) item.dataset.dragX = 0;
         if (!item.dataset.dragY) item.dataset.dragY = 0;
 
@@ -6559,15 +7025,15 @@ function initCollageData() {
 function updateGalleryLayout() {
     if (!collageDataInitialized) initCollageData();
     
-    // The Motion page grid is always forced into collage mode via its own
+    // The Digital page grid is always forced into collage mode via its own
     // CSS (#page-motion .works-grid.mode-collage) and must never be flipped
     // to rows mode by the Sketches page's rows/collage toggle — excluding
     // it here is what keeps the two pages' layouts independent.
     const grids = Array.from(document.querySelectorAll('.works-grid')).filter(
-        (grid) => !grid.closest('#page-motion') && !grid.closest('#page-sketches')
+        (grid) => !grid.closest('#page-motion') && !grid.closest('.still-grid-page')
     );
     const items = Array.from(document.querySelectorAll('.work-item')).filter(
-        (item) => !item.closest('#page-motion') && !item.closest('#page-sketches')
+        (item) => !item.closest('#page-motion') && !item.closest('.still-grid-page')
     );
 
     let columnsCss = '1fr';
@@ -6638,7 +7104,7 @@ items.forEach((item) => {
     // --- PASS 2: after layout has settled, measure which items are actually
     // in the first visual row and only apply pull-up / rotation to the rest ---
     requestAnimationFrame(() => {
-        const sketchGrid = document.querySelector('#page-sketches .works-grid');
+        const sketchGrid = document.querySelector('.still-grid-page .works-grid');
         let topRowY = null;
 
         if (sketchGrid) {
@@ -7476,13 +7942,19 @@ window.addEventListener('popstate', (event) => {
     if (normalizedPath.endsWith('/about')) {
         openAbout();
     } 
-    else if (normalizedPath.endsWith('/studies') || normalizedPath.endsWith('/sketches')) {
+    else if (normalizedPath.endsWith('/studies')) {
+        openDigitalStudies();
+    }
+    else if (normalizedPath.endsWith('/notes') || normalizedPath.endsWith('/sketches')) {
         if (normalizedPath.endsWith('/sketches')) {
-            window.history.replaceState(null, '', '/studies/');
+            window.history.replaceState(null, '', '/notes/');
         }
-        openSketches();
-    } 
-    else if (normalizedPath.endsWith('/motion')) {
+        openNotes();
+    }
+    else if (normalizedPath.endsWith('/digital') || normalizedPath.endsWith('/motion')) {
+        if (normalizedPath.endsWith('/motion')) {
+            window.history.replaceState(null, '', '/digital/');
+        }
         openMotion();
     }
     else if (normalizedPath.endsWith('/play') || normalizedPath.endsWith('/paint')) {
@@ -7588,9 +8060,11 @@ function updateGalleryQuality() {
             const fileName = img.dataset.thumbnail.split('/').pop();
             const cleanName = fileName.replace('_thumbnail', '');
             
-            // Only update if not already set to high-res
-            if (!img.src.includes('/artwork/small/')) {
-                img.src = `/artwork/small/${cleanName}`;
+            // Thumbnails live in /artwork/gallery/work/thumbnails/ and full-size files live in /artwork/gallery/work/.
+            // Build the high-resolution path from the thumbnail filename.
+            const highResPath = `/artwork/gallery/work/${cleanName}`;
+            if (!img.src.endsWith(highResPath)) {
+                img.src = highResPath;
             }
         } else {
             // Swap back to thumbnail
@@ -7611,12 +8085,12 @@ window.addEventListener('resize', () => {
 
 // --- MOTION PAGE: adaptive aspect-ratio cards and canvas-rendered seamless loops. ---
 (function () {
-    const MOTION_FOLDER = '/artwork/motion/';
+    const MOTION_FOLDER = '/artwork/digital/motion/';
     const MOTION_PHONE_FOLDER = MOTION_FOLDER + 'phone/';
     const MOTION_POSTER_FOLDER = MOTION_FOLDER + 'posters/';
 
     /* Static GitHub Pages file list. Add any future MP4 filename here after
-       uploading it to artwork/motion. The list is only used when the Motion
+       uploading it to artwork/digital/motion. The list is only used when the Digital
        page is opened, so these files do not load on the home/gallery pages. */
     const MOTION_FILES = Object.freeze([
   'jeff_01.mp4',
@@ -10969,7 +11443,7 @@ window.addEventListener('resize', () => {
     });
 
     /* handleRouting() runs earlier in this document, so direct visits to
-       /motion/ leave this flag for the deferred module to consume. */
+       /digital/ leave this flag for the deferred module to consume. */
     if (window.__motionOpenRequested || document.getElementById('page-motion').classList.contains('visible')) {
         window.__motionOpenRequested = false;
         ensureMotionPageLoaded();
@@ -11801,7 +12275,7 @@ function initTestArtEngine() {
 
 <script>
 (() => {
-    const page = document.getElementById('page-sketches');
+    const pages = Array.from(document.querySelectorAll('.still-grid-page'));
     const viewer = document.getElementById('studies-viewer');
     const stage = document.getElementById('studies-image-stage');
     const layers = [
@@ -11812,17 +12286,9 @@ function initTestArtEngine() {
     const previousButton = document.getElementById('studies-viewer-prev');
     const nextButton = document.getElementById('studies-viewer-next');
 
-    if (!page || !viewer || !stage || layers.some((layer) => !layer)) return;
+    if (!pages.length || !viewer || !stage || layers.some((layer) => !layer)) return;
 
-    const items = Array.from(page.querySelectorAll('.sketch-item'));
-    const sources = items.map((item) => {
-        const image = item.querySelector('img');
-        return {
-            src: image ? image.currentSrc || image.src : '',
-            alt: image ? image.alt : 'Study'
-        };
-    });
-
+    let sources = [];
     let currentIndex = 0;
     let activeLayer = 0;
     let requestToken = 0;
@@ -11875,7 +12341,8 @@ function initTestArtEngine() {
         });
     }
 
-    function open(index) {
+    function open(pageSources, index) {
+        sources = pageSources;
         currentIndex = index;
         viewer.classList.add('active');
         viewer.setAttribute('aria-hidden', 'false');
@@ -11891,18 +12358,29 @@ function initTestArtEngine() {
     function showPrevious() { reveal(currentIndex - 1); }
     function showNext() { reveal(currentIndex + 1); }
 
-    items.forEach((item, index) => {
-        item.setAttribute('role', 'button');
-        item.setAttribute('tabindex', '0');
-        item.setAttribute(
-            'aria-label',
-            `Open ${sources[index]?.alt || `Study ${index + 1}`} fullscreen`
-        );
-        item.addEventListener('click', () => open(index));
-        item.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            open(index);
+    pages.forEach((page) => {
+        const items = Array.from(page.querySelectorAll('.sketch-item'));
+        const pageSources = items.map((item) => {
+            const image = item.querySelector('img');
+            return {
+                src: image ? image.currentSrc || image.src : '',
+                alt: image ? image.alt : 'Image'
+            };
+        });
+
+        items.forEach((item, index) => {
+            item.setAttribute('role', 'button');
+            item.setAttribute('tabindex', '0');
+            item.setAttribute(
+                'aria-label',
+                `Open ${pageSources[index]?.alt || `Image ${index + 1}`} fullscreen`
+            );
+            item.addEventListener('click', () => open(pageSources, index));
+            item.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                open(pageSources, index);
+            });
         });
     });
 
