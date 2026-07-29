@@ -5753,6 +5753,42 @@ btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.
             });
         });
 
+        /* Close touch dropdowns as soon as the visitor begins scrolling.
+           Tracking actual finger movement avoids closing them on a simple tap
+           or because a newly opened page resets its own scroll position. */
+        let navTouchStartX = null;
+        let navTouchStartY = null;
+
+        document.addEventListener('touchstart', (event) => {
+            if (!usesTouchDropdowns() || !event.touches.length) return;
+            navTouchStartX = event.touches[0].clientX;
+            navTouchStartY = event.touches[0].clientY;
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchmove', (event) => {
+            if (!usesTouchDropdowns() || !event.touches.length) return;
+            if (navTouchStartX === null || navTouchStartY === null) return;
+
+            const dx = event.touches[0].clientX - navTouchStartX;
+            const dy = event.touches[0].clientY - navTouchStartY;
+            if (Math.hypot(dx, dy) > 7) {
+                closeNavDropdowns();
+                navTouchStartX = event.touches[0].clientX;
+                navTouchStartY = event.touches[0].clientY;
+            }
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchend', () => {
+            navTouchStartX = null;
+            navTouchStartY = null;
+        }, { passive: true, capture: true });
+
+        /* Also cover iPad trackpads and other wheel-based scrolling while the
+           device is using the touch-navigation mode. */
+        document.addEventListener('wheel', () => {
+            if (usesTouchDropdowns()) closeNavDropdowns();
+        }, { passive: true, capture: true });
+
         document.addEventListener('pointerdown', (event) => {
             if (!usesTouchDropdowns()) return;
             if (event.target.closest('.nav-links .dropdown')) return;
