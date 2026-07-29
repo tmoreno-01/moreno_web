@@ -915,6 +915,11 @@ body.site-loaded .copyright {
             }
         }
         
+        #page-works .work-item {
+            color: inherit;
+            text-decoration: none;
+        }
+
         .work-item { 
             position: relative; 
             display: flex; 
@@ -1197,7 +1202,13 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 }
 
 .lightbox-text { max-width: 350px; }
-.lightbox-text strong { font-size: 1.4rem; display: block; margin-bottom: 5px; color: var(--text-color); }
+.lightbox-text strong,
+.lightbox-text h1 {
+    font-size: 1.4rem;
+    display: block;
+    margin: 0 0 5px;
+    color: var(--text-color);
+}
 .lightbox-specs { font-size: 1rem; color: var(--text-muted); margin-bottom: 15px; font-style: italic; }
 .lightbox-text p { font-size: 1rem; line-height: 1.6; color: var(--text-color); margin: 0; }
 .lb-email-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; transition: opacity 0.2s ease; }
@@ -1381,7 +1392,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 opacity 0.2s ease !important;
     opacity: 1 !important;
     z-index: auto !important;
-    cursor: zoom-in !important;
+    cursor: pointer !important;
     contain: layout style;
     will-change: transform;
     -webkit-tap-highlight-color: transparent;
@@ -1457,6 +1468,55 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     #page-sketches .works-grid.mode-studies {
         gap: 14px !important;
         margin-top: -8px !important;
+    }
+}
+
+/* --- EXTRA-TALL STUDIES / MOTION FEATURE TILES --- */
+/* Media narrower than the JavaScript threshold can occupy the height of two
+   neighbouring rows. The original source order is preserved: the tall item
+   stays first, followed by consecutive items stacked in two rows beside it. */
+.media-tall-cluster {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: var(--media-tall-gap, 22px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+.media-tall-cluster .media-tall-primary {
+    flex-shrink: 0 !important;
+    align-self: flex-start !important;
+    margin: 0 !important;
+}
+.media-tall-stack {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--media-tall-gap, 22px);
+}
+.media-tall-row {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--media-tall-gap, 22px);
+}
+.media-tall-row > .work-item {
+    margin: 0 !important;
+}
+
+/* A phone has too little horizontal room for a useful side stack. JavaScript
+   therefore renders an ultra-tall item as a full-width natural-aspect row. */
+@media (max-width: 768px) {
+    .media-tall-cluster {
+        display: block !important;
     }
 }
 
@@ -2275,7 +2335,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     transition: opacity 0.3s ease;
 }
 .product-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.product-right h2 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
+.product-right h1 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
 .prod-desc { font-size: 0.9rem; line-height: 1.4; opacity: 0.8; }
 .selector-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .prod-option-btn { 
@@ -3045,6 +3105,7 @@ body.adhd-mode #ios-brush-selector {
 
         <!-- Store Grid (Hidden until timer hits 0) -->
         <div id="store-content" style="width: 100%; max-width: 1200px; padding-top: 60px; display: none;">
+            <h1 class="visually-hidden">Shop art prints, original artworks, apparel and objects by Tyrone Moreno</h1>
             <!-- Editions/Apparel tabs hidden for now (no apparel stock yet) — to bring back, remove the style="display:none;" below -->
             <div class="store-tabs" style="display:none;">
                 <button class="store-tab active" data-collection="prints" onclick="switchStoreTab('prints', this)">Editions</button>
@@ -3113,12 +3174,12 @@ body.adhd-mode #ios-brush-selector {
             <div class="works-container">
      <div class="works-grid mode-collage">
     <!-- Vanquish -->
-    <div class="work-item" data-slug="vanquish" onclick="openLightbox('/artwork/small/vanquish_front.webp', 'Vanquish', '2026', '38 x 26 cm, Mixed media on cotton paper', '', '/artwork/small/vanquish_back.webp', false); window.history.pushState(null, '', '/gallery/vanquish/');">
+    <a class="work-item" data-slug="vanquish" onclick="event.preventDefault(); openLightbox('/artwork/small/vanquish_front.webp', 'Vanquish', '2026', '38 x 26 cm, Mixed media on cotton paper', '', '/artwork/small/vanquish_back.webp', false); window.history.pushState(null, '', '/gallery/vanquish/');" href="/gallery/vanquish/">
         <div class="work-image"><img src="/artwork/thumbnails/vanquish_front_thumbnail.webp" alt="Vanquish" loading="lazy"></div>
         <div class="work-caption"><span>Vanquish</span><span>2026</span></div>
-    </div>
+    </a>
     <!-- I like to praise you like I SHOULD (Skateboard Triptych) -->
-    <div class="work-item" id="art-praiseyou" data-slug="i-like-to-praise-you-like-i-should" onclick="openLightbox('/artwork/small/praiseyou_front.webp', 'I like to praise you like I SHOULD', '2026', 'Mixed media on my old skateboards', 'Dive deep head first<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/praiseyou_back.webp', false); window.history.pushState(null, '', '/gallery/i-like-to-praise-you-like-i-should/');">
+    <a class="work-item" id="art-praiseyou" data-slug="i-like-to-praise-you-like-i-should" onclick="event.preventDefault(); openLightbox('/artwork/small/praiseyou_front.webp', 'I like to praise you like I SHOULD', '2026', 'Mixed media on my old skateboards', 'Dive deep head first&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/praiseyou_back.webp', false); window.history.pushState(null, '', '/gallery/i-like-to-praise-you-like-i-should/');" href="/gallery/i-like-to-praise-you-like-i-should/">
         <div class="work-image no-shadow">
             <img class="single-fallback" src="/artwork/individual/skateboardmiddle.webp" alt="I like to praise you like I SHOULD" loading="lazy">
             <div class="sliced-container">
@@ -3128,28 +3189,28 @@ body.adhd-mode #ios-brush-selector {
             </div>
         </div>
         <div class="work-caption"><span>I like to praise you like I SHOULD</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 2. Splinter -->
-    <div class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/splinter/');">
+    <a class="work-item" id="art-peanut-butter" data-slug="splinter" onclick="event.preventDefault(); openLightbox('/artwork/small/splinter_small.webp', 'Splinter', '2026', '83x55cm, Mixed Media on Wood', 'Dropping anchor starboard 20 fathoms. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/splinter/');" href="/gallery/splinter/">
         <div class="work-image"><img src="/artwork/thumbnails/splinter_small_thumbnail.webp" alt="Splinter"></div>
         <div class="work-caption"><span>Splinter</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 3. Rubik -->
-<div class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it', null, false); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');">
+<a class="work-item" id="art-camera" data-slug="an-unsolved-constant" onclick="event.preventDefault(); openLightbox('/artwork/3d/rubik/rubikcompress.glb', 'An Unsolved Constant', '2026', '9x9x9cm, Mixed media on Rubiks cube', 'Do not try to solve it', null, false); window.history.pushState(null, '', '/gallery/an-unsolved-constant/');" href="/gallery/an-unsolved-constant/">
         <div class="work-image"><img src="/artwork/3d/rubik/rubik_poster.webp" alt="An Unsolved Constant"></div>
         <div class="work-caption"><span>An Unsolved Constant</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 1. No time 4 overthinking -->
-    <div class="work-item" data-slug="no-time-4-overthinking" onclick="openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp', false); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');">
+    <a class="work-item" data-slug="no-time-4-overthinking" onclick="event.preventDefault(); openLightbox('/artwork/small/notimeforoverthinking.webp', 'No time 4 overthinking', '2026', '25x18.5cm, Mixed Media on Cotton Paper', '', '/artwork/small/notimeforoverthinkingback.webp', false); window.history.pushState(null, '', '/gallery/no-time-4-overthinking/');" href="/gallery/no-time-4-overthinking/">
         <div class="work-image"><img src="/artwork/thumbnails/notimeforoverthinking_thumbnail.webp" alt="No time 4 overthinking"></div>
         <div class="work-caption"><span>No time 4 overthinking</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 4. Seven of Hearts (Sliced Grid) -->
-    <div class="work-item" id="art-sevenofhearts" data-slug="seven-of-hearts" onclick="openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp', false); window.history.pushState(null, '', '/gallery/seven-of-hearts/');">
+    <a class="work-item" id="art-sevenofhearts" data-slug="seven-of-hearts" onclick="event.preventDefault(); openLightbox('/artwork/small/sevenofhearts_small.webp', 'Seven of Hearts', '2026', '6.3x8.8cm, Mixed Media on Playing Cards', 'Knock, knock, knocking on heavens door', '/artwork/small/sevenofhearts_smallback.webp', false); window.history.pushState(null, '', '/gallery/seven-of-hearts/');" href="/gallery/seven-of-hearts/">
         <div class="work-image no-shadow">
             <img class="single-fallback" src="/artwork/thumbnails/sevenofhearts_small_thumbnail.webp" alt="Seven of Hearts">
             <div class="sliced-container">
@@ -3192,109 +3253,109 @@ body.adhd-mode #ios-brush-selector {
             </div>
         </div>
         <div class="work-caption"><span>Seven of Hearts</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 5. Dairy Pirates -->
-    <div class="work-item" data-slug="dairy-pirates" onclick="openLightbox('/artwork/small/dairypirates_small.webp', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/dairy-pirates/');">
+    <a class="work-item" data-slug="dairy-pirates" onclick="event.preventDefault(); openLightbox('/artwork/small/dairypirates_small.webp', 'Dairy Pirates', '2026', '43x42 cm, Mixed Media on Wood', 'Full fat &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/dairy-pirates/');" href="/gallery/dairy-pirates/">
         <div class="work-image"><img src="/artwork/thumbnails/dairypirates_small_thumbnail.webp" alt="Dairy Pirates"></div>
         <div class="work-caption"><span>Dairy Pirates</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 6. From the Chest -->
-    <div class="work-item" data-slug="from-the-chest" onclick="openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/from-the-chest/');">
+    <a class="work-item" data-slug="from-the-chest" onclick="event.preventDefault(); openLightbox('/artwork/small/fromthechest_small.jpg', 'From the Chest', '2026', '40x47.5cm, Mixed Media on Wood', 'Go and tag somin &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/from-the-chest/');" href="/gallery/from-the-chest/">
         <div class="work-image"><img src="/artwork/thumbnails/fromthechest_small_thumbnail.webp" alt="From the Chest" loading="lazy"></div>
         <div class="work-caption"><span>From the Chest</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 7. Soul of an Old Telephone Box -->
-    <div class="work-item" data-slug="soul-of-an-old-telephone-box" onclick="openLightbox('/artwork/small/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/soulofatelephone_smallback.jpg', false); window.history.pushState(null, '', '/gallery/soul-of-an-old-telephone-box/');">
+    <a class="work-item" data-slug="soul-of-an-old-telephone-box" onclick="event.preventDefault(); openLightbox('/artwork/small/soulofatelephone_small.jpg', 'Soul of an Old Telephone Box', '2026', '63x122cm, Mixed Media on Wood', 'Im going to the fckin beach, Kenneth. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/soulofatelephone_smallback.jpg', false); window.history.pushState(null, '', '/gallery/soul-of-an-old-telephone-box/');" href="/gallery/soul-of-an-old-telephone-box/">
         <div class="work-image"><img src="/artwork/thumbnails/soulofatelephone_small_thumbnail.webp" alt="Soul of an Old Telephone Box" loading="lazy"></div>
         <div class="work-caption"><span>Soul of an Old Telephone Box</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 8. BFEC -->
-    <div class="work-item" data-slug="bfec" onclick="openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/bfec/');">
+    <a class="work-item" data-slug="bfec" onclick="event.preventDefault(); openLightbox('/artwork/small/bfec_small.jpg', 'BFEC', '2026', '90x122cm, Mixed Media on Wood', 'Big, might be friendly &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/bfec/');" href="/gallery/bfec/">
         <div class="work-image"><img src="/artwork/thumbnails/bfec_small_thumbnail.webp" alt="BFEC" loading="lazy"></div>
         <div class="work-caption"><span>BFEC</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 9. Liminal some Time -->
-    <div class="work-item" data-slug="liminal-some-time" onclick="openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. <br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg', false); window.history.pushState(null, '', '/gallery/liminal-some-time/');">
+    <a class="work-item" data-slug="liminal-some-time" onclick="event.preventDefault(); openLightbox('/artwork/small/liminalsometime_small.jpg', 'Liminal some Time', '2026', '90x122cm, Mixed Media on Wood (Acrylic, Oil stick, India ink, Collage, Charcoal)', 'It\'s like describing a painting to someone who\'s never seen a painting before, and then asking them to paint it. &lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', '/artwork/small/liminalsometime_smallback.jpg', false); window.history.pushState(null, '', '/gallery/liminal-some-time/');" href="/gallery/liminal-some-time/">
         <div class="work-image"><img src="/artwork/thumbnails/liminalsometime_small_thumbnail.webp" alt="Liminal some Time" loading="lazy"></div>
         <div class="work-caption"><span>Liminal some Time</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 10. Nice day off, Peanut butter luck -->
-    <div class="work-item" data-slug="nice-day-off-peanut-butter-luck" onclick="openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/nice-day-off-peanut-butter-luck/');">
+    <a class="work-item" data-slug="nice-day-off-peanut-butter-luck" onclick="event.preventDefault(); openLightbox('/artwork/small/nicedayoff_small.jpg', 'Nice day off, Peanut butter luck', '2026', '60x45cm, Mixed Media on Wood', 'Spin again, against all odds the luck is with you this time.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/nice-day-off-peanut-butter-luck/');" href="/gallery/nice-day-off-peanut-butter-luck/">
         <div class="work-image"><img src="/artwork/thumbnails/nicedayoff_small_thumbnail.webp" alt="Nice day off, Peanut butter luck" loading="lazy"></div>
         <div class="work-caption"><span>Nice day off, Peanut butter luck</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 11. AB+ -->
-    <div class="work-item" data-slug="ab-plus" onclick="openLightbox('/artwork/small/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/ab-plus/');">
+    <a class="work-item" data-slug="ab-plus" onclick="event.preventDefault(); openLightbox('/artwork/small/ab_small.jpg', 'AB+', '2026', '20x21cm, Mixed Media on Wood', 'Donate your blood to the blood bank&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/ab-plus/');" href="/gallery/ab-plus/">
         <div class="work-image"><img src="/artwork/thumbnails/ab_small_thumbnail.webp" alt="AB+" loading="lazy"></div>
         <div class="work-caption"><span>AB+</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 12. Midsummer -->
-    <div class="work-item" data-slug="midsummer" onclick="openLightbox('/artwork/small/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/midsummer/');">
+    <a class="work-item" data-slug="midsummer" onclick="event.preventDefault(); openLightbox('/artwork/small/midsummer_small.jpg', 'Midsummer', '2026', '21x20cm, Mixed Media on Wood', 'Why is it so hot?&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/midsummer/');" href="/gallery/midsummer/">
         <div class="work-image"><img src="/artwork/thumbnails/midsummer_small_thumbnail.webp" alt="Midsummer" loading="lazy"></div>
         <div class="work-caption"><span>Midsummer</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 13. Seize the Lighthouse -->
-    <div class="work-item" data-slug="seize-the-lighthouse" onclick="openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/seize-the-lighthouse/');">
+    <a class="work-item" data-slug="seize-the-lighthouse" onclick="event.preventDefault(); openLightbox('/artwork/small/seizethelighthouse_small.jpg', 'Seize the Lighthouse', '2026', '56x61cm, Mixed Media on Wood', 'See through the mist, the sanctuary in the storm, safety from basking in the Light.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/seize-the-lighthouse/');" href="/gallery/seize-the-lighthouse/">
         <div class="work-image"><img src="/artwork/thumbnails/seizethelighthouse_small_thumbnail.webp" alt="Seize the Lighthouse" loading="lazy"></div>
         <div class="work-caption"><span>Seize the Lighthouse</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 14. Pedestrian Crossing -->
-    <div class="work-item" data-slug="pedestrian-crossing" onclick="openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/pedestrian-crossing/');">
+    <a class="work-item" data-slug="pedestrian-crossing" onclick="event.preventDefault(); openLightbox('/artwork/small/pedestriancrossing_small.jpg', 'Pedestrian Crossing', '2026', '40x48cm, Mixed Media on Wood', 'Why does the pedestrian cross the road.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/pedestrian-crossing/');" href="/gallery/pedestrian-crossing/">
         <div class="work-image"><img src="/artwork/thumbnails/pedestriancrossing_small_thumbnail.webp" alt="Pedestrian Crossing" loading="lazy"></div>
         <div class="work-caption"><span>Pedestrian Crossing</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 15. Is the Grass Greener? -->
-    <div class="work-item" data-slug="is-the-grass-greener" onclick="openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/is-the-grass-greener/');">
+    <a class="work-item" data-slug="is-the-grass-greener" onclick="event.preventDefault(); openLightbox('/artwork/small/isthegrassgreener_square_small.jpg', 'Is the Grass Greener?', '2026', '75x80cm, Mixed Media on Wood', 'a nice dog on a nice day would that make the grass greener or would the sun still feel what it was to know the dog before the day has dawned?&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/is-the-grass-greener/');" href="/gallery/is-the-grass-greener/">
         <div class="work-image"><img src="/artwork/thumbnails/isthegrassgreener_square_small_thumbnail.webp" alt="Is the Grass Greener?" loading="lazy"></div>
         <div class="work-caption"><span>Is the Grass Greener?</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 16. Give ur Mum some flowers -->
-    <div class="work-item" data-slug="give-ur-mum-some-flowers" onclick="openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.<br><br>For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/give-ur-mum-some-flowers/');">
+    <a class="work-item" data-slug="give-ur-mum-some-flowers" onclick="event.preventDefault(); openLightbox('/artwork/small/mumflowers_small.jpg', 'Give ur Mum some flowers', '2026', '38.5x40cm, Mixed Media on Wood', 'your mum deserves them.&lt;br&gt;&lt;br&gt;For acquisition enquiries, please contact tyronemoreno.studio@gmail.com', null, false); window.history.pushState(null, '', '/gallery/give-ur-mum-some-flowers/');" href="/gallery/give-ur-mum-some-flowers/">
         <div class="work-image"><img src="/artwork/thumbnails/mumflowers_small_thumbnail.webp" alt="Give ur Mum some flowers" loading="lazy"></div>
         <div class="work-caption"><span>Give ur Mum some flowers</span><span>2026</span></div>
-    </div>
+    </a>
 
     <!-- 17. Zennor -->
-    <div class="work-item" data-slug="zennor" onclick="openLightbox('/artwork/small/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/zennor/');">
+    <a class="work-item" data-slug="zennor" onclick="event.preventDefault(); openLightbox('/artwork/small/zennor_small.jpg', 'Zennor', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/zennor/');" href="/gallery/zennor/">
         <div class="work-image"><img src="/artwork/thumbnails/zennor_small_thumbnail.webp" alt="Zennor" loading="lazy"></div>
         <div class="work-caption"><span>Zennor</span><span>2025</span></div>
-    </div>
+    </a>
 
     <!-- 18. Something about next week -->
-    <div class="work-item" data-slug="something-about-next-week" onclick="openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/something-about-next-week/');">
+    <a class="work-item" data-slug="something-about-next-week" onclick="event.preventDefault(); openLightbox('/artwork/small/somethingaboutnextweek_small.jpg', 'Something about next week', '2025', 'Acrylic on Paper', '', null, false); window.history.pushState(null, '', '/gallery/something-about-next-week/');" href="/gallery/something-about-next-week/">
         <div class="work-image"><img src="/artwork/thumbnails/somethingaboutnextweek_small_thumbnail.webp" alt="Something about next week" loading="lazy"></div>
         <div class="work-caption"><span>Something about next week</span><span>2025</span></div>
-    </div>
+    </a>
 
     <!-- 19. Mealticket -->
-    <div class="work-item" data-slug="mealticket" onclick="openLightbox('/artwork/small/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mealticket/');">
+    <a class="work-item" data-slug="mealticket" onclick="event.preventDefault(); openLightbox('/artwork/small/mealticket_small.jpg', 'Mealticket', '2025', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mealticket/');" href="/gallery/mealticket/">
         <div class="work-image"><img src="/artwork/thumbnails/mealticket_small_thumbnail.webp" alt="Mealticket" loading="lazy"></div>
         <div class="work-caption"><span>Mealticket</span><span>2025</span></div>
-    </div>
+    </a>
 
     <!-- 20. Mayonnaise on the Roof -->
-    <div class="work-item" data-slug="mayonnaise-on-the-roof" onclick="openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mayonnaise-on-the-roof/');">
+    <a class="work-item" data-slug="mayonnaise-on-the-roof" onclick="event.preventDefault(); openLightbox('/artwork/small/001_small.jpg', 'Mayonnaise on the Roof', '2024', 'Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/mayonnaise-on-the-roof/');" href="/gallery/mayonnaise-on-the-roof/">
         <div class="work-image"><img src="/artwork/thumbnails/001_small_thumbnail.webp" alt="Mayonnaise on the Roof" loading="lazy"></div>
         <div class="work-caption"><span>Mayonnaise on the Roof</span><span>2024</span></div>
-    </div>
+    </a>
 
     <!-- 21. Notitle -->
-    <div class="work-item" data-slug="notitle" onclick="openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/notitle/');">
+    <a class="work-item" data-slug="notitle" onclick="event.preventDefault(); openLightbox('/artwork/small/notitle_small.jpg', 'Notitle', '2023', '61x51cm, Acrylic on Canvas', '', null, false); window.history.pushState(null, '', '/gallery/notitle/');" href="/gallery/notitle/">
         <div class="work-image"><img src="/artwork/thumbnails/notitle_small_thumbnail.webp" alt="Notitle" loading="lazy"></div>
         <div class="work-caption"><span>Notitle</span><span>2023</span></div>
-    </div>
+    </a>
 
                 </div>
             </div>
@@ -3332,15 +3393,32 @@ body.adhd-mode #ios-brush-selector {
     <div class="overlay-content">
         <div class="works-container">
             <div class="works-grid mode-studies">
-                
+            <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/studies/motionnewyork_01.webp" alt="motionnewyork" loading="lazy"></div>
+                </div>
+      <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/studies/motionnewyork_02.webp" alt="motionnewyork_02" loading="lazy"></div>
+                </div>
+                         <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/studies/falling_03.webp" alt="falling_03" loading="lazy"></div>
+                </div>
                 <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/studies/sketch_01.webp" alt="Study 1" loading="lazy"></div>
+                </div>
+                <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/studies/warpsmoke.webp" alt="warpsmoke" loading="lazy"></div>
+                </div>
+             <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/studies/computerstudy_02.webp" alt="computerstudy_02" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/studies/sketch_02.webp" alt="Study 2" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/studies/sketch_03.webp" alt="Study 3" loading="lazy"></div>
+                </div>
+             <div class="work-item sketch-item">
+                    <div class="work-image"><img src="/artwork/studies/computerstudy_01.webp" alt="computerstudy" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/studies/sketch_04.webp" alt="Study 4" loading="lazy"></div>
@@ -3461,7 +3539,7 @@ body.adhd-mode #ios-brush-selector {
             </div>
             <div class="lightbox-right">
                 <div class="lightbox-text">
-                    <strong><span id="lb-title"></span></strong>
+                    <h1 id="lb-title"></h1>
                     <div class="lightbox-specs"><span id="lb-specs"></span>, <span id="lb-year"></span></div>
                     <p id="lb-desc"></p>
                 </div>
@@ -3488,7 +3566,7 @@ body.adhd-mode #ios-brush-selector {
     </div>
 </div>
 <div class="product-right">
-    <h2 id="prod-title">Product Title</h2>
+    <h1 id="prod-title">Product Title</h1>
     <div class="prod-desc" id="prod-desc">
         <p>Limited signed edition A3 (29.7x42.0cm) fine art prints.<br>Presented on archival cotton paper.</p>
         <ul style="margin-top: 15px; padding-left: 18px; opacity: 0.8;">
@@ -3540,23 +3618,242 @@ body.adhd-mode #ios-brush-selector {
 </div>
     <script>
 // --- SEO & META TAG UPDATER ---
-function updatePageMeta(pageTitle, imageUrl = "https://tyronemoreno.com/logo.webp") {
-    // Update Browser Tab Title
-    document.title = pageTitle;
+const SITE_ORIGIN = 'https://tyronemoreno.com';
+const DEFAULT_SITE_TITLE = 'Tyrone Moreno';
+const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a mixed media creator.';
+const DEFAULT_SITE_IMAGE = `${SITE_ORIGIN}/logo.webp`;
+const STORE_TITLE = 'Art Prints, Original Artworks, Apparel & Objects | Tyrone Moreno';
+const STORE_DESCRIPTION = 'Shop signed limited-edition art prints, original artworks, apparel and objects by Tyrone Moreno, with certificates of authenticity and worldwide delivery.';
+const STORE_CANONICAL = `${SITE_ORIGIN}/store/`;
+const GALLERY_TITLE = 'Original Mixed Media Artworks | Tyrone Moreno';
+const GALLERY_DESCRIPTION = 'Explore original mixed-media artworks by Tyrone Moreno, including painting, collage, sculpture and works on paper, wood, skateboards and found objects.';
+const GALLERY_CANONICAL = `${SITE_ORIGIN}/gallery/`;
 
-    // Update Open Graph and Twitter Titles
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.content = pageTitle;
-    
-    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
-    if (twitterTitle) twitterTitle.content = pageTitle;
+function setMetaContent(selector, content) {
+    const element = document.querySelector(selector);
+    if (element && content) element.setAttribute('content', content);
+}
 
-    // Update Open Graph and Twitter Images
-    const ogImage = document.querySelector('meta[property="og:image"]');
-    if (ogImage) ogImage.content = imageUrl;
-    
-    const twitterImage = document.querySelector('meta[name="twitter:image"]');
-    if (twitterImage) twitterImage.content = imageUrl;
+function removeProductStructuredData() {
+    document.getElementById('store-product-structured-data')?.remove();
+}
+
+function removeArtworkStructuredData() {
+    document.getElementById('gallery-artwork-structured-data')?.remove();
+}
+
+function removeRouteStructuredData() {
+    removeProductStructuredData();
+    removeArtworkStructuredData();
+}
+
+function updatePageMeta(
+    pageTitle,
+    imageUrl = DEFAULT_SITE_IMAGE,
+    description = DEFAULT_SITE_DESCRIPTION,
+    canonicalUrl = `${SITE_ORIGIN}/`,
+    ogType = 'website'
+) {
+    const absoluteCanonical = new URL(canonicalUrl, SITE_ORIGIN).href;
+    const absoluteImage = new URL(imageUrl || DEFAULT_SITE_IMAGE, SITE_ORIGIN).href;
+
+    /* Keep the visible browser tab consistent across the single-page site.
+       Route-specific SEO remains in canonical, description, Open Graph,
+       Twitter and structured-data fields. */
+    document.title = 'Tyrone Moreno';
+    setMetaContent('meta[name="description"]', description);
+    setMetaContent('meta[property="og:type"]', ogType);
+    setMetaContent('meta[property="og:url"]', absoluteCanonical);
+    setMetaContent('meta[property="og:title"]', pageTitle);
+    setMetaContent('meta[property="og:description"]', description);
+    setMetaContent('meta[property="og:image"]', absoluteImage);
+    setMetaContent('meta[name="twitter:title"]', pageTitle);
+    setMetaContent('meta[name="twitter:description"]', description);
+    setMetaContent('meta[name="twitter:image"]', absoluteImage);
+
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.setAttribute('href', absoluteCanonical);
+
+    removeRouteStructuredData();
+}
+
+function setStoreMeta() {
+    updatePageMeta(
+        STORE_TITLE,
+        DEFAULT_SITE_IMAGE,
+        STORE_DESCRIPTION,
+        STORE_CANONICAL,
+        'website'
+    );
+}
+
+function setGalleryMeta() {
+    updatePageMeta(
+        GALLERY_TITLE,
+        DEFAULT_SITE_IMAGE,
+        GALLERY_DESCRIPTION,
+        GALLERY_CANONICAL,
+        'website'
+    );
+}
+
+function plainTextFromHtml(html = '') {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    return (container.textContent || container.innerText || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function trimMetaDescription(value, maxLength = 160) {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength - 1).replace(/\s+\S*$/, '')}…`;
+}
+
+function cleanGalleryDescription(html = '') {
+    return plainTextFromHtml(html)
+        .replace(
+            /For acquisition enquiries, please contact\s+[^\s]+/gi,
+            ''
+        )
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function galleryArtworkDescription(title, year, specs, description, sold) {
+    const datedTitle = year ? `${title} (${year})` : title;
+    const introduction =
+        `${datedTitle} is an original artwork by mixed-media artist Tyrone Moreno.`;
+    const cleanDescription = cleanGalleryDescription(description);
+    const availability = sold ? 'This artwork is sold.' : '';
+
+    return trimMetaDescription(
+        [introduction, specs, cleanDescription, availability]
+            .filter(Boolean)
+            .join(' '),
+        160
+    );
+}
+
+function setArtworkStructuredData({
+    title,
+    year,
+    specs,
+    description,
+    canonicalUrl,
+    imageUrl
+}) {
+    const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'VisualArtwork',
+        name: title,
+        description,
+        url: canonicalUrl,
+        image: imageUrl,
+        creator: {
+            '@type': 'Person',
+            name: 'Tyrone Moreno',
+            url: `${SITE_ORIGIN}/about/`
+        },
+        copyrightHolder: {
+            '@type': 'Person',
+            name: 'Tyrone Moreno'
+        }
+    };
+
+    if (year) schema.dateCreated = String(year);
+    if (specs) schema.artMedium = specs;
+
+    const script = document.createElement('script');
+    script.id = 'gallery-artwork-structured-data';
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+}
+
+function setGalleryArtworkMeta({
+    slug,
+    title,
+    year,
+    specs,
+    description,
+    imageUrl,
+    sold = false
+}) {
+    if (!slug || !title) {
+        setGalleryMeta();
+        return;
+    }
+
+    const canonicalUrl =
+        `${SITE_ORIGIN}/gallery/${encodeURIComponent(slug)}/`;
+    const pageTitle =
+        `${title}${year ? ` (${year})` : ''} | Original Artwork by Tyrone Moreno`;
+    const metaDescription = galleryArtworkDescription(
+        title,
+        year,
+        specs,
+        description,
+        sold
+    );
+
+    updatePageMeta(
+        pageTitle,
+        imageUrl || DEFAULT_SITE_IMAGE,
+        metaDescription,
+        canonicalUrl,
+        'article'
+    );
+
+    setArtworkStructuredData({
+        title,
+        year,
+        specs,
+        description: metaDescription,
+        canonicalUrl,
+        imageUrl: new URL(
+            imageUrl || DEFAULT_SITE_IMAGE,
+            SITE_ORIGIN
+        ).href
+    });
+}
+
+function setProductStructuredData(product, canonicalUrl, description) {
+    const images = product.images.edges
+        .map((edge) => edge.node.highres)
+        .filter(Boolean);
+
+    const offers = product.variants.edges.map(({ node: variant }) => ({
+        '@type': 'Offer',
+        url: canonicalUrl,
+        price: variant.price.amount,
+        priceCurrency: variant.price.currencyCode || 'GBP',
+        availability: variant.availableForSale
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+        itemCondition: 'https://schema.org/NewCondition'
+    }));
+
+    const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.title,
+        description,
+        image: images,
+        url: canonicalUrl,
+        brand: {
+            '@type': 'Brand',
+            name: 'Tyrone Moreno'
+        },
+        offers
+    };
+
+    const script = document.createElement('script');
+    script.id = 'store-product-structured-data';
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
 }
 function handleRouting() {
     const params = new URLSearchParams(window.__initialSearch);
@@ -3581,7 +3878,7 @@ function handleRouting() {
             updatePageMeta("Tyrone Moreno | Play");
             clearNavigation();
         } else if (normalizedPath.includes('/gallery')) {
-            updatePageMeta("Tyrone Moreno | Gallery"); // <-- ADDED
+            setGalleryMeta();
             openWorks();
             const gallerySlugMatch = normalizedPath.match(/\/gallery\/([^\/]+)/);
             if (gallerySlugMatch) {
@@ -3604,11 +3901,10 @@ function handleRouting() {
             document.body.classList.add('overlay-open');
             document.getElementById('btn-contact').classList.add('active');
         } else if (normalizedPath.includes('/store')) {
-            updatePageMeta("Tyrone Moreno | Store"); // <-- ADDED
             openStore();
             const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
             if (storeSlugMatch) {
-                openProduct(storeSlugMatch[1]);
+                openProduct(storeSlugMatch[1], false);
             }
         } else if (normalizedPath.includes('/test')) {
             updatePageMeta("Tyrone Moreno | Test");
@@ -4007,6 +4303,14 @@ const btnSketches = document.getElementById('btn-sketches');
 const pageSketches = document.getElementById('page-sketches');
 const pageMotion = document.getElementById('page-motion');
 
+let pendingGallerySeoItem = null;
+pageWorks?.addEventListener('click', (event) => {
+    const item = event.target.closest(
+        '#page-works .work-item[data-slug]'
+    );
+    if (item) pendingGallerySeoItem = item;
+}, true);
+
 let studiesLayoutFrame = 0;
 
 function studiesRowGap() {
@@ -4039,15 +4343,332 @@ function readStudyRatio(item) {
     return Number.isFinite(stored) && stored > 0 ? stored : 0.75;
 }
 
-function applyStudiesRow(row, containerWidth, gap, targetHeight, justify) {
+const MEDIA_TALL_RATIO_THRESHOLD = 0.54;
+
+function unwrapMediaTallClusters(grid, itemSelector) {
+    if (!grid) return;
+
+    Array.from(grid.children)
+        .filter((child) => child.classList.contains('media-tall-cluster'))
+        .forEach((cluster) => {
+            const items = Array.from(cluster.querySelectorAll(itemSelector))
+                .sort((a, b) =>
+                    Number(a.dataset.mediaLayoutOrder || 0) -
+                    Number(b.dataset.mediaLayoutOrder || 0)
+                );
+
+            items.forEach((item) => {
+                item.classList.remove('media-tall-primary', 'media-tall-side');
+                item.removeAttribute('data-media-layout-order');
+                grid.insertBefore(item, cluster);
+            });
+            cluster.remove();
+        });
+}
+
+function mediaTallRowMetrics(row, width, gap) {
+    const ratioTotal = row.reduce(
+        (sum, entry) => sum + Math.max(0.01, entry.ratio),
+        0
+    );
+    const available = Math.max(
+        1,
+        width - gap * Math.max(0, row.length - 1) - 4
+    );
+    const height = available / ratioTotal;
+    return {
+        height,
+        widths: row.map((entry) => entry.ratio * height)
+    };
+}
+
+function chooseMediaTallSideRows(
+    followingEntries,
+    sideWidth,
+    gap,
+    targetHeight,
+    options = {}
+) {
+    const maxCandidates = Math.min(
+        followingEntries.length,
+        Math.max(2, Number(options.maxCandidates) || 7)
+    );
+    const minimumHeight = targetHeight * (
+        Number(options.minimumHeightFraction) || 0.62
+    );
+    const maximumHeight = targetHeight * (
+        Number(options.maximumHeightFraction) || 1.48
+    );
+    const minimumItemWidth = sideWidth * (
+        Number(options.minimumItemFraction) || 0.16
+    );
+    let best = null;
+
+    for (let count = 2; count <= maxCandidates; count++) {
+        const candidates = followingEntries.slice(0, count);
+
+        for (let split = 1; split < count; split++) {
+            const rows = [
+                candidates.slice(0, split),
+                candidates.slice(split)
+            ];
+            const metrics = rows.map(
+                (row) => mediaTallRowMetrics(row, sideWidth, gap)
+            );
+
+            if (
+                metrics.some(
+                    (metric) =>
+                        metric.height < minimumHeight ||
+                        metric.height > maximumHeight ||
+                        metric.widths.some(
+                            (width) => width < minimumItemWidth
+                        )
+                )
+            ) {
+                continue;
+            }
+
+            const heightError = metrics.reduce(
+                (sum, metric) =>
+                    sum + Math.abs(
+                        Math.log(
+                            Math.max(0.01, metric.height / targetHeight)
+                        )
+                    ),
+                0
+            );
+            const balanceError = Math.abs(
+                Math.log(
+                    Math.max(
+                        0.01,
+                        metrics[0].height / metrics[1].height
+                    )
+                )
+            );
+            const itemUseReward = count * 0.055;
+            const score = heightError * 3.6 + balanceError * 0.8 - itemUseReward;
+
+            if (!best || score < best.score) {
+                best = {
+                    score,
+                    count,
+                    rows,
+                    metrics
+                };
+            }
+        }
+    }
+
+    return best;
+}
+
+function planMediaTallCluster(
+    tallEntry,
+    followingEntries,
+    containerWidth,
+    gap,
+    targetHeight,
+    options = {}
+) {
+    if (!tallEntry || followingEntries.length < 2) return null;
+
+    /* Do not swallow another ultra-tall item into the side stack. Each tall
+       work should remain eligible to become its own feature tile. */
+    const compatibleFollowing = [];
+    for (const entry of followingEntries) {
+        if (entry.ratio <= MEDIA_TALL_RATIO_THRESHOLD) break;
+        compatibleFollowing.push(entry);
+        if (compatibleFollowing.length >= (options.maxCandidates || 7)) break;
+    }
+    if (compatibleFollowing.length < 2) return null;
+
+    let clusterHeight = targetHeight * 2 + gap;
+    let plan = null;
+
+    for (let iteration = 0; iteration < 5; iteration++) {
+        const tallWidth = tallEntry.ratio * clusterHeight;
+        const sideWidth = containerWidth - gap - tallWidth;
+
+        if (
+            tallWidth > containerWidth * 0.46 ||
+            sideWidth < containerWidth * 0.46
+        ) {
+            return null;
+        }
+
+        plan = chooseMediaTallSideRows(
+            compatibleFollowing,
+            sideWidth,
+            gap,
+            targetHeight,
+            options
+        );
+        if (!plan) return null;
+
+        const nextHeight =
+            plan.metrics[0].height + gap + plan.metrics[1].height;
+        if (Math.abs(nextHeight - clusterHeight) < 0.75) {
+            clusterHeight = nextHeight;
+            break;
+        }
+        clusterHeight = nextHeight;
+    }
+
+    const tallWidth = tallEntry.ratio * clusterHeight;
+    const sideWidth = containerWidth - gap - tallWidth;
+    plan = chooseMediaTallSideRows(
+        compatibleFollowing,
+        sideWidth,
+        gap,
+        targetHeight,
+        options
+    );
+    if (!plan) return null;
+
+    clusterHeight =
+        plan.metrics[0].height + gap + plan.metrics[1].height;
+
+    return {
+        count: plan.count,
+        rows: plan.rows,
+        clusterHeight,
+        tallWidth: tallEntry.ratio * clusterHeight,
+        sideWidth: containerWidth - gap - tallEntry.ratio * clusterHeight
+    };
+}
+
+function buildMediaTallCluster({
+    grid,
+    tallEntry,
+    plan,
+    gap,
+    type,
+    applyRow
+}) {
+    const cluster = document.createElement('div');
+    cluster.className = `media-tall-cluster media-tall-cluster-${type}`;
+    cluster.style.setProperty('--media-tall-gap', `${gap}px`);
+
+    const stack = document.createElement('div');
+    stack.className = 'media-tall-stack';
+
+    grid.insertBefore(cluster, tallEntry.item);
+    tallEntry.item.classList.add('media-tall-primary');
+    applyRow(
+        [tallEntry],
+        plan.tallWidth,
+        0,
+        plan.clusterHeight,
+        false,
+        plan.clusterHeight
+    );
+    cluster.appendChild(tallEntry.item);
+
+    plan.rows.forEach((row) => {
+        const rowElement = document.createElement('div');
+        rowElement.className = 'media-tall-row';
+        row.forEach((entry) => entry.item.classList.add('media-tall-side'));
+        applyRow(row, plan.sideWidth, gap, 1, true);
+        row.forEach((entry) => rowElement.appendChild(entry.item));
+        stack.appendChild(rowElement);
+    });
+
+    cluster.appendChild(stack);
+}
+
+function layoutMediaTallSequence({
+    grid,
+    entries,
+    containerWidth,
+    gap,
+    targetHeight,
+    type,
+    isPhone,
+    layoutSegment,
+    applyRow,
+    clusterOptions = {}
+}) {
+    entries.forEach((entry, index) => {
+        entry.item.dataset.mediaLayoutOrder = String(index);
+    });
+
+    let segment = [];
+    let index = 0;
+
+    const flushSegment = (closeBoundary) => {
+        if (!segment.length) return;
+        layoutSegment(segment, closeBoundary);
+        segment = [];
+    };
+
+    while (index < entries.length) {
+        const entry = entries[index];
+        if (entry.ratio > MEDIA_TALL_RATIO_THRESHOLD) {
+            segment.push(entry);
+            index++;
+            continue;
+        }
+
+        if (isPhone) {
+            flushSegment(true);
+            /* Full width at the exact source ratio: no crop and no tiny tile. */
+            applyRow(
+                [entry],
+                containerWidth,
+                0,
+                targetHeight,
+                true
+            );
+            index++;
+            continue;
+        }
+
+        const plan = planMediaTallCluster(
+            entry,
+            entries.slice(index + 1),
+            containerWidth,
+            gap,
+            targetHeight,
+            clusterOptions
+        );
+
+        if (!plan) {
+            segment.push(entry);
+            index++;
+            continue;
+        }
+
+        flushSegment(true);
+        buildMediaTallCluster({
+            grid,
+            tallEntry: entry,
+            plan,
+            gap,
+            type,
+            applyRow
+        });
+        index += 1 + plan.count;
+    }
+
+    flushSegment(false);
+}
+
+function applyStudiesRow(row, containerWidth, gap, targetHeight, justify, forcedHeight = null) {
     if (!row.length) return;
     const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
     const gapTotal = gap * Math.max(0, row.length - 1);
     const fitAllowance = justify ? 4 : 0;
     const available = Math.max(1, containerWidth - gapTotal - fitAllowance);
-    let height = justify && row.length > 1
-        ? available / ratioTotal
-        : Math.min(targetHeight, available / ratioTotal);
+    /* Match Motion on iPhone/iPad: every planned touch row is physically
+       justified, including a single 16:9 image. That lets a landscape use
+       the full row instead of leaving an empty block on its right. Desktop
+       final rows still pass justify=false and retain their natural scale. */
+    let height = Number.isFinite(forcedHeight) && forcedHeight > 0
+        ? forcedHeight
+        : justify
+            ? available / ratioTotal
+            : Math.min(targetHeight, available / ratioTotal);
     height = Math.max(1, height);
 
     row.forEach((entry) => {
@@ -4334,28 +4955,16 @@ function planLargeTouchRows(entries, containerWidth, gap, options = {}) {
     return memo[0].rows;
 }
 
-function layoutStudiesRows() {
-    studiesLayoutFrame = 0;
-    if (!pageSketches) return;
-    const grid = pageSketches.querySelector('.works-grid.mode-studies');
-    if (!grid) return;
-
-    const items = Array.from(grid.querySelectorAll('.sketch-item'));
-    const containerWidth = grid.clientWidth;
-    if (!items.length || !containerWidth) return;
-
-    const gap = studiesRowGap();
-    const targetHeight = studiesTargetRowHeight(containerWidth);
-    const entries = items.map((item) => ({
-        item,
-        ratio: readStudyRatio(item)
-    }));
+function layoutStudySegment(
+    entries,
+    containerWidth,
+    gap,
+    targetHeight,
+    closeBoundary = false
+) {
+    if (!entries.length) return;
 
     if (window.innerWidth <= 1024 && entries.length > 1) {
-        entries.forEach((entry) => {
-            entry.item.style.removeProperty('order');
-        });
-
         const rows = planLargeTouchRows(
             entries,
             containerWidth,
@@ -4369,21 +4978,12 @@ function layoutStudiesRows() {
                     window.innerWidth <= 768 ? 0.27 : 0.22
             }
         );
-
         rows.forEach((row) => {
-            applyStudiesRow(
-                row,
-                containerWidth,
-                gap,
-                targetHeight,
-                true
-            );
+            applyStudiesRow(row, containerWidth, gap, targetHeight, true);
         });
         return;
     }
 
-    /* Preserve the established desktop arrangement and natural DOM order. */
-    entries.forEach((entry) => entry.item.style.removeProperty('order'));
     let row = [];
     let ratioTotal = 0;
 
@@ -4408,8 +5008,80 @@ function layoutStudiesRows() {
         ratioTotal += entry.ratio;
     });
 
-    flush(false);
+    const ratioWidth =
+        ratioTotal * targetHeight + gap * Math.max(0, row.length - 1);
+    flush(
+        closeBoundary
+            ? row.length > 1 || ratioWidth >= containerWidth * 0.78
+            : false
+    );
 }
+
+function layoutStudiesRows() {
+    studiesLayoutFrame = 0;
+    if (!pageSketches) return;
+    const grid = pageSketches.querySelector('.works-grid.mode-studies');
+    if (!grid) return;
+
+    unwrapMediaTallClusters(grid, '.sketch-item');
+
+    const items = Array.from(grid.querySelectorAll('.sketch-item'));
+    const containerWidth = grid.clientWidth;
+    if (!items.length || !containerWidth) return;
+
+    const gap = studiesRowGap();
+    const targetHeight = studiesTargetRowHeight(containerWidth);
+    const entries = items.map((item) => {
+        item.style.removeProperty('order');
+        return {
+            item,
+            ratio: readStudyRatio(item)
+        };
+    });
+
+    const hasExtraTallMedia = entries.some(
+        (entry) => entry.ratio <= MEDIA_TALL_RATIO_THRESHOLD
+    );
+
+    if (hasExtraTallMedia) {
+        layoutMediaTallSequence({
+            grid,
+            entries,
+            containerWidth,
+            gap,
+            targetHeight,
+            type: 'studies',
+            isPhone: window.innerWidth <= 768,
+            layoutSegment: (segment, closeBoundary) =>
+                layoutStudySegment(
+                    segment,
+                    containerWidth,
+                    gap,
+                    targetHeight,
+                    closeBoundary
+                ),
+            applyRow: applyStudiesRow,
+            clusterOptions: {
+                maxCandidates: window.innerWidth <= 1024 ? 6 : 8,
+                minimumHeightFraction:
+                    window.innerWidth <= 1024 ? 0.60 : 0.62,
+                maximumHeightFraction: 1.52,
+                minimumItemFraction:
+                    window.innerWidth <= 1024 ? 0.19 : 0.15
+            }
+        });
+        return;
+    }
+
+    layoutStudySegment(
+        entries,
+        containerWidth,
+        gap,
+        targetHeight,
+        false
+    );
+}
+
 
 function scheduleStudiesRowLayout() {
     if (studiesLayoutFrame) cancelAnimationFrame(studiesLayoutFrame);
@@ -4545,8 +5217,12 @@ saveLastPage('about');
 function openStore() {
 isPaintingActive = false;
     saveLastPage('store');
-    if (pageStore.classList.contains('visible')) return;
+    if (pageStore.classList.contains('visible')) {
+        setStoreMeta();
+        return;
+    }
     clearNavigation();
+    setStoreMeta();
     pageStore.classList.add('visible');
     btnStore.classList.add('active');
     document.body.classList.add('overlay-open');
@@ -4561,8 +5237,14 @@ isPaintingActive = false;
         function openWorks() {
 isPaintingActive = false;
 saveLastPage('gallery');
-            if (pageWorks.classList.contains('visible')) return;
+            if (pageWorks.classList.contains('visible')) {
+                if (!document.getElementById('lightbox').classList.contains('active')) {
+                    setGalleryMeta();
+                }
+                return;
+            }
             clearNavigation();
+            setGalleryMeta();
             pageWorks.classList.add('visible');
             btnGallery.classList.add('active');
             document.body.classList.add('overlay-open');
@@ -4864,6 +5546,41 @@ isPaintingActive = false;
             document.getElementById('lb-title').innerText = title;
             document.getElementById('lb-year').innerText = year;
             document.getElementById('lb-specs').innerText = specs;
+            lbImg.alt = `${title}${year ? `, ${year}` : ''}, artwork by Tyrone Moreno`;
+
+            const galleryItem = pendingGallerySeoItem ||
+                Array.from(
+                    document.querySelectorAll(
+                        '#page-works .work-item[data-slug]'
+                    )
+                ).find((item) => {
+                    const routeSlug = window.location.pathname
+                        .match(/\/gallery\/([^/]+)/)?.[1];
+                    return routeSlug && item.dataset.slug === routeSlug;
+                });
+
+            const gallerySlug = galleryItem?.dataset.slug || '';
+            const galleryPoster = galleryItem?.querySelector(
+                '.work-image img'
+            );
+            const isModelSource = /\.(?:glb|gltf)(?:$|\?)/i.test(src);
+            const galleryImage = isModelSource
+                ? (
+                    galleryPoster?.currentSrc ||
+                    galleryPoster?.src ||
+                    DEFAULT_SITE_IMAGE
+                )
+                : src;
+
+            setGalleryArtworkMeta({
+                slug: gallerySlug,
+                title,
+                year,
+                specs,
+                description: desc,
+                imageUrl: galleryImage,
+                sold
+            });
 
             let displayDesc = desc;
             if (sold) {
@@ -4930,6 +5647,11 @@ isPaintingActive = false;
             // revert to the plain gallery URL now that the lightbox is closing.
             if (window.location.pathname.startsWith('/gallery/') && window.location.pathname !== '/gallery/') {
                 window.history.pushState(null, '', '/gallery/');
+            }
+
+            pendingGallerySeoItem = null;
+            if (pageWorks.classList.contains('visible')) {
+                setGalleryMeta();
             }
             
             resetZoom();
@@ -5977,9 +6699,12 @@ items.forEach((item) => {
 // Global variable to hold current product variants
 let currentProductVariants = [];
 
-async function openProduct(handle) {
+async function openProduct(handle, shouldPushHistory = true) {
 window.closeCart();
-    window.history.pushState(null, '', `/store/${handle}/`);
+    const productPath = `/store/${encodeURIComponent(handle)}/`;
+    if (shouldPushHistory && window.location.pathname !== productPath) {
+        window.history.pushState(null, '', productPath);
+    }
     const response = await shopifyGraphQL(PRODUCT_QUERY, { handle: handle });
     const product = response.data.productByHandle;
 
@@ -6006,8 +6731,29 @@ window.closeCart();
     
    document.getElementById('prod-title').innerText = product.title;
 document.getElementById('prod-desc').innerHTML = product.descriptionHtml;
-const highResImageUrl = product.images.edges[0]?.node.highres || "https://tyronemoreno.com/logo.webp";
-    updatePageMeta(`Tyrone Moreno | ${product.title}`, highResImageUrl);
+
+const productImages = product.images.edges.map((edge) => ({
+    thumb: edge.node.thumb,
+    highres: edge.node.highres,
+    alt: edge.node.altText || product.title
+}));
+const highResImageUrl = productImages[0]?.highres || DEFAULT_SITE_IMAGE;
+const productDescription = trimMetaDescription(
+    product.seo?.description ||
+    plainTextFromHtml(product.descriptionHtml) ||
+    STORE_DESCRIPTION
+);
+const productTitle = product.seo?.title?.trim() || `${product.title} | Tyrone Moreno`;
+const productCanonical = `${SITE_ORIGIN}${productPath}`;
+
+updatePageMeta(
+    productTitle,
+    highResImageUrl,
+    productDescription,
+    productCanonical,
+    'product'
+);
+setProductStructuredData(product, productCanonical, productDescription);
 
 // --- DYNAMIC VARIANT BUTTON GENERATOR ---
 const selectorGroup = document.getElementById('variant-selector-group');
@@ -6064,12 +6810,8 @@ updateProductUI(initialVariant);
     // 3. Trigger a price update calculation based on the restored quantity
     window.updateQty(0); 
 
-  // Pass both thumb and highres URLs to the carousel
-    const images = product.images.edges.map(e => ({
-        thumb: e.node.thumb,
-        highres: e.node.highres
-    }));
-    renderCarousel(images, product.title);
+  // Pass thumbnail, high-resolution URL and Shopify alt text to the carousel.
+    renderCarousel(productImages, product.title);
 
     document.getElementById('page-product').classList.add('visible');
     document.body.classList.add('overlay-open');
@@ -6138,7 +6880,7 @@ async function updateMainImage(url) {
     mainImg.src = url;
     mainImg.dataset.path = url;
 }
-function setProductMainImage(url) {
+function setProductMainImage(url, altText = '') {
     // Same small loading bar treatment as the art lightbox / .glb model,
     // shown while the store's main product image (loaded at 600px) streams in.
     const mainImg = document.getElementById('prod-img');
@@ -6155,6 +6897,7 @@ function setProductMainImage(url) {
         mainImg.style.opacity = '1';
     };
     mainImg.src = url;
+    mainImg.alt = altText || mainImg.alt || 'Tyrone Moreno product artwork';
     mainImg.dataset.path = url;
 }
 
@@ -6164,10 +6907,10 @@ function renderCarousel(imageArray, title) {
     
     // Set main image to the highres version of the first item
     if (imageArray.length > 0) {
-        setProductMainImage(imageArray[0].highres);
+        setProductMainImage(imageArray[0].highres, imageArray[0].alt || title);
     }
 
-    imageArray.forEach((imgData) => {
+    imageArray.forEach((imgData, index) => {
         const img = document.createElement('img');
         
         // Use the tiny, lightning-fast thumbnail for the strip
@@ -6176,10 +6919,11 @@ function renderCarousel(imageArray, title) {
         img.style.height = '80px';
         img.style.objectFit = 'cover';
         img.loading = 'lazy'; // Adds native lazy loading
-        
+        img.alt = imgData.alt || `${title} product view ${index + 1}`;
+
         img.onclick = () => {
             // Swap the main image to the high-res version on click
-            setProductMainImage(imgData.highres);
+            setProductMainImage(imgData.highres, img.alt);
         };
         
         carousel.appendChild(img);
@@ -6200,6 +6944,7 @@ query getCollectionProducts($handle: String!) {
           images(first: 1) {
             edges {
               node {
+                altText
                 thumbnail: url(transform: {maxWidth: 300, preferredContentType: WEBP})
                 highres: url(transform: {maxWidth: 600, preferredContentType: WEBP})
               }
@@ -6228,11 +6973,12 @@ function renderStoreGrid(products, handle) {
         const prod = edge.node;
         const thumbImg = prod.images.edges[0]?.node.thumbnail || '';
         const highresImg = prod.images.edges[0]?.node.highres || '';
+        const imageAlt = prod.images.edges[0]?.node.altText || prod.title;
         const price = prod.variants.edges[0]?.node.price.amount || '0.00';
         const formattedPrice = parseFloat(price).toFixed(2);
         const item = document.createElement('a');
         item.className = 'store-item';
-        item.href = '#';
+        item.href = `/store/${encodeURIComponent(prod.handle)}/`;
 
         // Browser automatically loads thumbnail on mobile, high-res on desktop
         item.innerHTML = `
@@ -6240,18 +6986,27 @@ function renderStoreGrid(products, handle) {
             src="${thumbImg}" 
             srcset="${thumbImg} 300w, ${highresImg} 600w"
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            alt="${prod.title}"
+            alt="${imageAlt.replace(/"/g, '&quot;')}"
             loading="lazy"
         >
         <h3>${prod.title}</h3>
         <p>From £${formattedPrice} GBP</p> 
         `;
 
-        // Reuses your existing openProduct logic
-        item.onclick = (e) => {
+        // Keep a real crawlable URL while preserving the current in-page
+        // product overlay for normal left-clicks and taps.
+        item.addEventListener('click', (e) => {
+            if (
+                e.button !== 0 ||
+                e.metaKey ||
+                e.ctrlKey ||
+                e.shiftKey ||
+                e.altKey
+            ) return;
+
             e.preventDefault();
             openProduct(prod.handle);
-        };
+        });
 
         grid.appendChild(item);
     });
@@ -6350,6 +7105,7 @@ window.closeProduct = function() {
     if (window.location.pathname.startsWith('/store/') && window.location.pathname !== '/store/') {
         window.history.pushState(null, '', '/store/');
     }
+    setStoreMeta();
 };
 
 window.openCart = function() {
@@ -6598,9 +7354,14 @@ const PRODUCT_QUERY = `
     productByHandle(handle: $handle) {
       title
       descriptionHtml
+      seo {
+        title
+        description
+      }
       images(first: 10) {
         edges { 
-          node { 
+          node {
+            altText
             thumb: url(transform: {maxWidth: 150, preferredContentType: WEBP}) 
             highres: url(transform: {maxWidth: 1200, preferredContentType: WEBP}) 
           } 
@@ -6611,7 +7372,7 @@ const PRODUCT_QUERY = `
           node {
             id
             title
-            price { amount }
+            price { amount currencyCode }
             image { url(transform: {maxWidth: 1200, preferredContentType: WEBP}) } 
             availableForSale
           }
@@ -6747,7 +7508,7 @@ window.addEventListener('popstate', (event) => {
         const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
         if (storeSlugMatch) {
             // If going back to a specific product
-            openProduct(storeSlugMatch[1]);
+            openProduct(storeSlugMatch[1], false);
         } else {
             // If going back to the main store from a product
             closeProduct(); 
@@ -6863,6 +7624,7 @@ window.addEventListener('resize', () => {
 'puzzleface_01.mp4',
 'tattoogirl.mp4',
         '3dglasses.mp4',
+'microphoneman_01.mp4',
 'graffitiwoman.mp4',
 'partypeople05.mp4',
         'beanieman_01.mp4',
@@ -6968,7 +7730,7 @@ window.addEventListener('resize', () => {
         return Number.isFinite(cssRatio) && cssRatio > 0 ? cssRatio : 0.5625;
     }
 
-    function applyMotionRow(row, containerWidth, gap, targetHeight, justify) {
+    function applyMotionRow(row, containerWidth, gap, targetHeight, justify, forcedHeight = null) {
         if (!row.length) return;
         const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
         const gapTotal = gap * Math.max(0, row.length - 1);
@@ -6981,11 +7743,17 @@ window.addEventListener('resize', () => {
            layout algorithm always remains on that physical flex line. */
         const rowFitAllowance = justify ? 4 : 0;
         const available = Math.max(1, containerWidth - gapTotal - rowFitAllowance);
-        let height = justify ? available / ratioTotal : targetHeight;
+        let height = Number.isFinite(forcedHeight) && forcedHeight > 0
+            ? forcedHeight
+            : justify
+                ? available / ratioTotal
+                : targetHeight;
 
         /* Never inflate a sparse/final row beyond the established card scale.
            Completed rows can move slightly either side of the target. */
-        if (!justify) height = Math.min(height, targetHeight);
+        if (!justify && !(Number.isFinite(forcedHeight) && forcedHeight > 0)) {
+            height = Math.min(height, targetHeight);
+        }
         height = Math.max(1, height);
 
         row.forEach((entry) => {
@@ -6995,10 +7763,191 @@ window.addEventListener('resize', () => {
         });
     }
 
+    function layoutMotionTallSegment(
+        entries,
+        containerWidth,
+        gap,
+        targetHeight,
+        closeBoundary = false
+    ) {
+        if (!entries.length) return;
+
+        if (window.innerWidth <= 1024) {
+            if (entries.length === 1) {
+                applyMotionRow(
+                    entries,
+                    containerWidth,
+                    gap,
+                    targetHeight,
+                    false
+                );
+                return;
+            }
+
+            const rows = planLargeTouchRows(
+                entries,
+                containerWidth,
+                gap,
+                {
+                    targetHeight,
+                    maxItems: window.innerWidth <= 768 ? 2 : 3,
+                    minimumRowHeightFraction:
+                        window.innerWidth <= 768 ? 0.68 : 0.62,
+                    minimumItemFraction:
+                        window.innerWidth <= 768 ? 0.27 : 0.22
+                }
+            );
+            rows.forEach((row) => {
+                applyMotionRow(
+                    row,
+                    containerWidth,
+                    gap,
+                    targetHeight,
+                    true
+                );
+            });
+            return;
+        }
+
+        const minAcceptedHeight = targetHeight * 0.88;
+        const maxAcceptedHeight = targetHeight * 1.14;
+        let row = [];
+
+        entries.forEach((entry) => {
+            if (!row.length) {
+                row.push(entry);
+                return;
+            }
+
+            const currentRatios = row.reduce(
+                (sum, member) => sum + member.ratio,
+                0
+            );
+            const currentHeight =
+                (containerWidth - gap * (row.length - 1)) /
+                currentRatios;
+            const withRatios = currentRatios + entry.ratio;
+            const withHeight =
+                (containerWidth - gap * row.length) / withRatios;
+            const currentIsGood =
+                currentHeight >= minAcceptedHeight &&
+                currentHeight <= maxAcceptedHeight;
+            const addingIsTooShort = withHeight < minAcceptedHeight;
+            const currentCloser =
+                Math.abs(currentHeight - targetHeight) <=
+                Math.abs(withHeight - targetHeight);
+
+            if (currentIsGood && addingIsTooShort && currentCloser) {
+                applyMotionRow(
+                    row,
+                    containerWidth,
+                    gap,
+                    targetHeight,
+                    true
+                );
+                row = [entry];
+            } else {
+                row.push(entry);
+                if (withHeight <= targetHeight && row.length > 1) {
+                    applyMotionRow(
+                        row,
+                        containerWidth,
+                        gap,
+                        targetHeight,
+                        true
+                    );
+                    row = [];
+                }
+            }
+        });
+
+        if (row.length) {
+            const ratioTotal = row.reduce(
+                (sum, entry) => sum + entry.ratio,
+                0
+            );
+            const naturalWidth =
+                ratioTotal * targetHeight +
+                gap * Math.max(0, row.length - 1);
+            applyMotionRow(
+                row,
+                containerWidth,
+                gap,
+                targetHeight,
+                closeBoundary || naturalWidth >= containerWidth * 0.9
+            );
+        }
+    }
+
     function layoutMotionRows() {
         motionRowLayoutFrame = 0;
+        unwrapMediaTallClusters(grid, '.motion-item');
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         if (!items.length) return;
+
+        const tallEntries = items.map((item) => ({
+            item,
+            ratio: readMotionRatio(item)
+        }));
+        const hasExtraTallMedia = tallEntries.some(
+            (entry) => entry.ratio <= MEDIA_TALL_RATIO_THRESHOLD
+        );
+
+        if (hasExtraTallMedia) {
+            const containerWidth = grid.clientWidth;
+            if (!containerWidth) return;
+            const gap = window.innerWidth <= 768
+                ? 14
+                : motionRowGap();
+
+            const portraitRatios = tallEntries
+                .map((entry) => entry.ratio)
+                .filter((ratio) => ratio > 0 && ratio < 0.82)
+                .sort((a, b) => a - b);
+            const referencePortraitRatio = portraitRatios.length
+                ? portraitRatios[Math.floor(portraitRatios.length / 2)]
+                : 0.5625;
+            const phoneColumnWidth = Math.max(
+                1,
+                (containerWidth - gap) / 2
+            );
+            const targetHeight = window.innerWidth <= 768
+                ? Math.max(1, phoneColumnWidth / referencePortraitRatio)
+                : motionTargetRowHeight(containerWidth);
+
+            tallEntries.forEach((entry) => {
+                entry.item.style.removeProperty('order');
+                entry.item.style.removeProperty('--motion-mobile-square-height');
+            });
+
+            layoutMediaTallSequence({
+                grid,
+                entries: tallEntries,
+                containerWidth,
+                gap,
+                targetHeight,
+                type: 'motion',
+                isPhone: window.innerWidth <= 768,
+                layoutSegment: (segment, closeBoundary) =>
+                    layoutMotionTallSegment(
+                        segment,
+                        containerWidth,
+                        gap,
+                        targetHeight,
+                        closeBoundary
+                    ),
+                applyRow: applyMotionRow,
+                clusterOptions: {
+                    maxCandidates: window.innerWidth <= 1024 ? 6 : 8,
+                    minimumHeightFraction:
+                        window.innerWidth <= 1024 ? 0.60 : 0.62,
+                    maximumHeightFraction: 1.52,
+                    minimumItemFraction:
+                        window.innerWidth <= 1024 ? 0.19 : 0.15
+                }
+            });
+            return;
+        }
 
         /* iPhone and iPad keep the exact curated source order. Dynamic
            programming selects only consecutive row breaks, preventing both
