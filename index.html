@@ -8149,6 +8149,7 @@ window.addEventListener('resize', () => {
 'threesome_01.mp4',
 'puzzleface_01.mp4',
 'tattoogirl.mp4',
+'chipface.mp4',
         '3dglasses.mp4',
 'microphoneman_01.mp4',
 'graffitiwoman.mp4',
@@ -9790,6 +9791,10 @@ window.addEventListener('resize', () => {
             this.parent = video.parentElement;
             this.onMetadata = onMetadata || null;
             this.source = '';
+            this.fallbackSource = '';
+            this.onSourceFallback = null;
+            this.fallbackAttempted = false;
+            this.sourceLoadFailed = false;
             this.playing = false;
             this.generation = 0;
             this.rafId = 0;
@@ -9857,6 +9862,14 @@ window.addEventListener('resize', () => {
             video.addEventListener('loadedmetadata', () => {
                 if (this.onMetadata) this.onMetadata(video);
             });
+            video.addEventListener('error', () => {
+                /* A missing /phone/ encode must not leave the iOS card dead.
+                   Record the failed source here; play() performs one safe retry
+                   with the original MP4 without racing the outer tap handler. */
+                if (video.getAttribute('src') === this.source) {
+                    this.sourceLoadFailed = true;
+                }
+            });
         }
 
         setLayerState(video, active, opacity = active ? 1 : 0, zIndex = active ? 2 : 0) {
@@ -9883,6 +9896,15 @@ window.addEventListener('resize', () => {
             if (!src) return;
             if (this.source && this.source !== src) this.releaseSource();
             this.source = src;
+            this.sourceLoadFailed = false;
+        }
+
+        setFallbackSource(src, onFallback = null) {
+            this.fallbackSource = src && src !== this.source ? src : '';
+            this.onSourceFallback = typeof onFallback === 'function'
+                ? onFallback
+                : null;
+            this.fallbackAttempted = false;
         }
 
         ensureVideoSource(video, preload = 'auto') {
@@ -10038,6 +10060,10 @@ window.addEventListener('resize', () => {
                 this.startRenderLoop(generation);
                 return true;
             } catch (_) {
+                const sourceDefinitelyFailed = this.sourceLoadFailed ||
+                    !!active.error ||
+                    active.networkState === HTMLMediaElement.NETWORK_NO_SOURCE;
+
                 if (generation === this.generation) {
                     this.playing = false;
                     try { active.pause(); } catch (_) {}
@@ -10046,6 +10072,23 @@ window.addEventListener('resize', () => {
                         this.parent.classList.remove('has-frame');
                     }
                 }
+
+                /* On iPhone/iPad, first try the small /phone/ encode. When that
+                   file genuinely does not exist or cannot be decoded, switch
+                   this card to the normal /digital/motion/ MP4 and retry once. */
+                if (sourceDefinitelyFailed &&
+                    this.fallbackSource &&
+                    !this.fallbackAttempted &&
+                    this.source !== this.fallbackSource) {
+                    const fallback = this.fallbackSource;
+                    this.fallbackAttempted = true;
+                    this.setSource(fallback);
+                    if (this.onSourceFallback) {
+                        try { this.onSourceFallback(fallback); } catch (_) {}
+                    }
+                    return this.play();
+                }
+
                 return false;
             }
         }
@@ -10479,6 +10522,17 @@ window.addEventListener('resize', () => {
         item.motionLooper = looper;
         item.dataset.motionSrc = src;
         motionLoopers.push(looper);
+
+        /* iPhone/iPad prefer the compressed /phone/ file, but a missing phone
+           encode now falls back automatically to the original Motion MP4. */
+        const originalSrc = motionVideoList[index];
+        if (looper.isIOSLeanThumbnail && originalSrc && src !== originalSrc) {
+            looper.setFallbackSource(originalSrc, (fallbackSrc) => {
+                motionThumbnailVideoList[index] = fallbackSrc;
+                item.dataset.motionSrc = fallbackSrc;
+            });
+        }
+
         ensureCardSource(looper, src);
 
         /* iOS creates no nearby decoders automatically; this limit is only a
