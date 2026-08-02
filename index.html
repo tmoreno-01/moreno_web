@@ -3600,8 +3600,8 @@ body.time-mode #ios-brush-selector {
     <div class="slider-arrow left-arrow" id="motion-viewer-prev"></div>
     <div class="slider-arrow right-arrow" id="motion-viewer-next"></div>
     <div id="motion-video-stage" class="motion-video-stage" role="button" aria-label="Play or pause video">
-        <video id="motion-viewer-video-a" class="motion-video-layer is-active" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
-        <video id="motion-viewer-video-b" class="motion-video-layer" playsinline webkit-playsinline preload="auto" disablepictureinpicture></video>
+        <video id="motion-viewer-video-a" class="motion-video-layer is-active" playsinline webkit-playsinline preload="none" disablepictureinpicture></video>
+        <video id="motion-viewer-video-b" class="motion-video-layer" playsinline webkit-playsinline preload="none" disablepictureinpicture></video>
         <canvas id="motion-viewer-freeze" class="motion-freeze-frame" aria-hidden="true"></canvas>
         <div id="motion-viewer-safety" class="motion-viewer-safety" aria-hidden="true">
             <img id="motion-viewer-safety-a" class="motion-viewer-safety-image is-active" alt="" decoding="async" draggable="false">
@@ -8592,8 +8592,8 @@ window.addEventListener('resize', () => {
     /* Keep a tiny browser-native media prewarm rack. Unlike Blob fetching,
        these off-screen <video> elements preserve Safari's own byte-range and
        media-cache behaviour. Only the three most likely clips are retained. */
-    const MOTION_PREWARM_SLOTS = 3;
-    const MOTION_PREWARM_DELAY_MS = 180;
+    const MOTION_PREWARM_SLOTS = 2;
+    const MOTION_PREWARM_DELAY_MS = 120;
     const motionPrewarmVideos = [];
     let motionPrewarmTimer = 0;
     let motionPrewarmGeneration = 0;
@@ -9325,14 +9325,15 @@ window.addEventListener('resize', () => {
         if (!motionVideoList.length) return;
         const current = normalizedMotionIndex(index, motionVideoList);
         const likely = includeCurrent
-            ? [current, current + 1, current - 1]
-            : [current + 1, current - 1, current + 2];
+            ? [current]
+            : [current + 1, current - 1];
 
-        /* Fullscreen always uses and prewarms the original high-resolution
-           sources, including on iPhone and iPad. */
+        /* A deliberate open/navigation action warms only the selected clip.
+           Once it is actually playing, the two available slots prepare the
+           immediately adjacent clips and nothing else. */
         scheduleMotionPrewarm(
             likely,
-            includeCurrent ? 0 : 80,
+            includeCurrent ? 0 : MOTION_PREWARM_DELAY_MS,
             motionVideoList
         );
     }
@@ -9840,6 +9841,7 @@ window.addEventListener('resize', () => {
             }
             this.canvasOnly = options.canvasOnly === true;
             this.canvasAlpha = options.canvasAlpha === true;
+            this.deferStandbyLoad = options.deferStandbyLoad === true;
             this.fitMode = options.fitMode === 'contain' ? 'contain' : 'cover';
             this.ctx = this.canvas.getContext('2d', {
                 alpha: this.canvasAlpha,
@@ -9996,16 +9998,26 @@ window.addEventListener('resize', () => {
             this.lastGoodFrame = false;
             this.hideCanvas();
             this.videos.forEach((video, index) => {
-                const shouldLoadNow = !this.isTouchThumbnail || index === 0;
+                const isActiveDecoder = index === 0;
+                const shouldLoadNow =
+                    isActiveDecoder ||
+                    (!this.deferStandbyLoad && !this.isTouchThumbnail);
+
                 if (shouldLoadNow) {
-                    if (video.getAttribute('src') !== src) video.setAttribute('src', src);
-                    video.preload = index === 0 ? 'auto' : 'metadata';
+                    if (video.getAttribute('src') !== src) {
+                        video.setAttribute('src', src);
+                    }
+                    video.preload = isActiveDecoder ? 'auto' : 'metadata';
                     video.load();
                 } else {
+                    /* Fullscreen keeps decoder B completely dormant until the
+                       active clip is close to its loop boundary. */
                     video.pause();
                     video.removeAttribute('src');
-                    video.preload = 'metadata';
+                    video.preload = 'none';
+                    video.load();
                 }
+
                 video.defaultPlaybackRate = 1;
                 video.playbackRate = 1;
                 video.muted = true;
@@ -10130,7 +10142,11 @@ window.addEventListener('resize', () => {
             if (this.drawVideo(active, 1, true)) this.showCanvas();
             else this.showDirectVideo(this.activeIndex);
             this.startRenderLoop(generation);
-            this.prime(1 - this.activeIndex, generation);
+
+            if (!this.deferStandbyLoad) {
+                this.prime(1 - this.activeIndex, generation);
+            }
+
             return true;
         }
         pause() {
@@ -10236,7 +10252,17 @@ window.addEventListener('resize', () => {
             newVideo.style.opacity = '1';
             newVideo.classList.add('is-active');
             this.primed[oldIndex] = false;
-            this.prime(oldIndex, generation);
+            this.priming[oldIndex] = null;
+
+            if (this.deferStandbyLoad) {
+                try {
+                    oldVideo.removeAttribute('src');
+                    oldVideo.preload = 'none';
+                    oldVideo.load();
+                } catch (_) {}
+            } else {
+                this.prime(oldIndex, generation);
+            }
         }
 
         startRenderLoop(generation) {
@@ -11365,6 +11391,12 @@ window.addEventListener('resize', () => {
                 if (event.target.closest && event.target.closest('.motion-fullscreen-btn')) return;
                 startX = event.clientX;
                 startY = event.clientY;
+
+                /* The press itself is useful intent. Start the lightweight
+                   browser prewarm now; the real decoder is still protected by
+                   the movement-sensitive 85ms guard below. */
+                prewarmMotionIndices([index], motionThumbnailVideoList);
+
                 clearTimeout(warmTimer);
                 warmTimer = setTimeout(() => {
                     /* An intentional press releases the previously playing
@@ -11404,12 +11436,29 @@ window.addEventListener('resize', () => {
         if (touchCapable) {
             bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
         } else {
-            item.addEventListener('mouseenter', play);
-            item.addEventListener('mouseleave', stop);
+            let desktopIntentTimer = 0;
 
-            /* The desktop thumbnail itself is now the fullscreen target.
-               Hover playback remains unchanged; the click simply opens the
-               existing Motion viewer for this card. */
+            item.addEventListener('mouseenter', () => {
+                clearTimeout(desktopIntentTimer);
+                desktopIntentTimer = window.setTimeout(() => {
+                    prewarmMotionIndices([index], motionThumbnailVideoList);
+                    play();
+                }, 60);
+            });
+
+            item.addEventListener('mouseleave', () => {
+                clearTimeout(desktopIntentTimer);
+                desktopIntentTimer = 0;
+                stop();
+            });
+
+            /* Pointerdown is stronger intent than hover: prepare the original
+               fullscreen source before the completed click opens the viewer. */
+            workImage.addEventListener('pointerdown', () => {
+                prewarmAroundMotionIndex(index, true);
+            }, { passive: true });
+
+            /* The desktop thumbnail itself remains the fullscreen target. */
             workImage.addEventListener('click', (event) => {
                 window.openMotionViewer(event, index);
             });
@@ -11571,6 +11620,7 @@ window.addEventListener('resize', () => {
         onMetadata: fitViewerStage,
         canvasOnly: true,
         canvasAlpha: true,
+        deferStandbyLoad: true,
         fitMode: 'contain',
         scale: 1.075
     });
@@ -11958,6 +12008,10 @@ window.addEventListener('resize', () => {
         const played = await playPromise;
         if (session !== viewerSession || viewerSource !== src) return;
 
+        if (played) {
+            prewarmAroundMotionIndex(index, false);
+        }
+
         let canvasReady = false;
         if (played) {
             canvasReady = await waitForFullscreenCanvasFrame(
@@ -11992,15 +12046,9 @@ window.addEventListener('resize', () => {
             viewerStage.classList.add('is-switching');
         }
 
-        primeSource(src).then((resolved) => {
-            if (viewerSource === src) {
-                viewerLooper.upgradeSource(resolved);
-            }
-        });
-
-        /* The current clip is already owned by the real viewer. Use the three
-           prewarm slots for next, previous, and next-after-next. */
-        prewarmAroundMotionIndex(index, false);
+        /* Keep fullscreen playback on the original HTTP URL. The browser
+           can reuse byte ranges naturally; forcing a second whole-file Blob
+           fetch here made large works compete with their own playback. */
     }
 
     window.openMotionViewer = function (event, index) {
@@ -12034,7 +12082,9 @@ window.addEventListener('resize', () => {
             if (session !== viewerSession || viewer.classList.contains('active')) return;
             viewerLooper.stop(false);
             viewerVideos.forEach((video) => {
+                video.pause();
                 video.removeAttribute('src');
+                video.preload = 'none';
                 video.load();
             });
             releaseResolvedSource(closingSource);
@@ -12057,7 +12107,7 @@ window.addEventListener('resize', () => {
         const session = ++viewerSession;
         motionViewerIndex =
             (motionViewerIndex + 1) % motionVideoList.length;
-        prewarmAroundMotionIndex(motionViewerIndex, false);
+        prewarmAroundMotionIndex(motionViewerIndex, true);
         renderViewer(false, session, outgoingIndex);
     }
 
@@ -12070,13 +12120,25 @@ window.addEventListener('resize', () => {
         motionViewerIndex =
             (motionViewerIndex - 1 + motionVideoList.length) %
             motionVideoList.length;
-        prewarmAroundMotionIndex(motionViewerIndex, false);
+        prewarmAroundMotionIndex(motionViewerIndex, true);
         renderViewer(false, session, outgoingIndex);
     }
 
+    const viewerNextButton = document.getElementById('motion-viewer-next');
+    const viewerPrevButton = document.getElementById('motion-viewer-prev');
+
     document.getElementById('motion-viewer-close').addEventListener('click', closeViewer);
-    document.getElementById('motion-viewer-next').addEventListener('click', showNext);
-    document.getElementById('motion-viewer-prev').addEventListener('click', showPrev);
+
+    viewerNextButton.addEventListener('pointerdown', () => {
+        prewarmAroundMotionIndex(motionViewerIndex + 1, true);
+    }, { passive: true });
+
+    viewerPrevButton.addEventListener('pointerdown', () => {
+        prewarmAroundMotionIndex(motionViewerIndex - 1, true);
+    }, { passive: true });
+
+    viewerNextButton.addEventListener('click', showNext);
+    viewerPrevButton.addEventListener('click', showPrev);
     bindReliableTap(viewerStage, () => viewerLooper.toggle());
     viewer.addEventListener('click', (event) => {
         if (event.target === viewer) closeViewer();
