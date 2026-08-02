@@ -140,7 +140,7 @@ model-viewer {
 
         /* Add a subtle entrance animation to the main UI once loaded */
         /* Fixed: Excluded lightbox and page-overlays from being forced visible */
-        body.site-loaded > *:not(#preloader):not(#canvas):not(.page-overlay):not(.lightbox) {
+        body.site-loaded > *:not(#preloader):not(#canvas):not(.page-overlay):not(.lightbox):not(.studies-viewer) {
             animation: uiFadeIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
@@ -1629,8 +1629,8 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 background-color 0.3s ease;
 }
 .studies-viewer.active {
-    opacity: 1;
-    visibility: visible;
+    opacity: 1 !important;
+    visibility: visible !important;
     pointer-events: auto;
 }
 .studies-image-stage {
@@ -1663,8 +1663,16 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     -webkit-user-drag: none;
 }
 .studies-viewer-image.is-active {
-    opacity: 1;
+    opacity: 1 !important;
     transform: scale(1);
+}
+
+#studies-viewer-image-a {
+    z-index: 2;
+}
+
+#studies-viewer-image-b {
+    display: none !important;
 }
 .studies-viewer .lightbox-close {
     position: fixed;
@@ -12938,110 +12946,144 @@ function initTestArtEngine() {
 (() => {
     const pages = Array.from(document.querySelectorAll('.still-grid-page'));
     const viewer = document.getElementById('studies-viewer');
-    const stage = document.getElementById('studies-image-stage');
-    const layers = [
-        document.getElementById('studies-viewer-image-a'),
-        document.getElementById('studies-viewer-image-b')
-    ];
+    const image = document.getElementById('studies-viewer-image-a');
     const closeButton = document.getElementById('studies-viewer-close');
     const previousButton = document.getElementById('studies-viewer-prev');
     const nextButton = document.getElementById('studies-viewer-next');
+    const stage = document.getElementById('studies-image-stage');
 
-    if (!pages.length || !viewer || !stage || layers.some((layer) => !layer)) return;
+    if (
+        !pages.length ||
+        !viewer ||
+        !image ||
+        !closeButton ||
+        !previousButton ||
+        !nextButton ||
+        !stage
+    ) {
+        return;
+    }
 
-    let sources = [];
+    let currentItems = [];
     let currentIndex = 0;
-    let activeLayer = 0;
-    let requestToken = 0;
     let touchStartX = 0;
     let touchStartY = 0;
 
-    function preloadNeighbours() {
-        if (sources.length < 2) return;
-        const previous = new Image();
-        const next = new Image();
-        previous.src = sources[(currentIndex - 1 + sources.length) % sources.length].src;
-        next.src = sources[(currentIndex + 1) % sources.length].src;
+    function sourceForItem(item) {
+        const sourceImage = item?.querySelector('img');
+        if (!sourceImage) return null;
+
+        const rawSource =
+            sourceImage.currentSrc ||
+            sourceImage.getAttribute('src') ||
+            sourceImage.dataset.src ||
+            '';
+
+        if (!rawSource) return null;
+
+        let resolvedSource = rawSource;
+        try {
+            resolvedSource = new URL(rawSource, document.baseURI).href;
+        } catch (_) {}
+
+        return {
+            src: resolvedSource,
+            alt: sourceImage.alt || 'Image'
+        };
     }
 
-    async function reveal(index, immediate = false) {
-        if (!sources.length) return;
-        currentIndex = (index + sources.length) % sources.length;
-        const token = ++requestToken;
-        const incomingIndex = immediate ? activeLayer : 1 - activeLayer;
-        const incoming = layers[incomingIndex];
-        const outgoing = layers[activeLayer];
-        const entry = sources[currentIndex];
+    function refreshItems(page) {
+        currentItems = Array.from(
+            page.querySelectorAll('.sketch-item')
+        );
+    }
 
-        incoming.classList.remove('is-active');
-        incoming.alt = entry.alt;
-        incoming.src = entry.src;
+    function preloadIndex(index) {
+        if (!currentItems.length) return;
 
-        try {
-            if (!incoming.complete || !incoming.naturalWidth) {
-                await new Promise((resolve, reject) => {
-                    incoming.addEventListener('load', resolve, { once: true });
-                    incoming.addEventListener('error', reject, { once: true });
-                });
-            }
-            if (typeof incoming.decode === 'function') {
-                try { await incoming.decode(); } catch (_) {}
-            }
-        } catch (_) {
-            return;
+        const normalized =
+            (index + currentItems.length) % currentItems.length;
+        const entry = sourceForItem(currentItems[normalized]);
+
+        if (!entry?.src) return;
+
+        const preload = new Image();
+        preload.decoding = 'async';
+        preload.src = entry.src;
+    }
+
+    function show(index) {
+        if (!currentItems.length) return;
+
+        currentIndex =
+            (index + currentItems.length) % currentItems.length;
+
+        const entry = sourceForItem(currentItems[currentIndex]);
+        if (!entry?.src) return;
+
+        image.alt = entry.alt;
+        image.classList.add('is-active');
+
+        if (image.getAttribute('src') !== entry.src) {
+            image.src = entry.src;
         }
 
-        if (token !== requestToken) return;
-
-        requestAnimationFrame(() => {
-            if (token !== requestToken) return;
-            incoming.classList.add('is-active');
-            if (incoming !== outgoing) outgoing.classList.remove('is-active');
-            activeLayer = incomingIndex;
-            preloadNeighbours();
-        });
+        preloadIndex(currentIndex - 1);
+        preloadIndex(currentIndex + 1);
     }
 
-    function open(pageSources, index) {
-        sources = pageSources;
-        currentIndex = index;
+    function open(page, item) {
+        refreshItems(page);
+
+        const index = currentItems.indexOf(item);
+        if (index < 0) return;
+
         viewer.classList.add('active');
         viewer.setAttribute('aria-hidden', 'false');
-        reveal(index, true);
+        document.body.classList.add('studies-viewer-open');
+
+        show(index);
     }
 
     function close() {
-        ++requestToken;
         viewer.classList.remove('active');
         viewer.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('studies-viewer-open');
     }
 
-    function showPrevious() { reveal(currentIndex - 1); }
-    function showNext() { reveal(currentIndex + 1); }
+    function showPrevious() {
+        show(currentIndex - 1);
+    }
+
+    function showNext() {
+        show(currentIndex + 1);
+    }
 
     pages.forEach((page) => {
-        const items = Array.from(page.querySelectorAll('.sketch-item'));
-        const pageSources = items.map((item) => {
-            const image = item.querySelector('img');
-            return {
-                src: image ? image.currentSrc || image.src : '',
-                alt: image ? image.alt : 'Image'
-            };
+        page.addEventListener('click', (event) => {
+            const item = event.target.closest('.sketch-item');
+            if (!item || !page.contains(item)) return;
+            open(page, item);
         });
 
-        items.forEach((item, index) => {
+        page.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+
+            const item = event.target.closest('.sketch-item');
+            if (!item || !page.contains(item)) return;
+
+            event.preventDefault();
+            open(page, item);
+        });
+
+        page.querySelectorAll('.sketch-item').forEach((item, index) => {
+            const sourceImage = item.querySelector('img');
             item.setAttribute('role', 'button');
             item.setAttribute('tabindex', '0');
             item.setAttribute(
                 'aria-label',
-                `Open ${pageSources[index]?.alt || `Image ${index + 1}`} fullscreen`
+                `Open ${sourceImage?.alt || `Image ${index + 1}`} fullscreen`
             );
-            item.addEventListener('click', () => open(pageSources, index));
-            item.addEventListener('keydown', (event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                open(pageSources, index);
-            });
         });
     });
 
@@ -13071,13 +13113,21 @@ function initTestArtEngine() {
         const touch = event.changedTouches[0];
         const deltaX = touch.clientX - touchStartX;
         const deltaY = touch.clientY - touchStartY;
-        if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+        if (
+            Math.abs(deltaX) < 45 ||
+            Math.abs(deltaX) < Math.abs(deltaY)
+        ) {
+            return;
+        }
+
         if (deltaX < 0) showNext();
         else showPrevious();
     }, { passive: true });
 
     document.addEventListener('keydown', (event) => {
         if (!viewer.classList.contains('active')) return;
+
         if (event.key === 'Escape') {
             event.preventDefault();
             close();
