@@ -227,6 +227,12 @@ model-viewer {
 
         .nav-links a:hover, .nav-links a.active, .dropbtn.active { opacity: 1; }
 
+        /* Keep a parent dropdown visibly active when its current page is
+           represented by a submenu link, such as About under Contact. */
+        .dropdown:has(.dropdown-content a.active) > .dropbtn {
+            opacity: 1;
+        }
+
         /* --- DROPDOWN NAVIGATION --- */
         .dropdown {
             position: relative;
@@ -1350,6 +1356,25 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 padding: 6px 15px;
                 min-height: 0;
                 line-height: 1.05;
+            }
+
+            /* Keep About directly centred beneath Contact on iPhone.
+               A compact intrinsic-width menu prevents it drifting left or
+               stretching toward the cart icon. */
+            .contact-dropdown .dropdown-content {
+                left: 50%;
+                right: auto;
+                width: max-content;
+                min-width: 0;
+                transform: translateX(-50%);
+                align-items: center;
+            }
+            .contact-dropdown .dropdown-content a {
+                width: auto;
+                padding-left: 12px;
+                padding-right: 12px;
+                justify-content: center;
+                text-align: center;
             }
             .footer { bottom: 38px; right: 15px; flex-direction: column-reverse; align-items: flex-end; gap: 12px; }
             .footer a { font-size: 0.55rem; } 
@@ -3050,8 +3075,12 @@ body.adhd-mode #ios-brush-selector {
             </div>
         </div>
         <a href="#store" id="btn-store">Store</a>
-        <a href="/about/" id="btn-about">About</a>
-        <a href="/contact/" id="btn-contact">Contact</a>
+        <div class="dropdown contact-dropdown">
+            <a href="/contact/" class="dropbtn" id="btn-contact" aria-haspopup="true" aria-expanded="false">Contact</a>
+            <div class="dropdown-content">
+                <a href="/about/" id="btn-about">About</a>
+            </div>
+        </div>
 <a href="#" id="btn-cart-nav" class="nav-cart hidden" onclick="openCart(); return false;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <circle cx="9" cy="21" r="1"></circle>
@@ -3521,7 +3550,7 @@ body.adhd-mode #ios-brush-selector {
         <div class="works-container">
             <div class="works-grid mode-studies">
                 <div class="work-item sketch-item" data-tall-feature="true">
-                    <div class="work-image"><img src="/artwork/digital/studies/warpsmoke.webp" alt="Warp Smoke" loading="lazy"></div>
+                    <div class="work-image"><img src="/artwork/digital/studies/columnguards_01.webp" alt="column guards" loading="lazy"></div>
                 </div>
 
                 <div class="work-item sketch-item">
@@ -3530,10 +3559,16 @@ body.adhd-mode #ios-brush-selector {
         <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/digital/studies/officecrowd05.webp" alt="officecrowd" loading="lazy"></div>
                 </div>
+                <div class="work-item sketch-item" data-tall-feature="true">
+                    <div class="work-image"><img src="/artwork/digital/studies/oldpeopledinner.webp" alt="oldpeopledinner" loading="lazy"></div>
+                </div>
                 <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/digital/studies/aliceswirl.webp" alt="Alice Swirl" loading="lazy"></div>
                 </div>
-                <div class="work-item sketch-item">
+                <div class="work-item sketch-item" data-tall-feature="true">
+                    <div class="work-image"><img src="/artwork/digital/studies/warpsmoke.webp" alt="Warp Smoke" loading="lazy"></div>
+                </div>
+             <div class="work-item sketch-item">
                     <div class="work-image"><img src="/artwork/digital/studies/pinkhorse.webp" alt="Pink Horse" loading="lazy"></div>
                 </div>
                 <div class="work-item sketch-item">
@@ -5713,7 +5748,7 @@ btnMotion.addEventListener('click', (e) => { e.preventDefault(); window.history.
         });
 
         /* Reliable iPhone/iPad dropdown behaviour.
-           A single tap on Gallery or Digital both opens that page and reveals
+           A single tap on Gallery, Digital or Contact opens that page and reveals
            its submenu. Submenu links stay clickable, and tapping elsewhere
            closes the open menu. */
         const navDropdowns = Array.from(document.querySelectorAll('.nav-links .dropdown'));
@@ -8146,6 +8181,7 @@ window.addEventListener('resize', () => {
     const MOTION_FILES = Object.freeze([
   'facecollage_01.mp4',
 'moneyman.mp4',
+ 'facecollage_03.mp4',
 'puzzleface_01.mp4',
 'tattoogirl.mp4',
 'threesome_01.mp4',
