@@ -7,18 +7,18 @@
 <link rel="canonical" href="https://tyronemoreno.com/">
 
 <!-- SEO Meta -->
-<meta name="description" content="Tyrone Moreno is a mixed media creator.">
+<meta name="description" content="Tyrone Moreno is a multidisciplinary creator and artist creator.">
 
 <!-- Open Graph / Facebook / Instagram -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tyronemoreno.com/">
 <meta property="og:title" content="Tyrone Moreno">
-<meta property="og:description" content="Tyrone Moreno is a mixed media creator.">
+<meta property="og:description" content="Tyrone Moreno is a multidisciplinary creator and artist.">
 <meta property="og:image" content="https://tyronemoreno.com/logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Tyrone Moreno">
-<meta name="twitter:description" content="Tyrone Moreno is a mixed media creator.">
+<meta name="twitter:description" content="Tyrone Moreno is a multidisciplinary creator and artist.">
 <meta name="twitter:image" content="https://tyronemoreno.com/logo.webp">
 
 <!-- Favicons -->
@@ -35,9 +35,7 @@
 </script>
 <link rel="preconnect" href="https://store.tyronemoreno.com" crossorigin>
 <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
-<!-- ADHD fonts are loaded only when the ADHD page opens. -->
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js" defer></script>
-    <style>
+<style>
 .visually-hidden {
     position: absolute !important;
     width: 1px !important;
@@ -76,7 +74,7 @@ model-viewer {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.8s;
+            transition: opacity 0.18s ease, visibility 0s linear 0.18s;
         }
 
         #preloader.loaded {
@@ -145,11 +143,11 @@ model-viewer {
         /* Add a subtle entrance animation to the main UI once loaded */
         /* Fixed: Excluded lightbox and page-overlays from being forced visible */
         body.site-loaded > *:not(#preloader):not(#canvas):not(.page-overlay):not(.lightbox) {
-            animation: uiFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: uiFadeIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
         @keyframes uiFadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
+            0% { opacity: 0; transform: translateY(6px); }
             100% { opacity: 1; transform: translateY(0); }
         }
         /* --- CSS VARIABLES FOR DARK MODE --- */
@@ -2985,74 +2983,8 @@ body.dark-mode .cart-item {
 body.time-mode .nav-links,
 body.time-mode .footer,
 body.time-mode .copyright,
-body.time-mode #ios-brush-selector,
-body.adhd-mode .nav-links,
-body.adhd-mode .footer,
-body.adhd-mode .copyright,
-body.adhd-mode #ios-brush-selector {
+body.time-mode #ios-brush-selector {
     display: none !important;
-}
-
-.adhd-field {
-    max-width: 1300px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px 20px;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-}
-.adhd-word {
-    font-family: 'Helvetica', 'Arial', sans-serif;
-    color: var(--text-color);
-    white-space: nowrap;
-    user-select: none;
-    transition: opacity 0.22s ease, font-size 0.22s ease;
-}
-.adhd-letter.adhd-flicker-active {
-    opacity: 0.55;
-    transform: scale(1.08);
-}
-.adhd-word.adhd-jitter {
-    animation: adhdJitter var(--jdur, 200ms) infinite alternate ease-in-out;
-}
-@keyframes adhdJitter {
-    from { transform: translateX(0); }
-    to   { transform: translateX(var(--jx, 1px)); }
-}
-.adhd-word.adhd-drift {
-    animation: adhdDrift var(--ddur, 4000ms) ease-in-out infinite alternate;
-}
-@keyframes adhdDrift {
-    from { transform: translateX(0); }
-    to   { transform: translateX(var(--dx, 30px)); }
-}
-.adhd-word.adhd-dart {
-    transition: transform 0.32s cubic-bezier(.34, 1.56, .64, 1), opacity 0.22s ease, font-size 0.22s ease !important;
-    z-index: 8;
-    position: relative;
-}
-.adhd-word.adhd-hyperfocus {
-    transform: scale(1.3) !important;
-    opacity: 1 !important;
-    filter: brightness(1.2);
-    z-index: 5;
-    position: relative;
-    transition: transform 0.35s cubic-bezier(.19,1,.22,1), filter 0.35s ease, opacity 0.2s ease !important;
-}
-@keyframes adhdFieldJolt {
-    0%   { transform: translateX(0) rotate(0deg); }
-    15%  { transform: translateX(-5px) rotate(-0.4deg); }
-    35%  { transform: translateX(4px) rotate(0.35deg); }
-    55%  { transform: translateX(-3px) rotate(-0.25deg); }
-    75%  { transform: translateX(2px) rotate(0.2deg); }
-    100% { transform: translateX(0) rotate(0deg); }
-}
-.adhd-field.adhd-jolt {
-    animation: adhdFieldJolt 340ms ease-in-out;
-}
-@media (max-width: 768px) {
-    .adhd-field { max-width: 100%; gap: 10px 14px; }
 }
 
 .inline-artist {
@@ -3204,7 +3136,7 @@ body.adhd-mode #ios-brush-selector {
 })();
 </script>
 
-<h1 class="visually-hidden">Tyrone Moreno — Mixed Media Artist and Creator</h1>
+<h1 class="visually-hidden">Tyrone Moreno — Multidisciplinary Artist and Creator</h1>
 <!-- New Duck Page -->
 <div id="page-duck" class="page-overlay">
     <div class="overlay-content">
@@ -3332,25 +3264,25 @@ body.adhd-mode #ios-brush-selector {
             <div class="about-container">
    <div class="about-image">
     <div class="slider-arrow left-arrow" onclick="prevAboutImage()"></div>
-    <img id="about-img-1" class="active" src="/me/aboutme_001.webp" alt="Tyrone Moreno" loading="lazy">
-    <img id="about-img-2" src="/me/aboutme_002.webp" alt="Tyrone Moreno" loading="lazy">
+    <img id="about-img-1" class="active" data-src="/me/aboutme_001.webp" alt="Tyrone Moreno" loading="lazy">
+    <img id="about-img-2" data-src="/me/aboutme_002.webp" alt="Tyrone Moreno" loading="lazy">
     <div class="slider-arrow right-arrow" onclick="nextAboutImage()"></div>
 </div>
                 <div class="about-text">
                     
-                    <img src="/random/symbols_01.webp" class="art-symbol sym-1" alt="Symbol 1" loading="lazy">
-<img src="/random/symbols_02.webp" class="art-symbol sym-2" alt="Symbol 2" loading="lazy">
-<img src="/random/symbols_03.webp" class="art-symbol sym-3" alt="Symbol 3" loading="lazy">
-<img src="/random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5" loading="lazy">
-<img src="/random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6" loading="lazy">
+                    <img data-src="/random/symbols_01.webp" class="art-symbol sym-1" alt="Symbol 1" loading="lazy">
+<img data-src="/random/symbols_02.webp" class="art-symbol sym-2" alt="Symbol 2" loading="lazy">
+<img data-src="/random/symbols_03.webp" class="art-symbol sym-3" alt="Symbol 3" loading="lazy">
+<img data-src="/random/symbols_05.webp" class="art-symbol sym-5" alt="Symbol 5" loading="lazy">
+<img data-src="/random/symbols_06.webp" class="art-symbol sym-6" alt="Symbol 6" loading="lazy">
                     
-                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img src="/random/artistcrossed.webp" alt="Artist" class="inline-artist" loading="lazy">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
-                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img src="/random/human_01.webp" alt="human" class="inline-human" loading="lazy">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
+                    <p>Hey there, I'm Tyrone Moreno, a half-Spanish, half-English <img data-src="/random/artistcrossed.webp" alt="Artist" class="inline-artist" loading="lazy">, I create as a deliberate embrace of making mistakes and accepting imperfections, it is how I deal with my extreme ADHD and overthinking brain.</p>
+                    <p>Creating is pure catharsis for me. Regardless of the medium, be it pixels or mashing paint onto a canvas, it’s what makes me feel <img data-src="/random/human_01.webp" alt="human" class="inline-human" loading="lazy">, the flow state of creating is the closest we get to dreaming whilst awake.</p>
                     <p><em><strong>'Of course it is happening inside your head, Harry, but why on earth should that mean that it is not real?'</strong> — Albus Dumbledore</em></p>
                     
                     <div class="frace-cabbage-wrapper">
-                      <img src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;" loading="lazy">
-                        <img src="/random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage" loading="lazy">
+                      <img data-src="/frace.webp" alt="Frace" class="about-frace" onclick="openDuckPage()" style="cursor: pointer;" loading="lazy">
+                        <img data-src="/random/boycabbage_01.webp" alt="Boy Cabbage" class="boy-cabbage" loading="lazy">
                     </div>
                 </div>
             </div>
@@ -3415,13 +3347,6 @@ body.adhd-mode #ios-brush-selector {
 
             <p class="time-copy">Based on a global population of roughly <strong>8.1 billion</strong> people and an average of <strong>6.7 hours</strong> of daily screen time each, humanity collectively burns through about <strong>630,000 hours</strong> of screen time every second &mdash; the equivalent of roughly <strong>71 years</strong> of a single human life, every second, somewhere in the world.</p>
         </div>
-    </div>
-</div>
-
-<!-- Hidden adhd page: a living field of words that never resolve into sentences. Not linked anywhere in the nav; reachable only via /adhd -->
-<div id="page-adhd" class="page-overlay">
-    <div class="overlay-content" style="align-items: center;">
-        <div class="adhd-field" id="adhd-field"></div>
     </div>
 </div>
 
@@ -3984,7 +3909,7 @@ body.adhd-mode #ios-brush-selector {
 // --- SEO & META TAG UPDATER ---
 const SITE_ORIGIN = 'https://tyronemoreno.com';
 const DEFAULT_SITE_TITLE = 'Tyrone Moreno';
-const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a mixed media creator.';
+const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a multidisciplinary creator and artist.';
 const DEFAULT_SITE_IMAGE = `${SITE_ORIGIN}/logo.webp`;
 const STORE_TITLE = 'Art Prints, Original Artworks, Apparel & Objects | Tyrone Moreno';
 const STORE_DESCRIPTION = 'Shop signed limited-edition art prints, original artworks, apparel and objects by Tyrone Moreno, with certificates of authenticity and worldwide delivery.';
@@ -4282,9 +4207,6 @@ function handleRouting() {
         } else if (normalizedPath.includes('/time')) {
             updatePageMeta("Tyrone Moreno | Time");
             openTimePage();
-        } else if (normalizedPath.includes('/adhd')) {
-            updatePageMeta("Tyrone Moreno | ADHD");
-            openAdhdPage();
         } else if (normalizedPath.includes('/exhibitions')) {
             updatePageMeta("Tyrone Moreno | Exhibitions"); // <-- ADDED
             clearNavigation();
@@ -4611,42 +4533,97 @@ themeToggleBtn.addEventListener('click', (e) => {
 }
 
 
-function openDuckPage() {
-isPaintingActive = false;
+
+const MODEL_VIEWER_SCRIPT_URL =
+    'https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js';
+let modelViewerLoadPromise = null;
+
+function ensureModelViewerLoaded() {
+    if (customElements.get('model-viewer')) {
+        return Promise.resolve();
+    }
+
+    if (modelViewerLoadPromise) {
+        return modelViewerLoadPromise;
+    }
+
+    modelViewerLoadPromise = new Promise((resolve, reject) => {
+        let script = document.querySelector('script[data-model-viewer-loader]');
+
+        const waitForDefinition = () => {
+            customElements.whenDefined('model-viewer').then(resolve).catch(reject);
+        };
+
+        if (script) {
+            script.addEventListener('load', waitForDefinition, { once: true });
+            script.addEventListener('error', () => {
+                modelViewerLoadPromise = null;
+                reject(new Error('model-viewer failed to load'));
+            }, { once: true });
+            return;
+        }
+
+        script = document.createElement('script');
+        script.type = 'module';
+        script.src = MODEL_VIEWER_SCRIPT_URL;
+        script.dataset.modelViewerLoader = 'true';
+        script.addEventListener('load', waitForDefinition, { once: true });
+        script.addEventListener('error', () => {
+            modelViewerLoadPromise = null;
+            reject(new Error('model-viewer failed to load'));
+        }, { once: true });
+        document.head.appendChild(script);
+    });
+
+    return modelViewerLoadPromise;
+}
+
+async function openDuckPage() {
     clearNavigation();
+    isPaintingActive = false;
+
     const overlay = document.getElementById('page-duck');
     const content = overlay.querySelector('.overlay-content');
-
-    // Check if it already exists
-    if (!document.getElementById('duck-viewer')) {
-        const mv = document.createElement('model-viewer');
-        mv.id = 'duck-viewer';
-        mv.src = '/artwork/3d/duck/source/duck_animation.glb';
-        mv.setAttribute('alt', 'A 3D duck animation');
-        mv.setAttribute('auto-rotate', '');
-        mv.setAttribute('camera-controls', '');
-        mv.setAttribute('shadow-intensity', '1');
-        mv.setAttribute('autoplay', '');
-mv.setAttribute('interaction-prompt', 'none');
-
-        
-        // Add listeners to debug the failure
-        mv.addEventListener('load', () => console.log('Duck model loaded successfully.'));
-        mv.addEventListener('error', (e) => console.error('Duck model failed to load:', e.detail));
-
-        mv.style.width = '100vw';
-        mv.style.height = '100vh';
-        mv.style.setProperty('--poster-color', 'transparent');
-        
-        content.appendChild(mv);
-    }
 
     overlay.classList.add('visible');
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
-    
-    if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
+
+    if (isTouchUI) {
+        document.getElementById('ios-brush-selector').style.display = 'none';
+    }
     updateFooterIcons('other');
+
+    try {
+        await ensureModelViewerLoaded();
+
+        if (!overlay.classList.contains('visible')) return;
+
+        if (!document.getElementById('duck-viewer')) {
+            const mv = document.createElement('model-viewer');
+            mv.id = 'duck-viewer';
+            mv.src = '/artwork/3d/duck/source/duck_animation.glb';
+            mv.setAttribute('alt', 'A 3D duck animation');
+            mv.setAttribute('auto-rotate', '');
+            mv.setAttribute('camera-controls', '');
+            mv.setAttribute('shadow-intensity', '1');
+            mv.setAttribute('autoplay', '');
+            mv.setAttribute('interaction-prompt', 'none');
+            mv.style.width = '100vw';
+            mv.style.height = '100vh';
+            mv.style.setProperty('--poster-color', 'transparent');
+
+            mv.addEventListener(
+                'error',
+                (event) => console.error('Duck model failed to load:', event.detail),
+                { once: true }
+            );
+
+            content.appendChild(mv);
+        }
+    } catch (error) {
+        console.error(error);
+    }
 }
 const btnStore = document.getElementById('btn-store');
 const pageStore = document.getElementById('page-store');
@@ -5657,59 +5634,11 @@ window.addEventListener('resize', scheduleStudiesRowLayout);
         const pageContact = document.getElementById('page-contact');
         const pageTest = document.getElementById('page-test');
         const pageTime = document.getElementById('page-time');
-        const pageAdhd = document.getElementById('page-adhd');
-
-const ADHD_FONT_STYLESHEET = 'https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Special+Elite&family=Bungee&family=Caveat:wght@700&family=Rubik+Mono+One&family=Playfair+Display:ital@1&family=Amatic+SC:wght@700&family=Righteous&family=VT323&family=Shadows+Into+Light&family=Anton&family=UnifrakturMaguntia&display=swap';
-let adhdFontLoadPromise = null;
-
-function loadAdhdFonts() {
-    if (adhdFontLoadPromise) return adhdFontLoadPromise;
-
-    adhdFontLoadPromise = new Promise((resolve) => {
-        const existing = document.querySelector(
-            'link[data-adhd-font-stylesheet]'
-        );
-
-        if (existing) {
-            if (existing.sheet) {
-                resolve();
-            } else {
-                existing.addEventListener('load', resolve, { once: true });
-                existing.addEventListener('error', resolve, { once: true });
-            }
-            return;
-        }
-
-        const addPreconnect = (href, crossOrigin = false) => {
-            if (document.querySelector(
-                'link[rel="preconnect"][href="' + href + '"]'
-            )) return;
-
-            const link = document.createElement('link');
-            link.rel = 'preconnect';
-            link.href = href;
-            if (crossOrigin) link.crossOrigin = 'anonymous';
-            document.head.appendChild(link);
-        };
-
-        addPreconnect('https://fonts.googleapis.com');
-        addPreconnect('https://fonts.gstatic.com', true);
-
-        const stylesheet = document.createElement('link');
-        stylesheet.rel = 'stylesheet';
-        stylesheet.href = ADHD_FONT_STYLESHEET;
-        stylesheet.dataset.adhdFontStylesheet = 'true';
-        stylesheet.addEventListener('load', resolve, { once: true });
-        stylesheet.addEventListener('error', resolve, { once: true });
-        document.head.appendChild(stylesheet);
-    });
-
-    return adhdFontLoadPromise;
-}
 
 function clearNavigation() {
-    /* Stop hidden motion decoders/render loops before changing sections. */
+    /* Stop hidden media and timers before changing sections. */
     if (typeof window.pauseMotionPage === 'function') window.pauseMotionPage();
+    if (typeof stopAboutSlideshow === 'function') stopAboutSlideshow();
     pageAbout.classList.remove('visible');
     pageWorks.classList.remove('visible');
     pageNotes.classList.remove('visible');
@@ -5723,11 +5652,8 @@ function clearNavigation() {
     pageStore.classList.remove('visible'); 
     pageTest.classList.remove('visible');
     pageTime.classList.remove('visible');
-    pageAdhd.classList.remove('visible');
     testArtActive = false;
     timeActive = false;
-    adhdActive = false;
-    adhdStopWikiFeed();
     removeAllLoadingIndicators();
     isPaintingActive = true;
             
@@ -5742,7 +5668,6 @@ function clearNavigation() {
     document.getElementById('page-duck').classList.remove('visible');
     document.body.classList.remove('overlay-open');
     document.body.classList.remove('time-mode');
-    document.body.classList.remove('adhd-mode');
     closeLightbox();
     document.body.style.cursor = 'none';
             
@@ -5754,19 +5679,30 @@ function clearNavigation() {
     updatePageMeta("Tyrone Moreno", "https://tyronemoreno.com/logo.webp");
 }
 
+function openAbout() {
+    saveLastPage('about');
 
-        function openAbout() {
-isPaintingActive = false;
-saveLastPage('about');
-            if (pageAbout.classList.contains('visible')) return;
-            clearNavigation();
-            pageAbout.classList.add('visible');
-            btnAbout.classList.add('active');
-            document.body.classList.add('overlay-open');
-            document.body.style.cursor = 'default';
-            if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
-            updateFooterIcons('other');
-        }
+    if (pageAbout.classList.contains('visible')) {
+        hydrateAboutImages();
+        startAboutSlideshow();
+        return;
+    }
+
+    clearNavigation();
+    isPaintingActive = false;
+    pageAbout.classList.add('visible');
+    btnAbout.classList.add('active');
+    document.body.classList.add('overlay-open');
+    document.body.style.cursor = 'default';
+
+    hydrateAboutImages();
+    startAboutSlideshow();
+
+    if (isTouchUI) {
+        document.getElementById('ios-brush-selector').style.display = 'none';
+    }
+    updateFooterIcons('other');
+}
 function openStore() {
 isPaintingActive = false;
     saveLastPage('store');
@@ -5832,23 +5768,6 @@ function openTimePage() {
     timeActive = true;
     timeStart = performance.now();
     requestAnimationFrame(timeFrame);
-}
-function openAdhdPage() {
-    isPaintingActive = false;
-    saveLastPage('adhd');
-    clearNavigation();
-    isPaintingActive = false; // clearNavigation() resets this true, so re-disable painting for /adhd
-    loadAdhdFonts();
-    document.body.classList.add('adhd-mode');
-    pageAdhd.classList.add('visible');
-    document.body.classList.add('overlay-open');
-    document.body.style.cursor = 'default';
-    if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
-    updateFooterIcons('other');
-    if (!adhdInitialized) initAdhdField();
-    adhdActive = true;
-    adhdStartWikiFeed();
-    requestAnimationFrame(adhdTick);
 }
 function openNotes() {
     isPaintingActive = false;
@@ -6064,44 +5983,114 @@ isPaintingActive = false;
         });
 
         // --- ABOUT PAGE IMAGE SLIDER ---
- const aboutImages = ['/me/aboutme_001.webp', '/me/aboutme_002.webp', '/me/aboutme_003.webp', '/me/aboutme_004.webp'];
+        const aboutImages = [
+            '/me/aboutme_001.webp',
+            '/me/aboutme_002.webp',
+            '/me/aboutme_003.webp',
+            '/me/aboutme_004.webp'
+        ];
         let currentAboutIdx = 0;
-        let aboutSlideInterval;
+        let aboutSlideInterval = null;
+        let aboutTransitionToken = 0;
+
+        function hydrateAboutImages() {
+            pageAbout.querySelectorAll('img[data-src]').forEach((image) => {
+                if (image.getAttribute('src')) return;
+                image.decoding = 'async';
+                image.src = image.dataset.src;
+            });
+        }
+
         function updateAboutImage(newIdx) {
+            if (!pageAbout.classList.contains('visible')) return;
+
             const img1 = document.getElementById('about-img-1');
             const img2 = document.getElementById('about-img-2');
-
             const activeImg = img1.classList.contains('active') ? img1 : img2;
             const nextImg = activeImg === img1 ? img2 : img1;
+            const targetSrc = aboutImages[newIdx];
+            const transitionToken = ++aboutTransitionToken;
 
-            nextImg.src = aboutImages[newIdx];
-            nextImg.classList.add('active');
-            activeImg.classList.remove('active');
+            const activateImage = () => {
+                if (transitionToken !== aboutTransitionToken) return;
+                if (!pageAbout.classList.contains('visible')) return;
+                nextImg.classList.add('active');
+                activeImg.classList.remove('active');
+                nextImg.onload = null;
+                nextImg.onerror = null;
+            };
+
+            nextImg.onload = activateImage;
+            nextImg.onerror = () => {
+                nextImg.onload = null;
+                nextImg.onerror = null;
+            };
+
+            if (
+                nextImg.dataset.aboutIndex === String(newIdx) &&
+                nextImg.complete &&
+                nextImg.naturalWidth > 0
+            ) {
+                activateImage();
+                return;
+            }
+
+            nextImg.dataset.aboutIndex = String(newIdx);
+            nextImg.src = targetSrc;
+        }
+
+        function changeAboutImage(direction, restartTimer = true) {
+            currentAboutIdx =
+                (currentAboutIdx + direction + aboutImages.length) %
+                aboutImages.length;
+            updateAboutImage(currentAboutIdx);
+
+            if (restartTimer) resetAboutSlideshow();
         }
 
         function nextAboutImage() {
-            currentAboutIdx = (currentAboutIdx + 1) % aboutImages.length;
-            updateAboutImage(currentAboutIdx);
-            resetAboutInterval();
+            changeAboutImage(1, true);
         }
 
         function prevAboutImage() {
-            currentAboutIdx = (currentAboutIdx - 1 + aboutImages.length) % aboutImages.length;
-            updateAboutImage(currentAboutIdx);
-            resetAboutInterval();
+            changeAboutImage(-1, true);
         }
 
-        function startAboutInterval() {
-            aboutSlideInterval = setInterval(nextAboutImage, 6000);
+        function startAboutSlideshow() {
+            stopAboutSlideshow();
+
+            if (
+                document.hidden ||
+                !pageAbout.classList.contains('visible') ||
+                aboutImages.length < 2
+            ) {
+                return;
+            }
+
+            aboutSlideInterval = window.setInterval(() => {
+                changeAboutImage(1, false);
+            }, 6000);
         }
 
-        function resetAboutInterval() {
-            clearInterval(aboutSlideInterval);
-            startAboutInterval();
+        function stopAboutSlideshow() {
+            if (aboutSlideInterval !== null) {
+                clearInterval(aboutSlideInterval);
+                aboutSlideInterval = null;
+            }
         }
-        
-        startAboutInterval();
 
+        function resetAboutSlideshow() {
+            if (!pageAbout.classList.contains('visible')) return;
+            startAboutSlideshow();
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAboutSlideshow();
+            } else if (pageAbout.classList.contains('visible')) {
+                startAboutSlideshow();
+            }
+        });
 
        // --- LIGHTBOX ZOOM AND PAN ENGINE ---
         let zoomState = 0; 
@@ -6133,22 +6122,38 @@ isPaintingActive = false;
 
                 lbLoader.style.display = 'block';
                 lbModel.style.opacity = '0';
+                lbModel.removeAttribute('src');
 
                 if (!lbModel.dataset.loadListenerAttached) {
                     lbModel.addEventListener('load', () => {
                         lbLoader.style.display = 'none';
                         lbModel.style.opacity = '1';
                     });
+                    lbModel.addEventListener('error', () => {
+                        lbLoader.style.display = 'none';
+                        lbModel.style.opacity = '1';
+                    });
                     lbModel.dataset.loadListenerAttached = 'true';
                 }
 
-                lbModel.src = null;
-                requestAnimationFrame(() => { lbModel.src = src; });
+                ensureModelViewerLoaded()
+                    .then(() => {
+                        if (renderToken !== lightboxMediaRenderToken) return;
+                        requestAnimationFrame(() => {
+                            if (renderToken !== lightboxMediaRenderToken) return;
+                            lbModel.setAttribute('src', src);
+                        });
+                    })
+                    .catch((error) => {
+                        if (renderToken !== lightboxMediaRenderToken) return;
+                        lbLoader.style.display = 'none';
+                        console.error(error);
+                    });
                 return;
             }
 
             lbModel.style.display = 'none';
-            lbModel.src = null;
+            lbModel.removeAttribute('src');
             lbLoader.style.display = 'none';
             lbImg.style.display = 'block';
             fsBtn.style.display = 'block';
@@ -6375,8 +6380,8 @@ isPaintingActive = false;
             lb.classList.remove('active', 'is-fullscreen'); 
             
             if (lbModel) {
-                lbModel.style.display = 'none'; 
-                lbModel.src = '';
+                lbModel.style.display = 'none';
+                lbModel.removeAttribute('src');
             }
             
             // If we're still sitting on a specific artwork URL (e.g. /gallery/splinter/),
@@ -8360,9 +8365,6 @@ window.addEventListener('popstate', (event) => {
     } 
     else if (normalizedPath.endsWith('/time')) {
         openTimePage();
-    } 
-    else if (normalizedPath.endsWith('/adhd')) {
-        openAdhdPage();
     } 
     else if (normalizedPath.endsWith('/contact')) {
         clearNavigation();
@@ -11912,380 +11914,53 @@ window.addEventListener('resize', () => {
             submitButton.innerText = "SEND ENQUIRY";
         });
     });
-// --- PAGE LOAD ANIMATION ---
- // --- IMPROVED PRELOADER TIMING ---
-window.addEventListener('load', hidePreloader);
-setTimeout(hidePreloader, 3500); // Enforce max 3000ms
+// --- FAST DOM-READY PRELOADER ---
+const PRELOADER_FADE_MS = 180;
+const PRELOADER_MAX_VISIBLE_MS = 700;
+let preloaderHideTimer = null;
 
 function hidePreloader() {
     const preloader = document.getElementById('preloader');
-    
-    // Only execute if it hasn't been hidden yet
-    if (!preloader.classList.contains('loaded')) {
-        preloader.classList.add('loaded');
-        document.body.classList.add('site-loaded');
-    }
-}
+    if (!preloader || preloader.classList.contains('loaded')) return;
 
-// =================================================================
-// ADHD WORD FIELD ENGINE (hidden /adhd page)
-// A field of words that never resolve into a sentence. Each word
-// independently, quietly swaps itself for another at its own random
-// interval - never all at once - so the field is always shifting
-// but never arriving anywhere. Nothing here is meant to cohere.
-// =================================================================
-const ADHD_WORDS = [
-    "toothpaste", "almost", "supernova", "email", "regret", "cinnamon",
-    "unfinished", "loud", "static", "tuesday", "again", "collapse", "soft",
-    "lock the door?", "or maybe not", "9:41am", "unread", "spiral",
-    "cardboard", "humming", "forgot why", "receipt",
-    "orbit", "itch", "half a sentence", "buffering", "cold coffee",
-    "someone's talking", "focus", "no wait", "moth", "deadline", "static shock",
-    "what was I", "glow", "traffic", "unsent", "seventeen tabs open",
-    "gravity", "chewed pen", "tomorrow", "left on read", "hum",
-    "was that today", "sunlight, blinds", "overdue", "fizzing",
-    "receipt from 2019", "which drawer", "echo", "half-formed", "static noise",
-    "porch light", "keys", "where", "cricket sound", "unfold", "drifting",
-    "notification", "too loud", "quiet now", "melting", "unlabeled",
-    "one more tab", "flicker", "spilled", "ceiling tiles",
-    "somewhere else", "half-asleep", "rewind", "static hiss", "unraveling",
-    "who said that", "loop", "misplaced", "humming fridge", "almost remembered",
-    "wait what", "seventeen thoughts", "shiny thing", "start over",
-    "half a plan", "why the kitchen?", "ringing ears", "too many windows",
-    "ctrl z", "unbrushed", "one sock", "clock says nothing", "restless leg",
-    "distracted by birds", "cold tea", "open box, later", "scroll scroll scroll",
-    "wrong tab", "day 4 again", "hyperfocus", "now bored",
-    "urge to reorganize", "forgot the word", "tip of tongue",
-    "three unfinished projects", "shiny new idea", "old idea, shiny",
-    "everything at once", "nothing at all", "buzzing", "underline this",
-    "sticky note graveyard", "nineteen browser tabs", "phone in hand",
-    "shower thought", "snoozed four times", "almost on time",
-    "same paragraph again", "oven on? probably",
-    "too many ideas", "loud head",
-    "half-drawn doodle", "unfinished sentence", "static in bones",
-    "forgot at six", "this again", "why this app"
-];
-
-// A handful of wild, mismatched fonts used only on the occasional
-// letter INSIDE a word - the word stays readable, but a letter or
-// two in it will suddenly be in a totally different typeface, like
-// the word glitched for a split second while you were reading it.
-const ADHD_GLITCH_FONTS = [
-    "'Permanent Marker', cursive",
-    "'Special Elite', 'Courier New', monospace",
-    "'Bungee', sans-serif",
-    "'Caveat', cursive",
-    "'Rubik Mono One', monospace",
-    "'Playfair Display', serif",
-    "'Amatic SC', sans-serif",
-    "'Righteous', sans-serif",
-    "'VT323', monospace",
-    "'Shadows Into Light', cursive",
-    "'Anton', sans-serif",
-    "'UnifrakturMaguntia', cursive"
-];
-
-let adhdInitialized = false;
-let adhdActive = false;
-let adhdWordStates = [];
-const ADHD_WORD_COUNT = 225;
-
-// ---------- live data: Wikipedia "recent changes" feed ----------
-// A real-time stream of totally unrelated edits happening across
-// Wikipedia right now - somebody, somewhere, mid-thought, editing an
-// article about something nobody in this conversation was thinking
-// about. That's the vibe: real, live, arriving uninvited, gone again.
-// Only ever polled while the /adhd page is actually open, so it can't
-// cost anything on the rest of the site.
-let adhdLiveTitles = [];
-let adhdWikiPollId = null;
-
-async function adhdFetchWikiChanges() {
-    try {
-        const res = await fetch('https://en.wikipedia.org/w/api.php?action=query&list=recentchanges&rcnamespace=0&rclimit=25&rcprop=title&format=json&origin=*');
-        if (!res.ok) return;
-        const data = await res.json();
-        const titles = (data && data.query && data.query.recentchanges || [])
-            .map((c) => c.title)
-            .filter((t) => t && t.length < 40); // keep the field readable, skip huge titles
-        if (!titles.length) return;
-        adhdLiveTitles = adhdLiveTitles.concat(titles).slice(-120); // rolling window
-    } catch (e) {
-        // offline / blocked / rate-limited - the field just keeps using
-        // the static word list, no big deal
-    }
-}
-
-function adhdStartWikiFeed() {
-    if (adhdWikiPollId !== null) return;
-    adhdFetchWikiChanges();
-    adhdWikiPollId = setInterval(adhdFetchWikiChanges, 5000);
-}
-
-function adhdStopWikiFeed() {
-    if (adhdWikiPollId !== null) {
-        clearInterval(adhdWikiPollId);
-        adhdWikiPollId = null;
-    }
-}
-
-function adhdRandomWord() {
-    if (adhdLiveTitles.length && Math.random() < 0.3) {
-        return adhdLiveTitles[Math.floor(Math.random() * adhdLiveTitles.length)];
-    }
-    return ADHD_WORDS[Math.floor(Math.random() * ADHD_WORDS.length)];
-}
-function adhdRandomGlitchFont() {
-    return ADHD_GLITCH_FONTS[Math.floor(Math.random() * ADHD_GLITCH_FONTS.length)];
-}
-
-// Not every word should pulse at the same rate - pick a pace per
-// word so the field has calm ones sitting still alongside twitchy
-// ones, instead of one uniform flicker speed. Deliberately bimodal:
-// mostly either quite slow or quite fast, with a rare "frozen" word
-// that just... stays, like it got stuck - and a rare manic one that
-// can barely hold a thought for half a second.
-function adhdPickSpeed() {
-    const r = Math.random();
-    if (r < 0.18) return { min: 150,  span: 500  };   // manic / twitching
-    if (r < 0.38) return { min: 450,  span: 1100 };   // fast
-    if (r < 0.60) return { min: 1000, span: 2400 };   // medium
-    if (r < 0.85) return { min: 2200, span: 5200 };   // slow / calm
-    return { min: 5500, span: 10000 };                 // frozen - stuck on one thought
-}
-
-function adhdApplyRandomStyle(span) {
-    const size = 0.85 + Math.random() * 1.6;
-    const opacity = 0.3 + Math.random() * 0.7;
-    span.style.fontSize = size.toFixed(2) + 'rem';
-    span.style.opacity = opacity.toFixed(2);
-    span.style.fontWeight = Math.random() < 0.15 ? 'bold' : 'normal';
-    span.style.fontStyle = Math.random() < 0.12 ? 'italic' : 'normal';
-
-    // restless movement: most words sit still, but a slice get a
-    // barely-there tremor and a smaller slice get a slow, larger
-    // drift that carries them sideways along the line like they're
-    // sliding out of place mid-sentence. Re-rolled every render.
-    span.classList.remove('adhd-jitter', 'adhd-drift');
-    const moveRoll = Math.random();
-    if (moveRoll < 0.05) {
-        span.classList.add('adhd-drift');
-        const amp = 16 + Math.random() * 46; // 16-62px
-        span.style.setProperty('--dx', (Math.random() < 0.5 ? -amp : amp).toFixed(0) + 'px');
-        span.style.setProperty('--ddur', (2200 + Math.random() * 4200).toFixed(0) + 'ms');
-        span.style.animationDelay = '-' + Math.floor(Math.random() * 3000) + 'ms';
-    } else if (moveRoll < 0.09) {
-        span.classList.add('adhd-jitter');
-        span.style.setProperty('--jx', (Math.random() * 1.6 - 0.8).toFixed(1) + 'px');
-        span.style.setProperty('--jdur', (200 + Math.random() * 300).toFixed(0) + 'ms');
-        span.style.animationDelay = '-' + Math.floor(Math.random() * 300) + 'ms';
-    }
-}
-
-// Renders a word letter-by-letter. Every alphabetic character gets
-// its own span (with the true letter stashed in data-char) so it can
-// be individually mangled later by the flicker system - the word
-// itself stays correct in the DOM/dataset, only the visible glyph
-// misfires for a moment. Occasionally a letter also gets wrapped in a
-// random display font (with a slight tilt/weight change) so the
-// glitch lives inside the word itself rather than as separate
-// floating letters.
-function adhdRenderWord(el, word) {
-    el.textContent = '';
-    const letters = [];
-    for (const ch of word) {
-        const span = document.createElement('span');
-        span.textContent = ch;
-        if (/[a-zA-Z]/.test(ch)) {
-            span.className = 'adhd-letter';
-            span.dataset.char = ch;
-            if (Math.random() < 0.16) {
-                span.style.fontFamily = adhdRandomGlitchFont();
-                span.style.fontWeight = Math.random() < 0.5 ? '700' : '400';
-                if (Math.random() < 0.5) {
-                    span.style.display = 'inline-block';
-                    span.style.transform = 'rotate(' + (Math.random() * 18 - 9).toFixed(1) + 'deg)';
-                }
-            }
-            letters.push(span);
-        }
-        el.appendChild(span);
-    }
-    return letters;
-}
-
-// ---------- letter-level flicker: words misspell themselves ----------
-// Independent of the slower full-word swaps above, this randomly
-// grabs single letters across whatever words are on screen and
-// swaps them for a wrong letter for a fraction of a second, so
-// "focus" might flash as "focKs" mid-read then correct itself.
-// Fires at an irregular, unpredictable rate - never a steady tick -
-// which is the point.
-const ADHD_FLICKER_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
-function adhdFlickerReplacement(original) {
-    let repl;
-    do {
-        repl = ADHD_FLICKER_ALPHABET[Math.floor(Math.random() * ADHD_FLICKER_ALPHABET.length)];
-    } while (repl === original.toLowerCase());
-    return original === original.toUpperCase() ? repl.toUpperCase() : repl;
-}
-
-// A real flicker, not a single swap: the letter stutters through
-// wrong letters in quick succession before landing back on itself -
-// and most of the time its font jumps to something completely
-// mismatched mid-stutter too, so it's not just the wrong letter, it's
-// the wrong letter in the wrong typeface for a split second.
-function adhdFlickerLetter(letter) {
-    const original = letter.dataset.char;
-    if (!original) return;
-    letter.classList.add('adhd-flicker-active');
-    const originalFont = letter.style.fontFamily || '';
-    const useFontGlitch = Math.random() < 0.7;
-    const stutters = 1 + Math.floor(Math.random() * 4);
-    let step = 0;
-    (function stutterStep() {
-        step++;
-        if (step > stutters) {
-            letter.textContent = original;
-            if (useFontGlitch) letter.style.fontFamily = originalFont;
-            letter.classList.remove('adhd-flicker-active');
-            return;
-        }
-        letter.textContent = adhdFlickerReplacement(original);
-        if (useFontGlitch) letter.style.fontFamily = adhdRandomGlitchFont();
-        setTimeout(stutterStep, 55 + Math.random() * 95);
-    })();
-}
-
-// ---------- global "energy" wave ----------
-// A slow, semi-random oscillation between calm and manic that drives
-// how much of the field is flickering at any given moment. Not a
-// clean sine wave alone (that would read as a metronome) - it's a
-// sine wave with noise layered on top, so the field drifts toward
-// a chaotic patch, sits there a while, then drifts calmer, without
-// ever settling into a predictable rhythm.
-const adhdEnergySeed = Math.random() * 1000;
-function adhdEnergyLevel(now) {
-    const wave = Math.sin(now * 0.00021 + adhdEnergySeed) * 0.5 + 0.5; // 0..1
-    return Math.max(0, Math.min(1, wave * 0.65 + Math.random() * 0.35));
-}
-
-// ---------- hyperfocus: the flip side of the chaos ----------
-// Every so often, one word locks in - scales up, sharpens, holds -
-// like attention briefly snapping onto a single thought before
-// letting go again. Contrast makes the surrounding chaos read better.
-let adhdNextHyperfocusAt = 0;
-function adhdMaybeHyperfocus(now) {
-    if (now < adhdNextHyperfocusAt) return;
-    adhdNextHyperfocusAt = now + 4500 + Math.random() * 9000;
-    if (!adhdWordStates.length) return;
-    const w = adhdWordStates[Math.floor(Math.random() * adhdWordStates.length)];
-    w.el.classList.add('adhd-hyperfocus');
-    const holdFor = 700 + Math.random() * 1500;
-    setTimeout(() => { w.el.classList.remove('adhd-hyperfocus'); }, holdFor);
-}
-
-// ---------- jolt: the whole field flinches ----------
-// A rare, brief full-field shake - a startle, a sudden interruption -
-// happening on its own unpredictable schedule.
-let adhdNextJoltAt = 0;
-function adhdMaybeJolt(now) {
-    if (now < adhdNextJoltAt) return;
-    adhdNextJoltAt = now + 10000 + Math.random() * 16000;
-    const field = document.getElementById('adhd-field');
-    if (!field) return;
-    field.classList.remove('adhd-jolt');
-    void field.offsetWidth; // force reflow so the animation restarts cleanly
-    field.classList.add('adhd-jolt');
-    setTimeout(() => field.classList.remove('adhd-jolt'), 380);
-}
-
-// ---------- dart: words suddenly lurch out of place ----------
-// Way more drastic than the restless jitter/drift above - every so
-// often a handful of words just snap sideways, up, down, tilted,
-// like the field flinched, then settle back into the line. Fires on
-// its own unpredictable schedule, independent of everything else.
-let adhdNextDartAt = 0;
-function adhdMaybeDart(now) {
-    if (now < adhdNextDartAt) return;
-    adhdNextDartAt = now + 220 + Math.random() * 900;
-    if (!adhdWordStates.length) return;
-    const bursts = 1 + Math.floor(Math.random() * 3);
-    for (let n = 0; n < bursts; n++) {
-        const w = adhdWordStates[Math.floor(Math.random() * adhdWordStates.length)];
-        if (w.el.classList.contains('adhd-dart')) continue;
-        // a running animation (jitter/drift) would otherwise win over
-        // our inline transform, so drop them for this word - they get
-        // re-rolled next time it swaps anyway
-        w.el.classList.remove('adhd-jitter', 'adhd-drift');
-        w.el.classList.add('adhd-dart');
-        const dx = (Math.random() * 90 - 45).toFixed(1);
-        const dy = (Math.random() * 55 - 27).toFixed(1);
-        const rot = (Math.random() * 16 - 8).toFixed(1);
-        w.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg)';
-        setTimeout(() => {
-            w.el.style.transform = '';
-            setTimeout(() => { w.el.classList.remove('adhd-dart'); }, 340);
-        }, 180 + Math.random() * 260);
-    }
-}
-
-function initAdhdField() {
-    const field = document.getElementById('adhd-field');
-    if (!field) return;
-    field.innerHTML = '';
-    adhdWordStates = [];
-    const now = performance.now();
-
-    for (let i = 0; i < ADHD_WORD_COUNT; i++) {
-        const span = document.createElement('span');
-        span.className = 'adhd-word';
-        const letters = adhdRenderWord(span, adhdRandomWord());
-        adhdApplyRandomStyle(span);
-        field.appendChild(span);
-        const speed = adhdPickSpeed();
-        adhdWordStates.push({ el: span, letters, speed, nextAt: now + Math.random() * speed.span });
+    if (preloaderHideTimer !== null) {
+        clearTimeout(preloaderHideTimer);
+        preloaderHideTimer = null;
     }
 
-    adhdInitialized = true;
+    preloader.classList.add('loaded');
+    preloader.setAttribute('aria-hidden', 'true');
+    document.body.classList.add('site-loaded');
+
+    window.setTimeout(() => {
+        if (preloader.parentNode) preloader.remove();
+    }, PRELOADER_FADE_MS + 40);
 }
 
-function adhdTick(now) {
-    if (!adhdActive) return;
-    adhdMaybeHyperfocus(now);
-    adhdMaybeJolt(now);
-    adhdMaybeDart(now);
-
-    // continuous per-letter chaos: every visible letter gets a fresh
-    // roll every frame, so flickering is a constant, obvious presence
-    // across the field rather than an occasional rare event. The
-    // "energy" wave scales how much of the field is misfiring at once.
-    const energy = adhdEnergyLevel(now);
-    const flickerChance = 0.0011 + energy * 0.0048;
-
-    adhdWordStates.forEach((w) => {
-        for (let i = 0; i < w.letters.length; i++) {
-            const letter = w.letters[i];
-            if (letter.classList.contains('adhd-flicker-active')) continue;
-            if (Math.random() < flickerChance) adhdFlickerLetter(letter);
-        }
-
-        if (now >= w.nextAt) {
-            // vary how fast each word snaps away vs fades away - some
-            // are gone instantly, others linger a beat
-            const fadeMs = 60 + Math.random() * 480;
-            w.el.style.transitionDuration = (fadeMs / 1000).toFixed(2) + 's';
-            w.el.style.opacity = 0;
-            setTimeout(() => {
-                if (!adhdActive) return;
-                w.letters = adhdRenderWord(w.el, adhdRandomWord());
-                adhdApplyRandomStyle(w.el);
-            }, Math.max(80, fadeMs * 0.85));
-            w.nextAt = now + w.speed.min + Math.random() * w.speed.span;
-        }
-    });
-    requestAnimationFrame(adhdTick);
+function revealSiteWhenDomIsUsable() {
+    requestAnimationFrame(hidePreloader);
 }
+
+if (document.readyState === 'loading') {
+    document.addEventListener(
+        'DOMContentLoaded',
+        revealSiteWhenDomIsUsable,
+        { once: true }
+    );
+} else {
+    revealSiteWhenDomIsUsable();
+}
+
+// Start the fade early enough for the overlay to be fully gone by roughly
+// 700 ms from navigation start, without waiting for images or third parties.
+const preloaderFadeDeadline = Math.max(
+    0,
+    PRELOADER_MAX_VISIBLE_MS - PRELOADER_FADE_MS - performance.now()
+);
+preloaderHideTimer = window.setTimeout(
+    hidePreloader,
+    preloaderFadeDeadline
+);
 
 // =================================================================
 // LIVING ARTWORK ENGINE (hidden /test page)
