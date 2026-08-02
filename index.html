@@ -8589,9 +8589,9 @@ window.addEventListener('resize', () => {
     const SOURCE_CACHE = new Map();
     const RESOLVED_SOURCES = new Map();
 
-    /* Keep a tiny browser-native media prewarm rack. Unlike Blob fetching,
-       these off-screen <video> elements preserve Safari's own byte-range and
-       media-cache behaviour. Only the three most likely clips are retained. */
+    /* Keep a tiny browser-native media prewarm rack for explicit
+       fullscreen/touch intent. Desktop grid hover uses its visible player
+       directly, so it does not duplicate the same MP4 request here. */
     const MOTION_PREWARM_SLOTS = 2;
     const MOTION_PREWARM_DELAY_MS = 120;
     const motionPrewarmVideos = [];
@@ -8600,6 +8600,7 @@ window.addEventListener('resize', () => {
 
     const POSTER_CACHE = new Map();
     const MOTION_POSTER_WARM_CACHE = new Map();
+    const MOTION_POSTER_META = new Map();
     const POSTER_REQUESTS = new Map();
     const POSTER_QUEUE = [];
     let posterWorkerRunning = false;
@@ -9014,28 +9015,59 @@ window.addEventListener('resize', () => {
 
     function cardHTML(index) {
         const filename = MOTION_FILES[index] || '';
-        /* The batch loader has already requested and decoded this WebP before
-           the card reaches the DOM. Keep the real image eager so native lazy
-           loading cannot leave a visible white hole during fast scrolling. */
-        const useStaticPoster = !!filename;
-        const cardClass = 'work-item motion-item poster-loading' +
+        const posterURL = filename ? motionPosterURL(filename) : '';
+        const posterMeta = posterURL
+            ? MOTION_POSTER_META.get(posterURL)
+            : null;
+        const posterReady = !!(
+            posterMeta &&
+            posterMeta.ready &&
+            posterMeta.width > 0 &&
+            posterMeta.height > 0
+        );
+
+        /* Each row reaches the DOM only after its posters have completed and
+           decoded. Mark successful cards ready immediately so there is no
+           shimmer or half-painted image between insertion and the load event. */
+        const cardClass =
+            'work-item motion-item ' +
+            (posterReady ? 'poster-ready' : 'poster-loading') +
             (useIOSLeanThumbnails ? ' ios-lean-motion' : '');
+
         const posterPriority = index < motionEagerPosterCount()
             ? ' fetchpriority="high"'
             : ' fetchpriority="auto"';
-        const posterAttributes = useStaticPoster
-            ? ' src="' + motionPosterURL(filename) +
+        const posterAttributes = filename
+            ? ' src="' + posterURL +
               '" loading="eager"' + posterPriority
             : '';
+
+        const itemRatioAttributes = posterReady
+            ? ' data-motion-ratio="' + posterMeta.ratio +
+              '" data-motion-native-width="' + posterMeta.width +
+              '" data-motion-native-height="' + posterMeta.height +
+              '" data-motion-aspect-locked="true"' +
+              ' style="--motion-ratio:' + posterMeta.ratio + ';"'
+            : '';
+
+        const imageAspectStyle = posterReady
+            ? ' style="aspect-ratio:' + posterMeta.width +
+              ' / ' + posterMeta.height + ';"'
+            : '';
+
         const cardActionLabel = touchCapable
             ? 'Play or pause motion video'
             : 'Open motion video fullscreen';
+
         return (
-            '<div class="' + cardClass + '" data-motion-index="' + index + '">' +
-                '<div class="work-image" role="button" tabindex="0" aria-label="' + cardActionLabel + '">' +
+            '<div class="' + cardClass + '" data-motion-index="' + index + '"' +
+                itemRatioAttributes + '>' +
+                '<div class="work-image" role="button" tabindex="0"' +
+                    imageAspectStyle +
+                    ' aria-label="' + cardActionLabel + '">' +
                     '<img class="motion-poster" alt="" aria-hidden="true" decoding="async" draggable="false"' + posterAttributes + '>' +
-                    /* Desktop injects its dual-decoder player only when needed.
-                       iOS injects one decoder after an intentional tap/press. */
+                    /* Desktop injects its seamless dual-decoder player only
+                       when hovered. iOS keeps its lean single active decoder. */
                     '<div class="motion-video-stack"></div>' +
                     '<button class="motion-fullscreen-btn" type="button" aria-label="View fullscreen" onclick="openMotionViewer(event, ' + index + ')">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
@@ -9073,7 +9105,15 @@ window.addEventListener('resize', () => {
     }
 
     function preloadMotionPoster(filename, priority = 'auto') {
-        if (!filename) return Promise.resolve();
+        if (!filename) {
+            return Promise.resolve({
+                ready: false,
+                width: 0,
+                height: 0,
+                ratio: 0,
+                url: ''
+            });
+        }
 
         const url = motionPosterURL(filename);
         if (MOTION_POSTER_WARM_CACHE.has(url)) {
@@ -9090,45 +9130,191 @@ window.addEventListener('resize', () => {
             }
 
             let settled = false;
-            const timeout = window.setTimeout(finish, 3200);
+            const timeout = window.setTimeout(() => {
+                finish(false);
+            }, 10000);
 
-            function finish() {
+            function finish(ready) {
                 if (settled) return;
                 settled = true;
                 clearTimeout(timeout);
 
+                const width = ready ? image.naturalWidth : 0;
+                const height = ready ? image.naturalHeight : 0;
+                const meta = {
+                    ready: !!(ready && width > 0 && height > 0),
+                    width,
+                    height,
+                    ratio: width > 0 && height > 0
+                        ? width / height
+                        : 0,
+                    url
+                };
+
+                if (meta.ready) {
+                    MOTION_POSTER_META.set(url, meta);
+                }
+
+                resolve(meta);
+            }
+
+            const complete = async () => {
                 if (
                     image.complete &&
                     image.naturalWidth > 0 &&
                     typeof image.decode === 'function'
                 ) {
-                    image.decode().catch(() => undefined).finally(resolve);
-                } else {
-                    resolve();
+                    try {
+                        await image.decode();
+                    } catch (_) {}
                 }
-            }
+                finish(image.naturalWidth > 0 && image.naturalHeight > 0);
+            };
 
-            image.addEventListener('load', finish, { once: true });
-            image.addEventListener('error', finish, { once: true });
+            image.addEventListener('load', complete, { once: true });
+            image.addEventListener('error', () => finish(false), { once: true });
             image.src = url;
 
-            if (image.complete) finish();
+            if (image.complete) complete();
         });
 
         MOTION_POSTER_WARM_CACHE.set(url, request);
         return request;
     }
 
-    function preloadMotionPosterRange(start, end, priority = 'auto') {
-        const requests = [];
+    function motionPosterRatio(index) {
+        const filename = MOTION_FILES[index];
+        if (!filename) return 0.5625;
 
-        for (let index = start; index < end; index++) {
-            requests.push(
-                preloadMotionPoster(MOTION_FILES[index], priority)
+        const meta = MOTION_POSTER_META.get(
+            motionPosterURL(filename)
+        );
+
+        return meta && Number.isFinite(meta.ratio) && meta.ratio > 0
+            ? meta.ratio
+            : 0.5625;
+    }
+
+    function motionRowMaximumItems() {
+        if (window.innerWidth <= 768) return 2;
+        if (window.innerWidth <= 1024) return 3;
+        return 6;
+    }
+
+    async function preloadNextMotionPosterRow(
+        start,
+        priority = 'auto'
+    ) {
+        const total = motionVideoList.length;
+        if (start >= total) return { start, end: start };
+
+        const containerWidth = Math.max(
+            1,
+            grid.clientWidth ||
+            motionPage.clientWidth ||
+            window.innerWidth
+        );
+        const gap = window.innerWidth <= 768
+            ? 14
+            : motionRowGap();
+        const targetHeight = motionTargetRowHeight(containerWidth);
+        const minAcceptedHeight = targetHeight * 0.88;
+        const maxAcceptedHeight = targetHeight * 1.14;
+        const maxItems = motionRowMaximumItems();
+
+        const rowRatios = [];
+        let end = start;
+
+        while (end < total && rowRatios.length < maxItems) {
+            await preloadMotionPoster(MOTION_FILES[end], priority);
+            const candidateRatio = motionPosterRatio(end);
+
+            if (rowRatios.length) {
+                const currentRatioTotal = rowRatios.reduce(
+                    (sum, ratio) => sum + ratio,
+                    0
+                );
+                const currentHeight =
+                    (containerWidth - gap * (rowRatios.length - 1)) /
+                    currentRatioTotal;
+                const withRatioTotal =
+                    currentRatioTotal + candidateRatio;
+                const withHeight =
+                    (containerWidth - gap * rowRatios.length) /
+                    withRatioTotal;
+
+                if (window.innerWidth > 1024) {
+                    const currentIsGood =
+                        currentHeight >= minAcceptedHeight &&
+                        currentHeight <= maxAcceptedHeight;
+                    const addingIsTooShort =
+                        withHeight < minAcceptedHeight;
+                    const currentCloser =
+                        Math.abs(currentHeight - targetHeight) <=
+                        Math.abs(withHeight - targetHeight);
+
+                    /* The candidate is already warmed for the following row,
+                       but it is not inserted into this one. */
+                    if (
+                        currentIsGood &&
+                        addingIsTooShort &&
+                        currentCloser
+                    ) {
+                        break;
+                    }
+                }
+            }
+
+            rowRatios.push(candidateRatio);
+            end++;
+
+            const ratioTotal = rowRatios.reduce(
+                (sum, ratio) => sum + ratio,
+                0
             );
+            const fittedHeight =
+                (containerWidth - gap * (rowRatios.length - 1)) /
+                ratioTotal;
+
+            if (window.innerWidth <= 768) {
+                /* Phone rows are at most two items. A wide work can occupy a
+                   complete row by itself, matching the visual layout. */
+                if (
+                    rowRatios.length === 1 &&
+                    candidateRatio >= 1.2
+                ) {
+                    break;
+                }
+                if (
+                    rowRatios.length >= 2 ||
+                    fittedHeight <= targetHeight
+                ) {
+                    break;
+                }
+            } else if (window.innerWidth <= 1024) {
+                if (
+                    rowRatios.length >= 3 ||
+                    (rowRatios.length >= 2 &&
+                     fittedHeight <= targetHeight)
+                ) {
+                    break;
+                }
+            } else if (
+                rowRatios.length > 1 &&
+                fittedHeight <= targetHeight
+            ) {
+                break;
+            }
         }
 
-        return Promise.allSettled(requests);
+        /* Always make forward progress, even if a missing poster returned no
+           dimensions. That card retains the existing generated-poster fallback. */
+        if (end === start) {
+            await preloadMotionPoster(MOTION_FILES[start], priority);
+            end = start + 1;
+        }
+
+        return { start, end };
     }
 
     function scheduleNextMotionPosterWarmup() {
@@ -9142,14 +9328,10 @@ window.addEventListener('resize', () => {
         }
 
         const start = renderedMotionCount;
-        const end = Math.min(
-            motionVideoList.length,
-            start + incrementalMotionBatchSize()
-        );
 
         const warm = () => {
             if (!isMotionPageActive()) return;
-            preloadMotionPosterRange(start, end, 'low');
+            preloadNextMotionPosterRow(start, 'low');
         };
 
         if ('requestIdleCallback' in window) {
@@ -9338,6 +9520,30 @@ window.addEventListener('resize', () => {
         );
     }
 
+    async function loadInitialMotionRows() {
+        /* First row gets the highest priority and becomes visible immediately
+           after every poster in that row has decoded. Rows two and three then
+           follow one at a time instead of blocking the first screen. */
+        await appendNextMotionBatch(true, {
+            observeTail: false,
+            scheduleWarm: false
+        });
+
+        for (let row = 1; row < 3; row++) {
+            if (renderedMotionCount >= motionVideoList.length) break;
+            await new Promise((resolve) =>
+                requestAnimationFrame(resolve)
+            );
+            await appendNextMotionBatch(false, {
+                observeTail: false,
+                scheduleWarm: false
+            });
+        }
+
+        scheduleNextMotionPosterWarmup();
+        observeMotionBatchTail();
+    }
+
     function buildGrid(filenames) {
         motionVideoList = filenames.map(motionFileURL);
         motionThumbnailVideoList = filenames.map((filename) =>
@@ -9349,7 +9555,7 @@ window.addEventListener('resize', () => {
         grid.classList.add('is-loading-initial');
         renderedMotionCount = 0;
         setupMotionObservers();
-        return appendNextMotionBatch(true);
+        return loadInitialMotionRows();
     }
 
     function primeSource(src) {
@@ -9842,6 +10048,9 @@ window.addEventListener('resize', () => {
             this.canvasOnly = options.canvasOnly === true;
             this.canvasAlpha = options.canvasAlpha === true;
             this.deferStandbyLoad = options.deferStandbyLoad === true;
+            this.nativePlaybackSurface =
+                options.nativePlaybackSurface === true &&
+                !this.canvasOnly;
             this.fitMode = options.fitMode === 'contain' ? 'contain' : 'cover';
             this.ctx = this.canvas.getContext('2d', {
                 alpha: this.canvasAlpha,
@@ -10139,8 +10348,16 @@ window.addEventListener('resize', () => {
             }
             if (!this.playing || generation !== this.generation) return false;
 
-            if (this.drawVideo(active, 1, true)) this.showCanvas();
-            else this.showDirectVideo(this.activeIndex);
+            if (this.nativePlaybackSurface) {
+                /* While moving, let the browser present the decoded video
+                   directly. Canvas is reserved for the tiny loop overlap and
+                   the exact hover-out freeze. */
+                this.showDirectVideo(this.activeIndex);
+            } else if (this.drawVideo(active, 1, true)) {
+                this.showCanvas();
+            } else {
+                this.showDirectVideo(this.activeIndex);
+            }
             this.startRenderLoop(generation);
 
             if (!this.deferStandbyLoad) {
@@ -10254,6 +10471,12 @@ window.addEventListener('resize', () => {
             this.primed[oldIndex] = false;
             this.priming[oldIndex] = null;
 
+            if (this.nativePlaybackSurface) {
+                /* The overlap canvas has completed its job. Return immediately
+                   to the newly active native video surface. */
+                this.showDirectVideo(newIndex);
+            }
+
             if (this.deferStandbyLoad) {
                 try {
                     oldVideo.removeAttribute('src');
@@ -10284,8 +10507,17 @@ window.addEventListener('resize', () => {
                     }
                     if (progress >= 1) this.finishCrossfade(generation);
                 } else {
-                    if (this.drawVideo(active, 1, true)) this.showCanvas();
-                    else this.showDirectVideo(this.activeIndex);
+                    /* Native thumbnail playback avoids copying every decoded
+                       frame into canvas. The render loop now only watches the
+                       timeline so it can prepare the seamless overlap. */
+                    if (!this.nativePlaybackSurface) {
+                        if (this.drawVideo(active, 1, true)) {
+                            this.showCanvas();
+                        } else {
+                            this.showDirectVideo(this.activeIndex);
+                        }
+                    }
+
                     const duration = active.duration;
                     if (Number.isFinite(duration) && duration > 0) {
                         const remaining = duration - active.currentTime;
@@ -10891,20 +11123,6 @@ window.addEventListener('resize', () => {
         }
     }
 
-    function initialMotionBatchSize() {
-        // Roughly three visual rows for each layout.
-        if (window.innerWidth <= 768) return 6;
-        if (window.innerWidth <= 1024) return 9;
-        return 12;
-    }
-
-    function incrementalMotionBatchSize() {
-        // Add smaller groups only as the visitor approaches the current end.
-        if (window.innerWidth <= 768) return 4;
-        if (window.innerWidth <= 1024) return 6;
-        return 8;
-    }
-
     function motionEagerPosterCount() {
         // Only the first visible row should compete for bandwidth immediately.
         if (window.innerWidth <= 768) return 2;
@@ -11065,6 +11283,7 @@ window.addEventListener('resize', () => {
             stack.replaceChildren(videoA, videoB);
             looper = new CanvasLoopPlayer([videoA, videoB], {
                 muted: true,
+                nativePlaybackSurface: true,
                 onMetadata: (video) => setCardAspect(item, video)
             });
         }
@@ -11436,19 +11655,14 @@ window.addEventListener('resize', () => {
         if (touchCapable) {
             bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
         } else {
-            let desktopIntentTimer = 0;
-
             item.addEventListener('mouseenter', () => {
-                clearTimeout(desktopIntentTimer);
-                desktopIntentTimer = window.setTimeout(() => {
-                    prewarmMotionIndices([index], motionThumbnailVideoList);
-                    play();
-                }, 60);
+                /* Desktop interaction is deliberately immediate. The visible
+                   dual-decoder player is itself the loader, avoiding a second
+                   invisible request for the same MP4. */
+                play();
             });
 
             item.addEventListener('mouseleave', () => {
-                clearTimeout(desktopIntentTimer);
-                desktopIntentTimer = 0;
                 stop();
             });
 
@@ -11482,7 +11696,10 @@ window.addEventListener('resize', () => {
         if (lastItem) motionBatchObserver.observe(lastItem);
     }
 
-    function appendNextMotionBatch(isInitial = false) {
+    function appendNextMotionBatch(
+        isInitial = false,
+        options = {}
+    ) {
         if (renderedMotionCount >= motionVideoList.length) {
             return Promise.resolve();
         }
@@ -11492,17 +11709,12 @@ window.addEventListener('resize', () => {
         }
 
         const start = renderedMotionCount;
-        const batchSize = isInitial
-            ? initialMotionBatchSize()
-            : incrementalMotionBatchSize();
-        const end = Math.min(motionVideoList.length, start + batchSize);
         const priority = isInitial ? 'high' : 'auto';
 
-        motionBatchRequestInFlight = preloadMotionPosterRange(
+        motionBatchRequestInFlight = preloadNextMotionPosterRow(
             start,
-            end,
             priority
-        ).then(() => {
+        ).then(({ end }) => {
             let cards = '';
             for (let index = start; index < end; index++) {
                 cards += cardHTML(index);
@@ -11510,7 +11722,12 @@ window.addEventListener('resize', () => {
 
             grid.insertAdjacentHTML('beforeend', cards);
             renderedMotionCount = end;
-            grid.classList.remove('is-loading-initial');
+
+            /* The first completed physical row replaces the page loader.
+               Later rows arrive only after their own posters are decoded. */
+            if (isInitial) {
+                grid.classList.remove('is-loading-initial');
+            }
 
             const newItems = Array.from(
                 grid.querySelectorAll('.motion-item')
@@ -11519,9 +11736,15 @@ window.addEventListener('resize', () => {
             initMotionItems(newItems);
             scheduleMotionRowLayout();
             requestAnimationFrame(refreshMotionViewport);
-            scheduleNextMotionPosterWarmup();
 
-            if (!motionBatchAppendLocked) {
+            if (options.scheduleWarm !== false) {
+                scheduleNextMotionPosterWarmup();
+            }
+
+            if (
+                options.observeTail !== false &&
+                !motionBatchAppendLocked
+            ) {
                 observeMotionBatchTail();
             }
         }).finally(() => {
