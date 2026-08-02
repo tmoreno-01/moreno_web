@@ -7,18 +7,18 @@
 <link rel="canonical" href="https://tyronemoreno.com/">
 
 <!-- SEO Meta -->
-<meta name="description" content="Tyrone Moreno is a multidisciplinary creator and artist creator.">
+<meta name="description" content="Tyrone Moreno is a mixed media creator.">
 
 <!-- Open Graph / Facebook / Instagram -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tyronemoreno.com/">
 <meta property="og:title" content="Tyrone Moreno">
-<meta property="og:description" content="Tyrone Moreno is a multidisciplinary creator and artist.">
+<meta property="og:description" content="Tyrone Moreno is a mixed media creator.">
 <meta property="og:image" content="https://tyronemoreno.com/logo.webp">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Tyrone Moreno">
-<meta name="twitter:description" content="Tyrone Moreno is a multidisciplinary creator and artist.">
+<meta name="twitter:description" content="Tyrone Moreno is a mixed media creator.">
 <meta name="twitter:image" content="https://tyronemoreno.com/logo.webp">
 
 <!-- Favicons -->
@@ -3136,7 +3136,7 @@ body.time-mode #ios-brush-selector {
 })();
 </script>
 
-<h1 class="visually-hidden">Tyrone Moreno — Multidisciplinary Artist and Creator</h1>
+<h1 class="visually-hidden">Tyrone Moreno — Mixed Media Artist and Creator</h1>
 <!-- New Duck Page -->
 <div id="page-duck" class="page-overlay">
     <div class="overlay-content">
@@ -3909,7 +3909,7 @@ body.time-mode #ios-brush-selector {
 // --- SEO & META TAG UPDATER ---
 const SITE_ORIGIN = 'https://tyronemoreno.com';
 const DEFAULT_SITE_TITLE = 'Tyrone Moreno';
-const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a multidisciplinary creator and artist.';
+const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a mixed media creator.';
 const DEFAULT_SITE_IMAGE = `${SITE_ORIGIN}/logo.webp`;
 const STORE_TITLE = 'Art Prints, Original Artworks, Apparel & Objects | Tyrone Moreno';
 const STORE_DESCRIPTION = 'Shop signed limited-edition art prints, original artworks, apparel and objects by Tyrone Moreno, with certificates of authenticity and worldwide delivery.';
@@ -8529,6 +8529,8 @@ window.addEventListener('resize', () => {
     let motionObserver = null;
     let motionBatchObserver = null;
     let renderedMotionCount = 0;
+    let motionBatchAppendLocked = false;
+    let motionBatchUnlockTimer = 0;
     let viewerSource = '';
     const motionPage = document.getElementById('page-motion');
     if (motionPage) {
@@ -8924,9 +8926,14 @@ window.addEventListener('resize', () => {
         const useStaticPoster = !!filename;
         const cardClass = 'work-item motion-item poster-ready' +
             (useIOSLeanThumbnails ? ' ios-lean-motion' : '');
+        const eagerPosterCount = motionEagerPosterCount();
+        const posterLoading = index < eagerPosterCount ? 'eager' : 'lazy';
+        const posterPriority = index < eagerPosterCount
+            ? ' fetchpriority="high"'
+            : ' fetchpriority="low"';
         const posterAttributes = useStaticPoster
-            ? ' src="' + motionPosterURL(filename) + '" loading="eager"' +
-              (index < 6 ? ' fetchpriority="high"' : '')
+            ? ' src="' + motionPosterURL(filename) + '" loading="' +
+              posterLoading + '"' + posterPriority
             : '';
         const cardActionLabel = touchCapable
             ? 'Play or pause motion video'
@@ -9133,17 +9140,6 @@ window.addEventListener('resize', () => {
         }, Math.max(0, delay));
     }
 
-    function prewarmInitialMotionClips() {
-        const sourceList = motionThumbnailVideoList.length
-            ? motionThumbnailVideoList
-            : motionVideoList;
-        scheduleMotionPrewarm(
-            [0, 1, 2],
-            MOTION_PREWARM_DELAY_MS,
-            sourceList
-        );
-    }
-
     function prewarmAroundMotionIndex(index, includeCurrent = false) {
         if (!motionVideoList.length) return;
         const current = normalizedMotionIndex(index, motionVideoList);
@@ -9170,7 +9166,7 @@ window.addEventListener('resize', () => {
         grid.innerHTML = '';
         renderedMotionCount = 0;
         setupMotionObservers();
-        appendNextMotionBatch();
+        appendNextMotionBatch(true);
     }
 
     function primeSource(src) {
@@ -10687,10 +10683,31 @@ window.addEventListener('resize', () => {
         }
     }
 
-    function motionBatchSize() {
-        if (window.innerWidth <= 768) return 8;
+    function initialMotionBatchSize() {
+        // Roughly three visual rows for each layout.
+        if (window.innerWidth <= 768) return 6;
         if (window.innerWidth <= 1024) return 9;
         return 12;
+    }
+
+    function incrementalMotionBatchSize() {
+        // Add smaller groups only as the visitor approaches the current end.
+        if (window.innerWidth <= 768) return 4;
+        if (window.innerWidth <= 1024) return 6;
+        return 8;
+    }
+
+    function motionEagerPosterCount() {
+        // Only the first visible row should compete for bandwidth immediately.
+        if (window.innerWidth <= 768) return 2;
+        if (window.innerWidth <= 1024) return 3;
+        return 4;
+    }
+
+    function motionBatchRootMargin() {
+        // Keep the next batch close to the viewport instead of preloading
+        // another 1,400px of cards as soon as the page opens.
+        return touchCapable ? 140 : 260;
     }
 
     function isMotionPageActive() {
@@ -11232,19 +11249,42 @@ window.addEventListener('resize', () => {
         if (lastItem) motionBatchObserver.observe(lastItem);
     }
 
-    function appendNextMotionBatch() {
+    function appendNextMotionBatch(isInitial = false) {
         if (renderedMotionCount >= motionVideoList.length) return;
+
         const start = renderedMotionCount;
-        const end = Math.min(motionVideoList.length, start + motionBatchSize());
+        const batchSize = isInitial
+            ? initialMotionBatchSize()
+            : incrementalMotionBatchSize();
+        const end = Math.min(motionVideoList.length, start + batchSize);
+
         let html = '';
-        for (let index = start; index < end; index++) html += cardHTML(index);
+        for (let index = start; index < end; index++) {
+            html += cardHTML(index);
+        }
+
         grid.insertAdjacentHTML('beforeend', html);
         renderedMotionCount = end;
-        const newItems = Array.from(grid.querySelectorAll('.motion-item')).slice(start, end);
+
+        const newItems = Array.from(
+            grid.querySelectorAll('.motion-item')
+        ).slice(start, end);
+
         initMotionItems(newItems);
-        observeMotionBatchTail();
         scheduleMotionRowLayout();
         requestAnimationFrame(refreshMotionViewport);
+
+        if (!motionBatchAppendLocked) {
+            observeMotionBatchTail();
+        }
+    }
+
+    function unlockMotionBatchLoading() {
+        clearTimeout(motionBatchUnlockTimer);
+        motionBatchUnlockTimer = window.setTimeout(() => {
+            motionBatchAppendLocked = false;
+            observeMotionBatchTail();
+        }, 220);
     }
 
     function setupMotionObservers() {
@@ -11255,8 +11295,8 @@ window.addEventListener('resize', () => {
             entries.forEach((entry) => {
                 const item = entry.target;
                 if (entry.isIntersecting && isMotionPageActive()) {
-                    /* Posters are already visible, so merely entering the
-                       viewport must not create or download MP4 decoders. */
+                    /* Posters are static images. Entering the viewport does not
+                       create or download an MP4 decoder. */
                     clearTimeout(item.motionUnloadTimer);
                 } else {
                     scheduleMotionUnload(item);
@@ -11269,11 +11309,19 @@ window.addEventListener('resize', () => {
         });
 
         motionBatchObserver = new IntersectionObserver((entries) => {
-            if (!isMotionPageActive()) return;
-            if (entries.some((entry) => entry.isIntersecting)) appendNextMotionBatch();
+            if (!isMotionPageActive() || motionBatchAppendLocked) return;
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+
+            motionBatchAppendLocked = true;
+            motionBatchObserver.disconnect();
+
+            requestAnimationFrame(() => {
+                appendNextMotionBatch(false);
+                unlockMotionBatchLoading();
+            });
         }, {
             root: motionPage,
-            rootMargin: '1400px 0px',
+            rootMargin: '0px 0px ' + motionBatchRootMargin() + 'px 0px',
             threshold: 0
         });
     }
@@ -11298,7 +11346,6 @@ window.addEventListener('resize', () => {
         }
         scheduleMotionRowLayout();
         requestAnimationFrame(() => requestAnimationFrame(refreshMotionViewport));
-        prewarmInitialMotionClips();
         return motionLoadPromise || Promise.resolve(motionVideoList);
     }
 
@@ -11855,6 +11902,9 @@ window.addEventListener('resize', () => {
         activeThumbnailItem = null;
         activeThumbnailLooper = null;
         clearMotionPrewarmers();
+        clearTimeout(motionBatchUnlockTimer);
+        motionBatchAppendLocked = false;
+        if (motionBatchObserver) motionBatchObserver.disconnect();
         Array.from(grid.querySelectorAll('.motion-item')).forEach(dehydrateMotionItem);
         if (viewer.classList.contains('active')) closeViewer();
     };
@@ -11865,7 +11915,7 @@ window.addEventListener('resize', () => {
             runPosterWorker();
             scheduleMotionRowLayout();
             requestAnimationFrame(refreshMotionViewport);
-            prewarmInitialMotionClips();
+            observeMotionBatchTail();
         }
     });
 
