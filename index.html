@@ -74,7 +74,7 @@ model-viewer {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+            transition: opacity 0.45s cubic-bezier(0.25, 1, 0.5, 1), visibility 0s linear 0.45s;
         }
 
         #preloader.loaded {
@@ -136,7 +136,7 @@ model-viewer {
     height: 100%;
 }
         @keyframes preloaderPulse {
-            0% { opacity: 0.6; }
+            0% { opacity: 0.78; }
             100% { opacity: 1; }
         }
 
@@ -11964,19 +11964,27 @@ window.addEventListener('resize', () => {
             submitButton.innerText = "SEND ENQUIRY";
         });
     });
-// --- FAST DOM-READY PRELOADER ---
-const PRELOADER_FADE_MS = 180;
-const PRELOADER_MAX_VISIBLE_MS = 700;
-let preloaderHideTimer = null;
+// --- BALANCED SITE PRELOADER ---
+// Keep the logo visible long enough to register, then wait for the browser's
+// initial eager resources to finish. A hard cap prevents hidden or third-party
+// assets from trapping visitors behind the loader.
+const PRELOADER_MIN_VISIBLE_MS = 900;
+const PRELOADER_MAX_VISIBLE_MS = 2500;
+const PRELOADER_FADE_MS = 450;
+const preloaderStartedAt = performance.now();
+
+let preloaderMinTimer = null;
+let preloaderMaxTimer = null;
+let initialPageLoadFinished = document.readyState === 'complete';
 
 function hidePreloader() {
     const preloader = document.getElementById('preloader');
     if (!preloader || preloader.classList.contains('loaded')) return;
 
-    if (preloaderHideTimer !== null) {
-        clearTimeout(preloaderHideTimer);
-        preloaderHideTimer = null;
-    }
+    clearTimeout(preloaderMinTimer);
+    clearTimeout(preloaderMaxTimer);
+    preloaderMinTimer = null;
+    preloaderMaxTimer = null;
 
     preloader.classList.add('loaded');
     preloader.setAttribute('aria-hidden', 'true');
@@ -11984,32 +11992,41 @@ function hidePreloader() {
 
     window.setTimeout(() => {
         if (preloader.parentNode) preloader.remove();
-    }, PRELOADER_FADE_MS + 40);
+    }, PRELOADER_FADE_MS + 60);
 }
 
-function revealSiteWhenDomIsUsable() {
-    requestAnimationFrame(hidePreloader);
+function hidePreloaderAfterMinimum() {
+    initialPageLoadFinished = true;
+
+    const elapsed = performance.now() - preloaderStartedAt;
+    const remainingMinimum = Math.max(
+        0,
+        PRELOADER_MIN_VISIBLE_MS - elapsed
+    );
+
+    clearTimeout(preloaderMinTimer);
+    preloaderMinTimer = window.setTimeout(
+        hidePreloader,
+        remainingMinimum
+    );
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener(
-        'DOMContentLoaded',
-        revealSiteWhenDomIsUsable,
+if (initialPageLoadFinished) {
+    hidePreloaderAfterMinimum();
+} else {
+    window.addEventListener(
+        'load',
+        hidePreloaderAfterMinimum,
         { once: true }
     );
-} else {
-    revealSiteWhenDomIsUsable();
 }
 
-// Start the fade early enough for the overlay to be fully gone by roughly
-// 700 ms from navigation start, without waiting for images or third parties.
-const preloaderFadeDeadline = Math.max(
-    0,
-    PRELOADER_MAX_VISIBLE_MS - PRELOADER_FADE_MS - performance.now()
-);
-preloaderHideTimer = window.setTimeout(
+// Failsafe: begin fading no later than 2.5 seconds after navigation, even if
+// a slow image, API or third-party request has not completed.
+const elapsedAtSetup = performance.now() - preloaderStartedAt;
+preloaderMaxTimer = window.setTimeout(
     hidePreloader,
-    preloaderFadeDeadline
+    Math.max(0, PRELOADER_MAX_VISIBLE_MS - elapsedAtSetup)
 );
 
 // =================================================================
