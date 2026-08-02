@@ -2288,9 +2288,11 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 
 .store-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); 
-    gap: 40px !important; /* Exactly matches the 40px L/R padding on #store-content */
-    margin: 0 !important; 
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-content: stretch;
+    column-gap: 28px !important;
+    row-gap: 42px !important;
+    margin: 0 !important;
     padding: 0;
     width: 100%;
 }
@@ -2300,9 +2302,16 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     #store-content {
         padding: 85px 30px 60px 30px !important;
     }
+    .store-tabs {
+        max-width: none;
+    }
     .store-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 30px !important; 
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 22px !important;
+        row-gap: 36px !important;
+    }
+    .store-item img {
+        height: clamp(280px, 38vw, 390px);
     }
 }
 
@@ -2311,20 +2320,31 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     #store-content {
         padding: 70px 20px 60px 20px !important;
     }
+    .store-tabs {
+        max-width: none;
+    }
 .store-grid {
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 20px !important; /* Reduced from 40px so the images aren't too small on mobile */
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 14px !important;
+        row-gap: 28px !important;
+    }
+    .store-item img {
+        height: clamp(190px, 56vw, 280px);
     }
 }
 .store-item {
+    min-width: 0;
     text-decoration: none;
     color: var(--text-color);
+    text-align: center;
 }
 
 .store-item img {
     width: 100%;
-    height: auto;
-    background-color: var(--overlay-bg); /* Visible placeholder tone while the image itself loads */
+    height: clamp(320px, 31vw, 480px);
+    object-fit: contain;
+    object-position: center;
+    background-color: var(--overlay-bg); /* Shared square image stage keeps every product card aligned */
     display: block;
     transition: transform 0.3s ease;
 }
@@ -2334,8 +2354,9 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 }
 
 .store-item h3 {
-    margin: 12px 0 2px;
+    margin: 13px 0 3px;
     font-size: 15px;
+    line-height: 1.25;
     font-weight: 500;
 }
 
@@ -2343,6 +2364,24 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     margin: 0;
     opacity: 0.65;
     font-size: 13px;
+    line-height: 1.25;
+}
+
+@media (max-width: 768px) {
+    /* Use a square media stage on phones. The Seven of Hearts images are
+       square, so this removes the hidden vertical space beneath them while
+       keeping both columns aligned. */
+    .store-item img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        object-position: center;
+    }
+
+    .store-item h3 {
+        margin-top: 9px;
+    }
 }
 
 /* --- STORE CATEGORY TABS (Editions / Apparel) --- */
@@ -2350,7 +2389,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     display: flex;
     justify-content: flex-start;
     gap: 36px;
-    margin-bottom: 40px;
+    margin: 0 0 28px;
     width: 100%;
 }
 
@@ -2385,7 +2424,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 .store-tab.active::after { transform: scaleX(1); }
 
 @media (max-width: 768px) {
-    .store-tabs { gap: 24px; margin-bottom: 30px; }
+    .store-tabs { gap: 24px; margin-bottom: 22px; }
     .store-tab { font-size: 0.6rem; letter-spacing: 0; }
 }
 
@@ -2406,25 +2445,89 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     max-width: 1000px; 
     width: 100%;
     margin: 0 auto; 
-    padding: 24px 40px; /* Reduced from 120px to shift content up */
+    padding: 38px 40px 24px; /* Slight breathing room above the product lightbox */
     box-sizing: border-box; 
 }
 @media (max-width: 768px) { 
-    .product-container { padding: 30px 20px; }
+    .product-container {
+        padding: 42px 20px 30px;
+        width: 100%;
+        max-width: none;
+        overflow-x: hidden;
+    }
+
+    .product-layout {
+        width: 100%;
+        min-width: 0;
+        gap: 14px;
+    }
+
+    .product-left,
+    .product-right {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .product-right {
+        align-self: stretch;
+        margin-top: -4px;
+    }
+
+    .product-carousel-shell {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        margin-top: 8px;
+        padding-bottom: 4px;
+    }
+
+    #prod-carousel {
+        width: 100%;
+        min-width: 0;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 .back-btn { background: none; border: none; font-size: 1rem; cursor: pointer; margin-bottom: 20px; opacity: 0.6; color: var(--text-color); padding: 0; }
 .product-layout { display: flex; gap: 60px; color: var(--text-color); }
-.product-left { flex: 1.6; min-width: 0; position: relative; }
-.product-left img { 
-    max-width: 100%; 
-    max-height: 80vh; 
-    width: auto;
-    height: auto; 
+.product-left {
+    flex: 1.6;
+    min-width: 0;
+    position: relative;
+}
+
+.product-main-stage {
+    position: relative;
+    width: 100%;
+    height: min(68vh, 660px);
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.product-main-stage #prod-img {
     display: block;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
     object-fit: contain;
+    object-position: center;
     transition: opacity 0.3s ease;
+}
+
+.product-main-stage #prod-img-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    margin: 0;
+    transform: translate(-50%, -50%);
 }
 .product-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .product-right h1 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
@@ -2492,7 +2595,10 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 @media (max-width: 768px) { 
     .product-layout { flex-direction: column; } 
     .product-left { flex: 1; }
-    .product-left img { max-height: 45vh; }
+    .product-main-stage {
+        height: min(58vh, 520px);
+        min-height: 340px;
+    }
 }
 /* --- SHOPPING CART ELEMENTS & DRAWER --- */
 .quantity-container {
@@ -2665,15 +2771,78 @@ body.dark-mode .cart-item {
     align-items: center;
     justify-content: center;
 }
-#prod-carousel img {
-    border: 1px solid transparent;
-    transition: border 0.2s ease;
-}
-#prod-carousel img:hover {
-    border: 1px solid var(--text-color);
+/* --- STORE PRODUCT CAROUSEL --- */
+.product-carousel-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: 12px;
+    padding: 0 34px 10px;
+    box-sizing: border-box;
 }
 #prod-carousel {
-    padding-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0;
+    cursor: pointer;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+}
+#prod-carousel::-webkit-scrollbar { display: none; }
+#prod-carousel.is-overflowing {
+    justify-content: flex-start;
+}
+
+#prod-carousel img {
+    flex: 0 0 80px;
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid transparent;
+    opacity: 0.28;
+    transition: opacity 0.22s ease, border-color 0.22s ease;
+}
+#prod-carousel img:hover { opacity: 0.7; }
+#prod-carousel img.is-active {
+    opacity: 1;
+    border-color: var(--text-color);
+}
+.product-carousel-arrow {
+    position: absolute;
+    top: 40px;
+    margin: 0;
+    z-index: 20;
+    outline: none;
+}
+
+.product-carousel-arrow:focus-visible {
+    opacity: 1;
+}
+
+#prod-carousel img:focus {
+    outline: none;
+}
+#prod-carousel-prev { left: 5px; }
+#prod-carousel-next { right: 5px; }
+.product-carousel-arrow[hidden] { display: none !important; }
+@media (max-width: 768px) {
+    .product-carousel-shell {
+        padding-left: 28px;
+        padding-right: 28px;
+    }
+    #prod-carousel img {
+        flex-basis: 68px;
+        width: 68px;
+        height: 68px;
+    }
+    .product-carousel-arrow { top: 34px; }
+    #prod-carousel-prev { left: 3px; }
+    #prod-carousel-next { right: 3px; }
 }
 /* Force disable interactions and reset cursor when an overlay is not visible */
 .page-overlay:not(.visible),
@@ -3207,8 +3376,8 @@ body.adhd-mode #ios-brush-selector {
         <!-- Store Grid (Hidden until timer hits 0) -->
         <div id="store-content" style="width: 100%; max-width: 1200px; padding-top: 60px; display: none;">
             <h1 class="visually-hidden">Shop art prints, original artworks, apparel and objects by Tyrone Moreno</h1>
-            <!-- Editions/Apparel tabs hidden for now (no apparel stock yet) — to bring back, remove the style="display:none;" below -->
-            <div class="store-tabs" style="display:none;">
+            <!-- Store category switcher -->
+            <div class="store-tabs">
                 <button class="store-tab active" data-collection="prints" onclick="switchStoreTab('prints', this)">Editions</button>
                 <button class="store-tab" data-collection="apparel" onclick="switchStoreTab('apparel', this)">Apparel</button>
             </div>
@@ -3736,12 +3905,28 @@ body.adhd-mode #ios-brush-selector {
         <div class="product-layout">
            <div class="product-left">
     <!-- Main Display Image -->
-    <img id="prod-img" src="" alt="Product Main" style="margin-bottom: 10px;">
-    <div id="prod-img-loader" class="img-loader" style="display:none;"><div class="img-loader-bar"></div></div>
+    <div class="product-main-stage">
+        <img id="prod-img" src="" alt="Product Main">
+        <div id="prod-img-loader" class="img-loader" style="display:none;"><div class="img-loader-bar"></div></div>
+    </div>
     
     <!-- Carousel Strip -->
-    <div id="prod-carousel" style="display: flex; gap: 10px; overflow-x: auto; cursor: pointer;">
-        <!-- Images will be injected here by JS -->
+    <div class="product-carousel-shell">
+        <div id="prod-carousel-prev"
+             class="slider-arrow left-arrow product-carousel-arrow"
+             role="button" tabindex="0"
+             aria-label="Previous product image"
+             onclick="changeProductCarouselImage(-1)"
+             hidden></div>
+        <div id="prod-carousel">
+            <!-- Images will be injected here by JS -->
+        </div>
+        <div id="prod-carousel-next"
+             class="slider-arrow right-arrow product-carousel-arrow"
+             role="button" tabindex="0"
+             aria-label="Next product image"
+             onclick="changeProductCarouselImage(1)"
+             hidden></div>
     </div>
 </div>
 <div class="product-right">
@@ -7290,6 +7475,15 @@ const productImages = product.images.edges.map((edge) => ({
     highres: edge.node.highres,
     alt: edge.node.altText || product.title
 }));
+
+const primaryProductImage =
+    productImages[0]?.thumb ||
+    productImages[0]?.highres ||
+    DEFAULT_SITE_IMAGE;
+
+// Keep the cart image independent from whichever carousel image is currently open.
+document.getElementById('prod-img').dataset.cartImage = primaryProductImage;
+
 const highResImageUrl = productImages[0]?.highres || DEFAULT_SITE_IMAGE;
 const productDescription = trimMetaDescription(
     product.seo?.description ||
@@ -7454,34 +7648,107 @@ function setProductMainImage(url, altText = '') {
     mainImg.dataset.path = url;
 }
 
+let productCarouselImages = [];
+let productCarouselIndex = 0;
+let productCarouselTitle = '';
+
+function updateProductCarouselSelection({ scrollIntoView = true } = {}) {
+    const carousel = document.getElementById('prod-carousel');
+    const thumbnails = Array.from(carousel.querySelectorAll('img'));
+
+    thumbnails.forEach((thumbnail, index) => {
+        const isActive = index === productCarouselIndex;
+        thumbnail.classList.toggle('is-active', isActive);
+        thumbnail.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
+
+    const selected = thumbnails[productCarouselIndex];
+    if (selected && scrollIntoView) {
+        const carouselLeft = carousel.scrollLeft;
+        const carouselRight = carouselLeft + carousel.clientWidth;
+        const selectedLeft = selected.offsetLeft;
+        const selectedRight = selectedLeft + selected.offsetWidth;
+
+        if (selectedLeft < carouselLeft || selectedRight > carouselRight) {
+            carousel.scrollTo({
+                left: selectedLeft - (carousel.clientWidth - selected.offsetWidth) / 2,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    const hasMultipleImages = productCarouselImages.length > 1;
+    document.getElementById('prod-carousel-prev').hidden = !hasMultipleImages;
+    document.getElementById('prod-carousel-next').hidden = !hasMultipleImages;
+
+    requestAnimationFrame(() => {
+        carousel.classList.toggle(
+            'is-overflowing',
+            carousel.scrollWidth > carousel.clientWidth + 1
+        );
+    });
+}
+
+function selectProductCarouselImage(index, { scrollIntoView = true } = {}) {
+    if (!productCarouselImages.length) return;
+    productCarouselIndex = (index + productCarouselImages.length) % productCarouselImages.length;
+    const selected = productCarouselImages[productCarouselIndex];
+    setProductMainImage(
+        selected.highres,
+        selected.alt || `${productCarouselTitle} product view ${productCarouselIndex + 1}`
+    );
+    updateProductCarouselSelection({ scrollIntoView });
+}
+
+function changeProductCarouselImage(direction) {
+    selectProductCarouselImage(productCarouselIndex + direction);
+}
+
 function renderCarousel(imageArray, title) {
     const carousel = document.getElementById('prod-carousel');
     carousel.innerHTML = '';
-    
-    // Set main image to the highres version of the first item
-    if (imageArray.length > 0) {
-        setProductMainImage(imageArray[0].highres, imageArray[0].alt || title);
-    }
+    productCarouselImages = Array.isArray(imageArray) ? imageArray : [];
+    productCarouselIndex = 0;
+    productCarouselTitle = title || 'Product';
 
-    imageArray.forEach((imgData, index) => {
+    productCarouselImages.forEach((imgData, index) => {
         const img = document.createElement('img');
-        
-        // Use the tiny, lightning-fast thumbnail for the strip
-        img.src = imgData.thumb; 
-        img.style.width = '80px';
-        img.style.height = '80px';
-        img.style.objectFit = 'cover';
-        img.loading = 'lazy'; // Adds native lazy loading
-        img.alt = imgData.alt || `${title} product view ${index + 1}`;
+        img.src = imgData.thumb;
+        img.loading = 'lazy';
+        img.alt = imgData.alt || `${productCarouselTitle} product view ${index + 1}`;
+        img.setAttribute('role', 'button');
+        img.setAttribute('tabindex', '0');
+        img.setAttribute('aria-label', `Show ${img.alt}`);
 
-        img.onclick = () => {
-            // Swap the main image to the high-res version on click
-            setProductMainImage(imgData.highres, img.alt);
+        const selectThumbnail = () => {
+            selectProductCarouselImage(index, { scrollIntoView: false });
         };
-        
+
+        img.onclick = selectThumbnail;
+        img.onkeydown = (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectThumbnail();
+            }
+        };
         carousel.appendChild(img);
     });
+
+    if (productCarouselImages.length > 0) {
+        selectProductCarouselImage(0, { scrollIntoView: false });
+    } else {
+        document.getElementById('prod-carousel-prev').hidden = true;
+        document.getElementById('prod-carousel-next').hidden = true;
+    }
 }
+
+document.addEventListener('keydown', (event) => {
+    const productPage = document.getElementById('page-product');
+    if (!productPage || !productPage.classList.contains('visible')) return;
+    if (event.key === 'ArrowLeft') changeProductCarouselImage(-1);
+    if (event.key === 'ArrowRight') changeProductCarouselImage(1);
+});
+
 // Add this fetch logic
 const storeCollectionCache = {}; // Caches fetched products per collection handle so tabs don't re-fetch
 let currentStoreCollection = 'prints';
@@ -7528,7 +7795,13 @@ function renderStoreGrid(products, handle) {
         const highresImg = prod.images.edges[0]?.node.highres || '';
         const imageAlt = prod.images.edges[0]?.node.altText || prod.title;
         const price = prod.variants.edges[0]?.node.price.amount || '0.00';
-        const formattedPrice = parseFloat(price).toFixed(2);
+        const numericPrice = parseFloat(price);
+        const formattedPrice = Number.isFinite(numericPrice)
+            ? numericPrice.toLocaleString('en-GB', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+              })
+            : '0';
         const item = document.createElement('a');
         item.className = 'store-item';
         item.href = `/store/${encodeURIComponent(prod.handle)}/`;
@@ -7543,7 +7816,7 @@ function renderStoreGrid(products, handle) {
             loading="lazy"
         >
         <h3>${prod.title}</h3>
-        <p>From £${formattedPrice} GBP</p> 
+        <p>From £${formattedPrice}</p> 
         `;
 
         // Keep a real crawlable URL while preserving the current in-page
@@ -7648,6 +7921,7 @@ window.closeProduct = function() {
     // 2. CLEAR THE DATA to prevent flash of old content next time
     mainImg.src = ''; 
     mainImg.dataset.path = '';
+    mainImg.dataset.cartImage = '';
     carousel.innerHTML = ''; 
     
     // 3. Reset buttons
@@ -7733,7 +8007,11 @@ async function addToCart(event) {
     btn.disabled = true;
 
     const title = document.getElementById('prod-title').innerText;
-    const img = document.getElementById('prod-img').dataset.path; 
+    const productImageEl = document.getElementById('prod-img');
+    const img =
+        productImageEl.dataset.cartImage ||
+        productImageEl.dataset.path ||
+        DEFAULT_SITE_IMAGE;
     const activeOptionBtn = document.querySelector('.prod-option-btn.active');
     const option = activeOptionBtn ? activeOptionBtn.innerText : 'Print Only';
     
@@ -7746,9 +8024,13 @@ async function addToCart(event) {
     
     if(existingIndex > -1) {
         cart[existingIndex].qty += currentQty;
+        cart[existingIndex].img = img;
+        cart[existingIndex].title = title;
+        cart[existingIndex].option = option;
+        cart[existingIndex].price = itemPrice;
     } else {
         cart.push({
-            variantId: variantId, // Save it to the cart!
+            variantId: variantId,
             title: title,
             img: img,
             option: option,
@@ -8183,6 +8465,7 @@ window.addEventListener('resize', () => {
 'moneyman.mp4',
  'facecollage_03.mp4',
 'puzzleface_01.mp4',
+'squishedontrain_01.mp4',
 'tattoogirl.mp4',
 'threesome_01.mp4',
 'chipface.mp4',
