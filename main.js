@@ -2,7 +2,7 @@
 const SITE_ORIGIN = 'https://tyronemoreno.com';
 const DEFAULT_SITE_TITLE = 'Tyrone Moreno';
 const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a multidisciplinary artist and creator.';
-const DEFAULT_SITE_IMAGE = `${SITE_ORIGIN}/logo.webp`;
+const DEFAULT_SITE_IMAGE = `${SITE_ORIGIN}/random/logo.webp`;
 const STORE_TITLE = 'Art Prints, Original Artworks, Apparel & Objects | Tyrone Moreno';
 const STORE_DESCRIPTION = 'Shop signed limited-edition art prints, original artworks, apparel and objects by Tyrone Moreno, with certificates of authenticity and worldwide delivery.';
 const STORE_CANONICAL = `${SITE_ORIGIN}/store/`;
@@ -1897,7 +1897,7 @@ function clearNavigation() {
     updateFooterIcons('paint');
 
     // 👇 --- RESET META TAGS TO DEFAULT --- 👇
-    updatePageMeta("Tyrone Moreno", "https://tyronemoreno.com/logo.webp");
+    updatePageMeta("Tyrone Moreno", "https://tyronemoreno.com/random/logo.webp");
 }
 
 function openAbout() {
@@ -4457,7 +4457,7 @@ function showLoadingOverlay(btn) {
     
     const img = document.createElement('img');
     img.className = 'btn-loading-img';
-    img.src = '/frace.webp'; // Update this line
+    img.src = '/random/frace.webp'; // Update this line
     btn.appendChild(img);
 
     // Failsafe only — generous margin so it never races a real in-flight request
