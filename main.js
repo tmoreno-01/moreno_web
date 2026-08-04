@@ -1726,51 +1726,24 @@ window.addEventListener('resize', scheduleStudiesRowLayout);
 function hydrateSectionImages(section, eagerCount = 0, options = {}) {
     if (!section) return Promise.resolve([]);
 
-    const {
-        loadAll = false,
-        retryFailed = false
-    } = options;
-
+    const { loadAll = false } = options;
     const images = Array.from(section.querySelectorAll('img[data-src]'));
 
     function waitForImage(image) {
-        const decodeImage = () => {
-            if (typeof image.decode !== 'function') return Promise.resolve();
-            return image.decode().catch(() => undefined);
-        };
-
-        const revealReadyImage = () => decodeImage().then(() => {
-            image.classList.remove('section-image-failed');
-            image.classList.add('section-image-ready');
-            section.dispatchEvent(new CustomEvent('section:first-content-ready'));
-        });
-
         if (image.complete && image.naturalWidth > 0) {
-            return revealReadyImage();
+            section.dispatchEvent(new CustomEvent('section:first-content-ready'));
+            return Promise.resolve();
         }
 
         return new Promise((resolve) => {
-            let retried = false;
-
             const finish = () => {
-                revealReadyImage().finally(resolve);
-            };
-
-            const retryOrFinish = () => {
-                if (retryFailed && !retried && image.dataset.src) {
-                    retried = true;
-                    const separator = image.dataset.src.includes('?') ? '&' : '?';
-                    image.addEventListener('load', finish, { once: true });
-                    image.addEventListener('error', retryOrFinish, { once: true });
-                    image.src = `${image.dataset.src}${separator}retry=${Date.now()}`;
-                    return;
-                }
-                image.classList.add('section-image-failed');
+                section.dispatchEvent(new CustomEvent('section:first-content-ready'));
                 resolve();
             };
+            const fail = () => resolve();
 
             image.addEventListener('load', finish, { once: true });
-            image.addEventListener('error', retryOrFinish, { once: true });
+            image.addEventListener('error', fail, { once: true });
         });
     }
 
@@ -1791,6 +1764,12 @@ function hydrateSectionImages(section, eagerCount = 0, options = {}) {
 
     const imagesToAwait = loadAll ? images : images.slice(0, eagerCount);
     return Promise.allSettled(imagesToAwait.map(waitForImage));
+}
+
+function visibleStillImagePreloadCount() {
+    if (window.innerWidth <= 768) return 4;
+    if (window.innerWidth <= 1024) return 6;
+    return 8;
 }
 
 function showSectionPageLoader(section, label = 'Loading') {
@@ -2016,8 +1995,7 @@ function openNotes() {
     beginSectionPageLoading(pageNotes, 'Loading notes');
     const notesLoad = hydrateSectionImages(
         pageNotes,
-        pageNotes.querySelectorAll('img[data-src]').length,
-        { loadAll: true, retryFailed: true }
+        visibleStillImagePreloadCount()
     );
     btnNotes.classList.add('active');
     btnGallery.classList.add('active');
@@ -2041,8 +2019,7 @@ function openDigitalStudies() {
     beginSectionPageLoading(pageDigitalStudies, 'Loading studies');
     const studiesLoad = hydrateSectionImages(
         pageDigitalStudies,
-        pageDigitalStudies.querySelectorAll('img[data-src]').length,
-        { loadAll: true, retryFailed: true }
+        visibleStillImagePreloadCount()
     );
     btnDigitalStudies.classList.add('active');
     btnMotion.classList.add('active');
