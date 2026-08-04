@@ -3091,3 +3091,74 @@ body.time-mode #ios-brush-selector {
         height: 128vh !important;
     }
 }
+
+/* --- SECTION LOADERS: NOTES / STUDIES / DIGITAL MOTION --- */
+.section-page-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 240;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.section-page-loader.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease;
+}
+
+.section-page-loader-track {
+    position: relative;
+    width: 140px;
+    height: 2px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgba(128, 128, 128, 0.25);
+}
+
+.section-page-loader-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40%;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--text-color);
+    animation: lb-loader-sweep 1s ease-in-out infinite;
+}
+
+/* Keep blank/un-decoded still tiles visually quiet until the browser has a
+   complete WebP frame. This prevents partially decoded frames flashing in
+   Safari while the justified-row dimensions are being recalculated. */
+.still-grid-page .sketch-item img[data-src] {
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+
+.still-grid-page .sketch-item img.section-image-ready,
+.still-grid-page .sketch-item img.section-image-failed {
+    opacity: 1;
+}
+
+@media (max-width: 1024px) {
+    .section-page-loader-track {
+        width: 132px;
+    }
+}
+
+@media (max-width: 768px) {
+    .section-page-loader-track {
+        width: 118px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .section-page-loader-bar {
+        animation-duration: 1.6s;
+    }
+}

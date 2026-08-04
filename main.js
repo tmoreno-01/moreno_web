@@ -1723,17 +1723,57 @@ window.addEventListener('resize', scheduleStudiesRowLayout);
         const pageContact = document.getElementById('page-contact');
         const pageTime = document.getElementById('page-time');
 
-function hydrateSectionImages(section, eagerCount = 0) {
+function hydrateSectionImages(section, eagerCount = 0, options = {}) {
     if (!section) return Promise.resolve([]);
+
+    const {
+        loadAll = false,
+        retryFailed = false
+    } = options;
 
     const images = Array.from(section.querySelectorAll('img[data-src]'));
 
+    function waitForImage(image) {
+        const decodeImage = () => {
+            if (typeof image.decode !== 'function') return Promise.resolve();
+            return image.decode().catch(() => undefined);
+        };
+
+        if (image.complete && image.naturalWidth > 0) {
+            image.classList.add('section-image-ready');
+            return decodeImage();
+        }
+
+        return new Promise((resolve) => {
+            let retried = false;
+
+            const finish = () => {
+                image.classList.add('section-image-ready');
+                resolve();
+            };
+
+            const retryOrFinish = () => {
+                if (retryFailed && !retried && image.dataset.src) {
+                    retried = true;
+                    const separator = image.dataset.src.includes('?') ? '&' : '?';
+                    image.src = `${image.dataset.src}${separator}retry=1`;
+                    return;
+                }
+                image.classList.add('section-image-failed');
+                resolve();
+            };
+
+            image.addEventListener('load', finish, { once: true });
+            image.addEventListener('error', retryOrFinish, { once: true });
+        }).then(decodeImage);
+    }
+
     images.forEach((image, index) => {
         image.decoding = 'async';
-        image.loading = index < eagerCount ? 'eager' : 'lazy';
+        image.loading = loadAll || index < eagerCount ? 'eager' : 'lazy';
 
         if ('fetchPriority' in image) {
-            image.fetchPriority = index < Math.min(2, eagerCount)
+            image.fetchPriority = index < Math.min(3, eagerCount)
                 ? 'high'
                 : 'auto';
         }
@@ -1743,26 +1783,57 @@ function hydrateSectionImages(section, eagerCount = 0) {
         }
     });
 
-    const importantImages = images.slice(0, eagerCount);
-    return Promise.allSettled(
-        importantImages.map((image) => {
-            if (image.complete && image.naturalWidth > 0) {
-                return typeof image.decode === 'function'
-                    ? image.decode().catch(() => undefined)
-                    : Promise.resolve();
-            }
+    const imagesToAwait = loadAll ? images : images.slice(0, eagerCount);
+    return Promise.allSettled(imagesToAwait.map(waitForImage));
+}
 
-            return new Promise((resolve) => {
-                const finish = () => resolve();
-                image.addEventListener('load', finish, { once: true });
-                image.addEventListener('error', finish, { once: true });
-            }).then(() => {
-                if (typeof image.decode === 'function') {
-                    return image.decode().catch(() => undefined);
-                }
-            });
-        })
-    );
+function showSectionPageLoader(section, label = 'Loading') {
+    if (!section) return null;
+
+    let loader = section.querySelector('.section-page-loader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.className = 'section-page-loader';
+        loader.setAttribute('role', 'status');
+        loader.setAttribute('aria-live', 'polite');
+        loader.innerHTML = `
+            <span class="visually-hidden"></span>
+            <div class="section-page-loader-track" aria-hidden="true">
+                <div class="section-page-loader-bar"></div>
+            </div>`;
+        section.appendChild(loader);
+    }
+
+    const hiddenLabel = loader.querySelector('.visually-hidden');
+    if (hiddenLabel) hiddenLabel.textContent = label;
+    loader.classList.add('visible');
+    section.classList.add('section-is-loading');
+    return loader;
+}
+
+function hideSectionPageLoader(section, minimumVisibleMs = 260) {
+    if (!section) return;
+    const loader = section.querySelector('.section-page-loader');
+    if (!loader) return;
+
+    const shownAt = Number(loader.dataset.shownAt || performance.now());
+    const remaining = Math.max(0, minimumVisibleMs - (performance.now() - shownAt));
+
+    window.setTimeout(() => {
+        loader.classList.remove('visible');
+        section.classList.remove('section-is-loading');
+    }, remaining);
+}
+
+function beginSectionPageLoading(section, label) {
+    const loader = showSectionPageLoader(section, label);
+    if (loader) loader.dataset.shownAt = String(performance.now());
+}
+
+async function finishSectionPageLoading(section, workPromise, timeoutMs = 9000) {
+    const timeout = new Promise((resolve) => window.setTimeout(resolve, timeoutMs));
+    await Promise.race([Promise.resolve(workPromise), timeout]);
+    hideSectionPageLoader(section);
 }
 
 let storeConnectionsReady = false;
@@ -1916,8 +1987,13 @@ function openNotes() {
         return;
     }
     clearNavigation();
-    hydrateSectionImages(pageNotes, window.innerWidth <= 768 ? 4 : 8);
     pageNotes.classList.add('visible');
+    beginSectionPageLoading(pageNotes, 'Loading notes');
+    const notesLoad = hydrateSectionImages(
+        pageNotes,
+        pageNotes.querySelectorAll('img[data-src]').length,
+        { loadAll: true, retryFailed: true }
+    );
     btnNotes.classList.add('active');
     btnGallery.classList.add('active');
     document.body.classList.add('overlay-open');
@@ -1925,6 +2001,7 @@ function openNotes() {
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
     scheduleStudiesRowLayout();
+    finishSectionPageLoading(pageNotes, notesLoad).then(scheduleStudiesRowLayout);
 }
 function openDigitalStudies() {
     isPaintingActive = false;
@@ -1935,8 +2012,13 @@ function openDigitalStudies() {
         return;
     }
     clearNavigation();
-    hydrateSectionImages(pageDigitalStudies, window.innerWidth <= 768 ? 4 : 8);
     pageDigitalStudies.classList.add('visible');
+    beginSectionPageLoading(pageDigitalStudies, 'Loading studies');
+    const studiesLoad = hydrateSectionImages(
+        pageDigitalStudies,
+        pageDigitalStudies.querySelectorAll('img[data-src]').length,
+        { loadAll: true, retryFailed: true }
+    );
     btnDigitalStudies.classList.add('active');
     btnMotion.classList.add('active');
     document.body.classList.add('overlay-open');
@@ -1944,6 +2026,7 @@ function openDigitalStudies() {
     if (isTouchUI) document.getElementById('ios-brush-selector').style.display = 'none';
     updateFooterIcons('other');
     scheduleStudiesRowLayout();
+    finishSectionPageLoading(pageDigitalStudies, studiesLoad).then(scheduleStudiesRowLayout);
 }
 function openMotion() {
 isPaintingActive = false;
@@ -1960,6 +2043,7 @@ updatePageMeta("Tyrone Moreno | Digital");
     }
     clearNavigation();
     pageMotion.classList.add('visible');
+    beginSectionPageLoading(pageMotion, 'Loading digital work');
     btnMotion.classList.add('active');
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
@@ -1967,8 +2051,12 @@ updatePageMeta("Tyrone Moreno | Digital");
     updateFooterIcons('other'); // No zoom/layout toggles needed for a fixed video grid
 
     /* Digital motion media is deliberately initialized only when this page is opened. */
-    if (typeof window.ensureMotionPageLoaded === 'function') window.ensureMotionPageLoaded();
-    else window.__motionOpenRequested = true;
+    if (typeof window.ensureMotionPageLoaded === 'function') {
+        finishSectionPageLoading(pageMotion, window.ensureMotionPageLoaded(), 10000);
+    } else {
+        window.__motionOpenRequested = true;
+        window.setTimeout(() => hideSectionPageLoader(pageMotion), 2500);
+    }
 }
 
         // Updated Handlers to change URLs without reloading
