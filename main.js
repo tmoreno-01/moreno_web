@@ -1739,24 +1739,30 @@ function hydrateSectionImages(section, eagerCount = 0, options = {}) {
             return image.decode().catch(() => undefined);
         };
 
-        if (image.complete && image.naturalWidth > 0) {
+        const revealReadyImage = () => decodeImage().then(() => {
+            image.classList.remove('section-image-failed');
             image.classList.add('section-image-ready');
-            return decodeImage();
+            section.dispatchEvent(new CustomEvent('section:first-content-ready'));
+        });
+
+        if (image.complete && image.naturalWidth > 0) {
+            return revealReadyImage();
         }
 
         return new Promise((resolve) => {
             let retried = false;
 
             const finish = () => {
-                image.classList.add('section-image-ready');
-                resolve();
+                revealReadyImage().finally(resolve);
             };
 
             const retryOrFinish = () => {
                 if (retryFailed && !retried && image.dataset.src) {
                     retried = true;
                     const separator = image.dataset.src.includes('?') ? '&' : '?';
-                    image.src = `${image.dataset.src}${separator}retry=1`;
+                    image.addEventListener('load', finish, { once: true });
+                    image.addEventListener('error', retryOrFinish, { once: true });
+                    image.src = `${image.dataset.src}${separator}retry=${Date.now()}`;
                     return;
                 }
                 image.classList.add('section-image-failed');
@@ -1765,7 +1771,7 @@ function hydrateSectionImages(section, eagerCount = 0, options = {}) {
 
             image.addEventListener('load', finish, { once: true });
             image.addEventListener('error', retryOrFinish, { once: true });
-        }).then(decodeImage);
+        });
     }
 
     images.forEach((image, index) => {
@@ -1825,9 +1831,28 @@ function hideSectionPageLoader(section, minimumVisibleMs = 260) {
     }, remaining);
 }
 
+function sectionAlreadyHasVisibleContent(section) {
+    if (!section) return false;
+    return Array.from(section.querySelectorAll('img')).some((image) =>
+        image.classList.contains('section-image-ready') ||
+        (image.complete && image.naturalWidth > 0)
+    );
+}
+
 function beginSectionPageLoading(section, label) {
+    if (sectionAlreadyHasVisibleContent(section)) {
+        hideSectionPageLoader(section, 0);
+        return null;
+    }
+
     const loader = showSectionPageLoader(section, label);
-    if (loader) loader.dataset.shownAt = String(performance.now());
+    if (!loader) return null;
+
+    loader.dataset.shownAt = String(performance.now());
+
+    const hideOnFirstContent = () => hideSectionPageLoader(section, 0);
+    section.addEventListener('section:first-content-ready', hideOnFirstContent, { once: true });
+    return loader;
 }
 
 async function finishSectionPageLoading(section, workPromise, timeoutMs = 9000) {
