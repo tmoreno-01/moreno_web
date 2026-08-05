@@ -1680,11 +1680,1406 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     padding-left: 1.2vw !important;
     padding-right: 1.2vw !important;
 }
-/* Digital motion rows are inserted only after their posters are ready.
-   Do not draw a second loader over the grid: it can overlap visible artwork
-   and Safari may stretch its animated layer across the viewport. */
-#motion-grid.is-loading-initial {
-    min-height: 58vh;
+
+#page-motion .works-grid.mode-collage {
+    grid-template-columns: repeat(4, 1fr) !important;
+    grid-auto-flow: row dense !important;
+    gap: 22px !important;
+    width: 100%;
+    margin-top: -16px !important;
+}
+@media (min-width: 1400px) {
+    #page-motion .works-grid.mode-collage {
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 25px !important;
+    }
+}
+@media (max-width: 1024px) {
+    #page-motion .works-grid.mode-collage {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 16px !important;
+        margin-top: -10px !important;
+    }
+    #page-motion .works-container {
+        padding-left: 1vw !important;
+        padding-right: 1vw !important;
+    }
+}
+@media (max-width: 768px) {
+    /* Use the same justified-row principle as desktop/iPad on phones.
+       JavaScript gives every card in a physical row one shared height and
+       calculates its width from the native MP4 ratio. This removes the uneven
+       bottoms created by two equal-width CSS grid columns. */
+    #page-motion .works-grid.mode-collage {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        grid-template-columns: none !important;
+        grid-auto-flow: initial !important;
+        gap: 14px !important;
+        margin-top: -8px !important;
+    }
+    #page-motion .works-container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    #page-motion .works-grid.mode-collage .motion-item {
+        flex: 0 0 var(--motion-item-width, 100%) !important;
+        width: var(--motion-item-width, 100%) !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        grid-column: auto !important;
+    }
+    #page-motion .works-grid.mode-collage .motion-item .work-image {
+        width: 100% !important;
+        height: var(--motion-row-height, auto) !important;
+        aspect-ratio: auto !important;
+    }
+}
+
+/* iPad only: add a little breathing room below the fixed navigation.
+   The width/height gates keep the existing iPhone layout unchanged. */
+@supports (-webkit-touch-callout: none) {
+    @media (min-width: 600px) and (min-height: 600px) and (max-width: 1366px) {
+        #page-motion .overlay-content { padding-top: 76px !important; }
+    }
+}
+
+/* Keep motion items straight and make taps immediate/reliable on iOS. */
+#page-motion .work-item {
+    transform: none !important;
+    margin-top: 0 !important;
+    grid-column: auto !important;
+    z-index: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    /* Motion thumbnails must not resize when the pointer leaves. The old
+       1.015 hover scale exposed the card background around the edges and made
+       the frozen frame appear to jump even when the media handoff was sound. */
+    transition: none !important;
+    opacity: 1 !important;
+}
+#page-motion .work-item:has(.work-image:hover) {
+    transform: none !important;
+    opacity: 1 !important;
+    z-index: 5 !important;
+}
+
+
+/* Motion cards use each file's real dimensions. Landscape files span two
+   columns, while portrait and square files keep one column. */
+#page-motion .works-grid.mode-collage .motion-item.motion-landscape {
+    grid-column: span 2 !important;
+}
+#page-motion .works-grid.mode-collage .motion-item.motion-square,
+#page-motion .works-grid.mode-collage .motion-item.motion-portrait {
+    grid-column: span 1 !important;
+}
+
+/* On phones, every aspect ratio now participates in the same balanced
+   justified-row planner. Square and landscape clips can sit beside compatible
+   neighbours instead of forcing isolated rows with empty space. */
+@media (max-width: 768px) {
+    #page-motion .works-grid.mode-collage .motion-item.motion-square,
+    #page-motion .works-grid.mode-collage .motion-item.motion-landscape {
+        grid-column: auto !important;
+    }
+
+    #page-motion .works-grid.mode-collage .motion-item.motion-square .work-image,
+    #page-motion .works-grid.mode-collage .motion-item.motion-landscape .work-image {
+        height: var(--motion-row-height, auto) !important;
+        aspect-ratio: auto !important;
+    }
+}
+
+/* The general mobile Gallery rule sets artwork <img> elements to height:auto
+   and object-fit:contain. That is correct for Gallery artwork, but it was also
+   overriding the Motion poster on iPhone. The square WebP therefore used
+   different geometry from the full-height MP4 and appeared to jump upward
+   when playback began. Keep every Motion poster locked to the exact same
+   crop, centre point and box as its video layer. */
+@media (max-width: 768px) {
+    #page-motion .works-grid.mode-collage .motion-item .motion-poster {
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        object-fit: cover !important;
+        object-position: 50% 50% !important;
+    }
+}
+
+/* Desktop and iPad use justified Motion rows. Every item in a completed row
+   receives one shared height, while its width is calculated from the native
+   video ratio. A 16:9 clip therefore becomes wider instead of shorter and the
+   following cards move to the next row when the remaining space is too small. */
+@media (min-width: 769px) {
+    #page-motion .works-grid.mode-collage {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        grid-template-columns: none !important;
+        grid-auto-flow: initial !important;
+    }
+
+    #page-motion .works-grid.mode-collage .motion-item {
+        flex: 0 0 var(--motion-item-width, 100%) !important;
+        width: var(--motion-item-width, 100%) !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        grid-column: auto !important;
+    }
+
+    #page-motion .works-grid.mode-collage .motion-item .work-image {
+        width: 100% !important;
+        height: var(--motion-row-height, auto) !important;
+        aspect-ratio: auto !important;
+    }
+}
+
+#page-motion .works-grid.mode-collage .motion-item .work-image {
+    position: relative;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0;
+    box-shadow: none !important;
+    /* A decoded poster or frozen canvas always owns the visible surface.
+       Keeping this transparent removes the grey pulse Safari/Chrome could
+       briefly composite while switching GPU video layers. */
+    background: transparent;
+    aspect-ratio: var(--motion-ratio, 0.5625);
+    overflow: hidden;
+    border-radius: 0 !important;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Every device loads the checked-in WebP first frame immediately. After a clip
+   has played, the poster is replaced by the exact stopped frame, preserving
+   the freeze-frame effect without decoding every MP4 during initial loading. */
+.motion-poster {
+    position: absolute !important;
+    inset: 0;
+    z-index: 1;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    object-fit: cover !important;
+    object-position: center;
+    opacity: 1;
+    transform: scale(1.08);
+    transform-origin: center;
+    filter: none !important;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    transition: opacity 0.12s linear;
+}
+/* Keep the poster permanently painted underneath the video stack.
+   The moving/frozen canvas remains above it, so there is never a frame where
+   the card background can become the visible surface. */
+.motion-item.is-playing .motion-poster,
+.motion-item.is-freezing .motion-poster {
+    opacity: 1 !important;
+    transition: none !important;
+}
+.motion-item.is-freezing .motion-video-stack {
+    opacity: 1 !important;
+    transition: none !important;
+}
+
+/* A poster made from the transition canvas already contains the same 1.08
+   crop as the live MP4. Do not apply the poster's initial 1.08 transform a
+   second time, which previously caused the visible zoom/jump after hover-out. */
+#page-motion .motion-item.has-frozen-poster .motion-poster {
+    transform: none !important;
+}
+
+
+/* This appears only when a checked-in poster is missing or still loading.
+   The old serial MP4 decoder is retained purely as a safety fallback. */
+.motion-item.poster-loading .work-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        var(--bg-color)
+        linear-gradient(110deg,
+            rgba(127,127,127,0.10) 25%,
+            rgba(127,127,127,0.24) 42%,
+            rgba(127,127,127,0.10) 58%);
+    background-size: 220% 100%;
+    animation: motion-poster-loading 1.15s linear infinite;
+}
+@keyframes motion-poster-loading {
+    to { background-position: -220% 0; }
+}
+
+/* Two decoded layers alternate at every loop point. The stack is transparent
+   and hidden until a valid moving frame exists; the poster remains underneath. */
+.motion-video-stack {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    background: transparent;
+    contain: strict;
+    opacity: 0;
+    transition: opacity 0.08s linear;
+}
+.motion-video-stack.has-frame { opacity: 1; }
+.motion-video-stack:empty::after { display: none; }
+
+/* Desktop hover-in must be a direct visual handoff, not a fade through the
+   card background. The poster remains underneath as a safety frame while the
+   already-painted video/canvas stack is revealed instantly above it. */
+@media (hover: hover) and (pointer: fine) {
+    #page-motion .motion-video-stack,
+    #page-motion .motion-poster,
+    #page-motion .motion-video-layer,
+    #page-motion .motion-transition-canvas {
+        transition: none !important;
+    }
+}
+#page-motion .motion-video-layer { background: transparent; }
+.motion-video-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.08);
+    transform-origin: center;
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+.motion-video-layer.is-active {
+    opacity: 1;
+    z-index: 2;
+}
+
+/* iPhone/iPad native video layers must always inherit the complete card box.
+   This is especially important for square MP4s displayed in the custom
+   full-row mobile height, where Safari otherwise may briefly fall back to an
+   intrinsic-size hardware layer during rapid pause/resume cycles. */
+@supports (-webkit-touch-callout: none) {
+    #page-motion .motion-video-stack .motion-video-layer {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 100% !important;
+        min-height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        object-fit: cover !important;
+        object-position: 50% 50% !important;
+    }
+
+    #page-motion .motion-video-stack .motion-video-layer:not(.is-active) {
+        z-index: 0 !important;
+    }
+
+    #page-motion .motion-item.mobile-video-frozen .motion-video-layer.is-active {
+        z-index: 3 !important;
+        opacity: 1 !important;
+        transform: scale(1.08) !important;
+        transform-origin: 50% 50% !important;
+        will-change: auto !important;
+    }
+}
+
+/* The card box owns the native MP4 ratio. Every visual layer fills that box
+   without ever supplying geometry back to the layout, preventing a later
+   frozen canvas snapshot from changing portrait/landscape classification. */
+#page-motion .motion-poster,
+#page-motion .motion-video-layer,
+#page-motion .motion-transition-canvas {
+    aspect-ratio: inherit;
+}
+
+/* Notes, Digital Studies and Digital motion use clean, square-edged presentation. This is scoped to
+   these two sections only; Gallery artwork and all other site elements retain
+   their existing corner treatment. */
+.still-grid-page .works-grid.mode-studies .work-image,
+.still-grid-page .works-grid.mode-studies .work-image img,
+#page-motion .works-grid.mode-collage .motion-item .work-image,
+#page-motion .works-grid.mode-collage .motion-item .motion-poster,
+#page-motion .works-grid.mode-collage .motion-item .motion-video-stack,
+#page-motion .works-grid.mode-collage .motion-item .motion-video-layer,
+#page-motion .works-grid.mode-collage .motion-item .motion-transition-canvas {
+    border-radius: 0 !important;
+}
+
+/* --- Per-video fullscreen button, bottom right of each thumbnail --- */
+.motion-fullscreen-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    padding: 6px;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.motion-fullscreen-btn svg { width: 100%; height: 100%; }
+.motion-fullscreen-btn:hover { background: rgba(0, 0, 0, 0.7); }
+/* The fullscreen control belongs to the active loop only. Keeping it hidden
+   on idle cards also prevents a grid of controls covering mobile artwork. */
+#page-motion .motion-item.is-playing .motion-fullscreen-btn {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Desktop uses the complete thumbnail as the fullscreen control. The small
+   corner button remains available on touch devices such as iPhone and iPad,
+   where tapping the thumbnail itself still controls play/pause. */
+#page-motion.desktop-click-fullscreen .motion-fullscreen-btn {
+    display: none !important;
+}
+
+/* --- MOTION FULLSCREEN VIEWER --- */
+.motion-viewer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-color);
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity 0.3s ease, background-color 0.3s ease, visibility 0.3s;
+}
+.motion-viewer.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* This stage is sized in JS to the video's real aspect ratio. It clips the
+   small overscale below, trimming any baked-in one-pixel/tiny black bars while
+   preserving the artwork's full portrait framing. */
+.motion-video-stage {
+    position: relative;
+    width: 96vw;
+    height: 96vh;
+    height: 96dvh;
+    max-width: 96vw;
+    max-height: 96vh;
+    max-height: 96dvh;
+    overflow: hidden;
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    contain: layout paint;
+}
+
+/* Fullscreen videos are decoder-only. Safari's promoted native video surface
+   is never made visible, so it cannot flash black when a differently shaped
+   MP4 replaces it. All moving output is painted into the canvas instead. */
+.motion-video-stage .motion-video-layer {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: none !important;
+}
+.motion-transition-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 5;
+    image-rendering: auto;
+    pointer-events: none;
+    background: transparent;
+}
+
+.motion-freeze-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 6;
+    pointer-events: none;
+}
+
+/* During next/previous navigation, this independent canvas holds the outgoing
+   frame at its original pixel dimensions. The hidden stage is free to resize
+   for the incoming MP4 behind it, so Safari can never stretch the old video
+   into the new aspect ratio and the viewer never has to flash black. */
+.motion-viewer-safety {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    display: block;
+    overflow: hidden;
+    background: var(--bg-color);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+.motion-viewer-safety.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+.motion-viewer-safety-image {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    object-position: center;
+    transform: scale(1.075);
+    transform-origin: center;
+    opacity: 0;
+    visibility: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.motion-viewer-safety-image.is-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.motion-viewer-hold {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 8;
+    width: 96vw;
+    height: 96vh;
+    height: 96dvh;
+    max-width: 96vw;
+    max-height: 96vh;
+    max-height: 96dvh;
+    background: transparent;
+    pointer-events: none;
+    image-rendering: auto;
+}
+
+/* The outgoing canvas snapshot or decoded incoming WebP remains above the
+   decoder canvas throughout a source change. The stage itself is never the
+   only visible surface. */
+.motion-video-stage.is-switching .motion-video-layer,
+.motion-video-stage.is-switching .motion-transition-canvas,
+.motion-video-stage.is-switching .motion-freeze-frame {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Native media controls are intentionally disabled in this custom viewer.
+   This prevents Safari/Chrome from flashing the bottom loading/progress bar
+   each time a loop changes layers. Tap the video itself to play/pause. */
+.motion-viewer video {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+}
+.motion-viewer video::-webkit-media-controls,
+.motion-viewer video::-webkit-media-controls-panel,
+.motion-viewer video::-webkit-media-controls-enclosure,
+.motion-viewer video::-webkit-media-controls-overlay-play-button,
+.motion-viewer video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+}
+
+.motion-viewer .lightbox-close { position: fixed; top: 30px; right: 40px; }
+.motion-viewer .slider-arrow { position: fixed; top: 50%; }
+.motion-viewer .left-arrow { left: 40px; }
+.motion-viewer .right-arrow { right: 40px; }
+@media (max-width: 768px) {
+    .motion-video-stage {
+        max-width: 96vw;
+        max-height: 96vh;
+        max-height: 96dvh;
+    }
+    .motion-viewer .lightbox-close { top: 15px; right: 25px; font-size: 2.5rem; }
+    .motion-viewer .left-arrow { left: 18px; }
+    .motion-viewer .right-arrow { right: 18px; }
+}
+/* --- STORE PAGE - PERFECT EQUAL SPACING --- */
+
+#page-store .overlay-content {
+    padding: 0 !important; /* Strip this so it stops fighting the wrapper below */
+    align-items: flex-start !important; /* Let items start from the top naturally */
+}
+
+#store-content {
+    /* Overrides the inline HTML styles completely */
+    width: 100% !important;
+    max-width: 1600px !important; /* Widened to 1600px to match your gallery's breathing room */
+    margin: 0 auto !important; 
+    
+    /* THE FIX: The left/right padding EXACTLY matches the grid gap */
+    padding: 85px 40px 80px 40px !important; 
+    box-sizing: border-box;
+}
+
+.store-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-content: stretch;
+    column-gap: 28px !important;
+    row-gap: 42px !important;
+    margin: 0 !important;
+    padding: 0;
+    width: 100%;
+}
+
+/* Responsive adjustments for iPads / Tablets */
+@media (max-width: 1024px) {
+    #store-content {
+        padding: 85px 30px 60px 30px !important;
+    }
+    .store-tabs {
+        max-width: none;
+    }
+    .store-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 22px !important;
+        row-gap: 36px !important;
+    }
+    .store-item img {
+        height: clamp(280px, 38vw, 390px);
+    }
+}
+
+/* Responsive adjustments for Mobile */
+@media (max-width: 768px) {
+    #store-content {
+        padding: 70px 20px 60px 20px !important;
+    }
+    .store-tabs {
+        max-width: none;
+    }
+.store-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 14px !important;
+        row-gap: 28px !important;
+    }
+    .store-item img {
+        height: clamp(190px, 56vw, 280px);
+    }
+}
+.store-item {
+    min-width: 0;
+    text-decoration: none;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.store-item img {
+    width: 100%;
+    height: clamp(320px, 31vw, 480px);
+    object-fit: contain;
+    object-position: center;
+    background-color: var(--overlay-bg); /* Shared square image stage keeps every product card aligned */
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.store-item:hover img {
+    transform: scale(1.02);
+}
+
+.store-item h3 {
+    margin: 13px 0 3px;
+    font-size: 15px;
+    line-height: 1.25;
+    font-weight: 500;
+}
+
+.store-item p {
+    margin: 0;
+    opacity: 0.65;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+@media (max-width: 768px) {
+    /* Use a square media stage on phones. The Seven of Hearts images are
+       square, so this removes the hidden vertical space beneath them while
+       keeping both columns aligned. */
+    .store-item img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        object-position: center;
+    }
+
+    .store-item h3 {
+        margin-top: 9px;
+    }
+}
+
+/* --- STORE CATEGORY TABS (Editions / Apparel) --- */
+.store-tabs {
+    display: flex;
+    justify-content: flex-start;
+    gap: 36px;
+    margin: 0 0 28px;
+    width: 100%;
+}
+
+.store-tab {
+    background: none;
+    border: none;
+    padding: 0 0 8px 0;
+    color: var(--text-color);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    position: relative;
+}
+
+.store-tab::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%; height: 1px;
+    background: var(--text-color);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.3s ease;
+}
+
+.store-tab:hover { opacity: 0.8; }
+.store-tab.active { opacity: 1; }
+.store-tab.active::after { transform: scaleX(1); }
+
+@media (max-width: 768px) {
+    .store-tabs { gap: 24px; margin-bottom: 22px; }
+    .store-tab { font-size: 0.6rem; letter-spacing: 0; }
+}
+
+.store-coming-soon {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.5;
+}
+/* --- PRODUCT DETAIL OVERLAY --- */
+#page-product { z-index: 100000; overflow-y: auto; overflow-x: hidden; background: var(--overlay-bg); }
+/* 1. Lift the product lightbox higher */
+.product-container { 
+    max-width: 1000px; 
+    width: 100%;
+    margin: 0 auto; 
+    padding: 38px 40px 24px; /* Slight breathing room above the product lightbox */
+    box-sizing: border-box; 
+}
+@media (max-width: 768px) { 
+    .product-container {
+        padding: 42px 20px 30px;
+        width: 100%;
+        max-width: none;
+        overflow-x: hidden;
+    }
+
+    .product-layout {
+        width: 100%;
+        min-width: 0;
+        gap: 14px;
+    }
+
+    .product-left,
+    .product-right {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .product-right {
+        align-self: stretch;
+        margin-top: -4px;
+    }
+
+    .product-carousel-shell {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        margin-top: 8px;
+        padding-bottom: 4px;
+    }
+
+    #prod-carousel {
+        width: 100%;
+        min-width: 0;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+.back-btn { background: none; border: none; font-size: 1rem; cursor: pointer; margin-bottom: 20px; opacity: 0.6; color: var(--text-color); padding: 0; }
+.product-layout { display: flex; gap: 60px; color: var(--text-color); }
+.product-left {
+    flex: 1.6;
+    min-width: 0;
+    position: relative;
+}
+
+.product-main-stage {
+    position: relative;
+    width: 100%;
+    height: min(68vh, 660px);
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.product-main-stage #prod-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
+    object-fit: contain;
+    object-position: center;
+    transition: opacity 0.3s ease;
+}
+
+.product-main-stage #prod-img-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    margin: 0;
+    transform: translate(-50%, -50%);
+}
+.product-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.product-right h1 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
+.prod-desc { font-size: 0.9rem; line-height: 1.4; opacity: 0.8; }
+.product-option-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+.product-option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.product-option-group > label {
+    display: block;
+    margin: 0;
+}
+.selector-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.selector-group.compact-sizes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.selector-group.compact-colours {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+}
+@media (max-width: 560px) {
+    .selector-group.compact-sizes {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+.prod-option-btn { 
+    padding: 7px 16px; 
+    border: 1px solid var(--text-color); 
+    background: none; 
+    color: var(--text-color); 
+    cursor: pointer; 
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+.prod-option-btn.active {
+    background: var(--text-color);
+    color: var(--bg-color);
+}
+.buy-btn {
+    width: 100%;
+    padding: 16px;
+    cursor: pointer;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    
+    /* Sleek Outline Style */
+    background: transparent;
+    color: var(--text-color);
+    border: 2px solid var(--text-color);
+    border-radius: 4px;
+    
+    /* Smooth transition */
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    overflow: visible;
+}
+.buy-btn:hover {
+    background: var(--text-color);
+    color: var(--bg-color);
+}
+.buy-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--text-color);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: -1;
+    /* Add these to keep the background fill contained within the radius */
+    border-radius: 4px;
+    overflow: hidden; 
+}
+
+.buy-btn:hover::before {
+    transform: scaleX(1);
+}
+.buy-btn.black { background: var(--text-color); color: var(--bg-color); }
+.price-tag { font-size: 1.5rem; font-weight: bold; margin: 6px 0; }
+.shipping-info { margin-top: 20px; font-size: 0.8rem; line-height: 1.6; opacity: 0.7; }
+@media (max-width: 768px) { 
+    .product-layout { flex-direction: column; } 
+    .product-left { flex: 1; }
+    .product-main-stage {
+        height: min(58vh, 520px);
+        min-height: 340px;
+    }
+}
+/* --- SHOPPING CART ELEMENTS & DRAWER --- */
+.quantity-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 4px 0;
+}
+
+/* Cart Drawer Footer */
+.cart-footer {
+    margin-top: auto;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 20px;
+}
+body.dark-mode .cart-footer {
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.cart-totals {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+}
+.cart-totals span:last-child {
+    font-size: 1.3rem;
+}
+.cart-tax-info {
+    font-size: 0.85rem;
+    text-align: right;
+    opacity: 0.7;
+    margin-bottom: 25px;
+    line-height: 1.4;
+}
+
+.qty-btn {
+    background: none;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#qty-display {
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+.cart-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 100%;
+    max-width: 400px;
+    height: 100%;
+    background: var(--overlay-bg);
+    border-left: 1px solid var(--text-muted);
+    z-index: 100001;
+    box-sizing: border-box;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cart-drawer.active {
+    right: 0;
+}
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+.cart-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}
+.cart-header button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 2rem;
+    cursor: pointer;
+}
+#cart-items {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.cart-item {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 15px;
+}
+body.dark-mode .cart-item {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.cart-item img {
+    width: 70px;
+    height: auto;
+}
+.cart-item-details {
+    flex: 1;
+}
+.cart-item-details h4 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+}
+.cart-item-details p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+.remove-cart-item {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    opacity: 0.5;
+    padding: 0;
+    margin-top: 5px;
+}
+.remove-cart-item:hover {
+    opacity: 1;
+}
+/* --- NAV CART ICON --- */
+.nav-cart {
+    position: relative;
+    display: inline-flex !important; /* Overrides hidden */
+    align-items: center;
+    opacity: 0.65;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    margin-left: -10px; /* Gives a tiny bit of extra breathing room from Contact */
+}
+
+.nav-cart.hidden {
+    display: none !important;
+}
+
+.nav-cart:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+#cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -12px;
+    background: var(--text-color);
+    color: var(--bg-color);
+    font-size: 0.6rem;
+    font-weight: bold;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* --- STORE PRODUCT CAROUSEL --- */
+.product-carousel-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: 12px;
+    padding: 0 34px 10px;
+    box-sizing: border-box;
+}
+#prod-carousel {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0;
+    cursor: pointer;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+}
+#prod-carousel::-webkit-scrollbar { display: none; }
+#prod-carousel.is-overflowing {
+    justify-content: flex-start;
+}
+
+#prod-carousel img {
+    flex: 0 0 80px;
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid transparent;
+    opacity: 0.28;
+    transition: opacity 0.22s ease, border-color 0.22s ease;
+}
+#prod-carousel img:hover { opacity: 0.7; }
+#prod-carousel img.is-active {
+    opacity: 1;
+    border-color: var(--text-color);
+}
+.product-carousel-arrow {
+    position: absolute;
+    top: 40px;
+    margin: 0;
+    z-index: 20;
+    outline: none;
+}
+
+.product-carousel-arrow:focus-visible {
+    opacity: 1;
+}
+
+#prod-carousel img:focus {
+    outline: none;
+}
+#prod-carousel-prev { left: 5px; }
+#prod-carousel-next { right: 5px; }
+.product-carousel-arrow[hidden] { display: none !important; }
+@media (max-width: 768px) {
+    .product-carousel-shell {
+        padding-left: 28px;
+        padding-right: 28px;
+    }
+    #prod-carousel img {
+        flex-basis: 68px;
+        width: 68px;
+        height: 68px;
+    }
+    .product-carousel-arrow { top: 34px; }
+    #prod-carousel-prev { left: 3px; }
+    #prod-carousel-next { right: 3px; }
+}
+/* Force disable interactions and reset cursor when an overlay is not visible */
+.page-overlay:not(.visible),
+.page-overlay:not(.visible) * {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+/* Slower, theme-aware loading graphic */
+@keyframes throb-animation {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+/* --- LOADING GRAPHIC (Static, Centered) --- */
+.btn-loading-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Perfectly centers the image */
+    height: 90%;                     /* Adjust this percentage to make it larger/smaller */
+    width: auto;
+    object-fit: contain;             /* Ensures it doesn't stretch/distort */
+    z-index: 10;
+    pointer-events: none;
+}
+/* 2. Dynamic Theme Logic */
+/* Standard transparent buttons use the base text color */
+.buy-btn .btn-loading-img {
+    filter: var(--logo-filter);
+}
+
+/* Hovering standard buttons fills them, so invert the graphic */
+.buy-btn:hover .btn-loading-img {
+    filter: var(--loader-invert);
+}
+
+/* 3. Filled/Black buttons ALWAYS have a filled background matching text-color */
+/* Therefore they always need the inverted contrast graphic */
+.buy-btn.black .btn-loading-img,
+.buy-btn.black:hover .btn-loading-img {
+    filter: var(--loader-invert);
+}
+/* --- STORE COUNTDOWN TIMER --- */
+#store-countdown-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    position: absolute; 
+    top: 0; left: 0;
+    z-index: 10;
+}
+.cd-title {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: normal;
+    letter-spacing: 4px;
+    opacity: 0.6;
+    margin-bottom: 35px;
+    text-transform: uppercase;
+}
+.store-countdown {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    color: var(--text-color);
+}
+.cd-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80px;
+}
+.cd-item span:first-child {
+    font-size: 4rem;
+    font-weight: bold;
+    line-height: 1;
+}
+.cd-separator {
+    font-size: 3.5rem;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0.2;
+    margin-bottom: 25px; /* Adjust to align with the numbers */
+}
+.cd-label {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    opacity: 0.5;
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .cd-item span:first-child { font-size: 2.5rem; }
+    .cd-item { width: 55px; }
+    .cd-separator { font-size: 2.2rem; margin-bottom: 20px; }
+    .cd-title { font-size: 1rem; }
+}
+
+/* --- TIME PAGE (hidden /time) --- */
+.time-page-inner { max-width: 640px; margin: 0 auto; text-align: center; }
+.time-eyebrow {
+    font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
+    opacity: 0.55; font-weight: bold; margin-bottom: 22px;
+}
+.time-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-color); margin-right: 8px; vertical-align: 1px;
+    animation: timePulse 1.6s ease-in-out infinite;
+}
+@keyframes timePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.time-intro { font-size: 1rem; line-height: 1.6; opacity: 0.75; margin: 0 0 50px; }
+.time-intro strong { opacity: 1; }
+.time-counter {
+    display: flex; justify-content: center; align-items: center; gap: 18px;
+    color: var(--text-color); flex-wrap: wrap; margin-bottom: 30px;
+}
+.time-item { display: flex; flex-direction: column; align-items: center; min-width: 90px; }
+.time-item span:first-child {
+    font-size: 3.4rem; font-weight: bold; line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.time-sep { font-size: 3rem; font-weight: bold; line-height: 1; opacity: 0.2; margin-bottom: 22px; }
+.time-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; margin-top: 12px; }
+.time-ticker { font-size: 0.8rem; letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 30px; font-variant-numeric: tabular-nums; }
+.time-copy { font-size: 0.85rem; line-height: 1.7; opacity: 0.55; max-width: 520px; margin: 0 auto; }
+.time-copy strong { opacity: 0.85; }
+@media (max-width: 768px) {
+    .time-item span:first-child { font-size: 2.1rem; }
+    .time-sep { font-size: 1.8rem; margin-bottom: 14px; }
+    .time-item { min-width: 62px; }
+    .time-counter { gap: 8px; }
+    .time-intro { margin-bottom: 34px; }
+}
+
+/* When /time is open, strip the site chrome down to just the logo */
+body.time-mode .nav-links,
+body.time-mode .footer,
+body.time-mode .copyright,
+body.time-mode #ios-brush-selector {
+    display: none !important;
+}
+
+.inline-artist {
+    height: 2.4em; /* Scales perfectly with the paragraph text */
+    width: auto; 
+    vertical-align: middle; 
+    mix-blend-mode: var(--frace-blend);
+    filter: var(--logo-filter);
+    margin: 0 3px; /* Gives the image a tiny bit of breathing room from the commas */
+    position: relative;
+    top: -2px; /* Nudges it down slightly to sit nicely on the baseline */
+    transition: filter 0.3s ease;
+}
+/* --- UNRESTRICTED 3D MODEL VIEWER --- */
+#lb-model {
+    position: fixed !important;
+    top: 0 !important;
+    /* Spans 124% of the screen, shifted left by 24% to perfectly center on the 75% left column */
+    left: -24vw !important;
+    width: 124vw !important;
+    height: 100vh !important;
+    transform: none !important;
+    z-index: 20 !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    outline: none !important;
+    transition: opacity 0.3s ease;
+}
+
+/* Small centered loading bar shown while a .glb streams in, instead of a poster that pops */
+.lb-model-loader {
+    position: fixed;
+    top: 50%;
+    left: 38%; /* Center of the model's actual -24vw to 100vw span, not the full viewport */
+    transform: translate(-50%, -50%);
+    z-index: 21;
+    width: 140px;
+    height: 2px;
+    background: rgba(128,128,128,0.25);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+    .lb-model-loader {
+        left: 50%; /* Model goes full-width on mobile, so horizontal center is correct here */
+        top: 46%; /* Center of the model's -18vh to 110vh span on mobile */
+    }
+}
+
+.lb-model-loader-bar {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 40%;
+    background: var(--text-color);
+    border-radius: 2px;
+    animation: lb-loader-sweep 1s ease-in-out infinite;
+}
+
+@keyframes lb-loader-sweep {
+    0%   { left: -40%; }
+    100% { left: 100%; }
+}
+
+/* Generic small loading bar (same look as the .glb loader above) used for
+   art lightbox images and the store product lightbox while a higher-res
+   image streams in. Positioned absolute + centered within its own
+   position:relative parent, rather than fixed like the model loader,
+   since these containers don't have the model's special fixed layout. */
+.img-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    width: 140px;
+    height: 2px;
+    background: rgba(128,128,128,0.25);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.img-loader-bar {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 40%;
+    background: var(--text-color);
+    border-radius: 2px;
+    animation: lb-loader-sweep 1s ease-in-out infinite;
 }
 
 /* Mobile/Tablet alignment */
@@ -1696,16 +3091,6 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
         width: 100vw !important;
         height: 128vh !important;
     }
-}
-
-/* Digital uses its decoded poster rows as the loading feedback. Never show
-   the shared section loader on this page, including stale nodes from a prior
-   cached version of the script. */
-#page-motion .section-page-loader {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    animation: none !important;
 }
 
 /* --- SECTION LOADERS: NOTES / STUDIES / DIGITAL MOTION --- */
@@ -1731,33 +3116,21 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 .section-page-loader-track {
     position: relative;
     width: 140px;
-    max-width: 140px;
     height: 2px;
     overflow: hidden;
-    overflow: clip;
-    contain: strict;
-    isolation: isolate;
     border-radius: 2px;
     background: rgba(128, 128, 128, 0.25);
 }
 
 .section-page-loader-bar {
     position: absolute;
-    inset: 0 auto 0 0;
+    top: 0;
+    left: 0;
     width: 40%;
     height: 100%;
     border-radius: 2px;
     background: var(--text-color);
-    transform: translate3d(-100%, 0, 0);
-    will-change: transform;
-    animation: section-loader-sweep 1s ease-in-out infinite;
-}
-
-/* A transform-only animation stays clipped to the small track. Animating
-   `left` occasionally produced a full-width compositor streak in Safari. */
-@keyframes section-loader-sweep {
-    0%   { transform: translate3d(-100%, 0, 0); }
-    100% { transform: translate3d(250%, 0, 0); }
+    animation: lb-loader-sweep 1s ease-in-out infinite;
 }
 
 @media (max-width: 1024px) {
