@@ -2045,7 +2045,14 @@ updatePageMeta("Tyrone Moreno | Digital");
     }
     clearNavigation();
     pageMotion.classList.add('visible');
-    beginSectionPageLoading(pageMotion, 'Loading digital work');
+
+    /* Digital artwork should never be covered by a page-level loading bar.
+       Clear any loader left behind by an older visit and let the first decoded
+       poster row appear naturally. */
+    hideSectionPageLoader(pageMotion, 0);
+    pageMotion.querySelector('.section-page-loader')?.remove();
+    pageMotion.classList.remove('section-is-loading');
+
     btnMotion.classList.add('active');
     document.body.classList.add('overlay-open');
     document.body.style.cursor = 'default';
@@ -2054,10 +2061,9 @@ updatePageMeta("Tyrone Moreno | Digital");
 
     /* Digital motion media is deliberately initialized only when this page is opened. */
     if (typeof window.ensureMotionPageLoaded === 'function') {
-        finishSectionPageLoading(pageMotion, window.ensureMotionPageLoaded(), 10000);
+        window.ensureMotionPageLoaded();
     } else {
         window.__motionOpenRequested = true;
-        window.setTimeout(() => hideSectionPageLoader(pageMotion), 2500);
     }
 }
 
