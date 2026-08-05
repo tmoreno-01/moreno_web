@@ -2528,7 +2528,33 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 .product-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .product-right h1 { margin: 0; font-size: 1.7rem; line-height: 1.2; }
 .prod-desc { font-size: 0.9rem; line-height: 1.4; opacity: 0.8; }
+.product-option-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+.product-option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.product-option-group > label {
+    display: block;
+    margin: 0;
+}
 .selector-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.selector-group.compact-sizes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.selector-group.compact-colours {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+}
+@media (max-width: 560px) {
+    .selector-group.compact-sizes {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
 .prod-option-btn { 
     padding: 7px 16px; 
     border: 1px solid var(--text-color); 

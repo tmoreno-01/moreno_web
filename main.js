@@ -3738,50 +3738,155 @@ updatePageMeta(
 setProductStructuredData(product, productCanonical, productDescription);
 
 // --- DYNAMIC VARIANT BUTTON GENERATOR ---
+const optionGroupsRoot = document.getElementById('product-option-groups');
+const legacyOptionGroup = document.getElementById('legacy-option-group');
 const selectorGroup = document.getElementById('variant-selector-group');
-const optionsLabel = document.getElementById('options-label'); // Make sure your label has this ID
-selectorGroup.innerHTML = ''; 
+const optionsLabel = document.getElementById('options-label');
 
-// ADD THIS CHECK: If only one variant and it's "Default Title", hide the UI
-if (currentProductVariants.length === 1 && currentProductVariants[0].node.title === 'Default Title') {
-    selectorGroup.style.display = 'none';
-    if (optionsLabel) optionsLabel.style.display = 'none';
-    
-    // Automatically set the state
+selectorGroup.innerHTML = '';
+optionGroupsRoot.querySelectorAll('.dynamic-product-option-group').forEach((group) => group.remove());
+
+const collectionHandles = (product.collections?.nodes || []).map((collection) => collection.handle);
+const isApparelProduct =
+    collectionHandles.includes('apparel') ||
+    /apparel|clothing|t-?shirt|tee|sweatshirt|hoodie/i.test(product.productType || '');
+
+const saveAndRenderVariant = (variant) => {
     if (!productSelectionState[handle]) productSelectionState[handle] = {};
+    productSelectionState[handle].variantId = variant.id;
+    updateProductUI(variant);
+    window.updateQty(0);
+};
+
+if (currentProductVariants.length === 1 && currentProductVariants[0].node.title === 'Default Title') {
+    legacyOptionGroup.style.display = 'none';
+    productSelectionState[handle] = productSelectionState[handle] || {};
     productSelectionState[handle].variantId = currentProductVariants[0].node.id;
+} else if (isApparelProduct && Array.isArray(product.options) && product.options.length) {
+    legacyOptionGroup.style.display = 'none';
+
+    const selectedValues = Object.fromEntries(
+        (initialVariant.selectedOptions || []).map((option) => [option.name, option.value])
+    );
+
+    const findMatchingVariant = () => currentProductVariants.find(({ node: variant }) =>
+        (variant.selectedOptions || []).every((option) =>
+            !selectedValues[option.name] || selectedValues[option.name] === option.value
+        )
+    )?.node;
+
+    product.options.forEach((option) => {
+        let values = [...new Set(option.values || [])];
+        const normalizedName = option.name.trim().toLowerCase();
+        const isColour = normalizedName === 'color' || normalizedName === 'colour';
+        const isSize = normalizedName === 'size';
+
+        // Shopify can return apparel variants in creation order. Always present
+        // standard clothing sizes in a predictable S, M, L, XL sequence.
+        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
+        const compactSizeLabel = (value) => {
+            const normalized = String(value).trim().toUpperCase().replace(/[-_\s]+/g, ' ');
+            const aliases = {
+                'EXTRA SMALL': 'XS',
+                'X SMALL': 'XS',
+                'SMALL': 'S',
+                'MEDIUM': 'M',
+                'LARGE': 'L',
+                'EXTRA LARGE': 'XL',
+                'X LARGE': 'XL',
+                '2XL': 'XXL',
+                'XX LARGE': 'XXL',
+                'EXTRA EXTRA LARGE': 'XXL'
+            };
+            return aliases[normalized] || normalized.replace(/\s+/g, '');
+        };
+
+        if (isSize) {
+            values.sort((a, b) => {
+                const aLabel = compactSizeLabel(a);
+                const bLabel = compactSizeLabel(b);
+                const aIndex = sizeOrder.indexOf(aLabel);
+                const bIndex = sizeOrder.indexOf(bLabel);
+                if (aIndex !== -1 || bIndex !== -1) {
+                    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+                }
+                return String(a).localeCompare(String(b), undefined, { numeric: true });
+            });
+        }
+
+        // A single fixed colour adds no useful choice. It will automatically
+        // appear here as soon as another colour is added in Shopify.
+        if (isColour && values.length < 2) return;
+        if (values.length < 2 && !isSize) return;
+
+        const group = document.createElement('div');
+        group.className = 'product-option-group dynamic-product-option-group';
+
+        const label = document.createElement('label');
+        label.innerText = isColour ? 'Colour' : (isSize ? 'Size' : option.name);
+
+        const buttons = document.createElement('div');
+        buttons.className = `selector-group${isSize ? ' compact-sizes' : ''}${isColour ? ' compact-colours' : ''}`;
+
+        values.forEach((value) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'prod-option-btn';
+            button.innerText = isSize ? compactSizeLabel(value) : value;
+            button.dataset.optionName = option.name;
+            button.dataset.optionValue = value;
+            button.classList.toggle('active', selectedValues[option.name] === value);
+
+            button.addEventListener('click', () => {
+                selectedValues[option.name] = value;
+
+                const matchingVariant = findMatchingVariant();
+                if (!matchingVariant) return;
+
+                // Sync every option group to the actual matched Shopify variant.
+                (matchingVariant.selectedOptions || []).forEach((selected) => {
+                    selectedValues[selected.name] = selected.value;
+                });
+                optionGroupsRoot.querySelectorAll('.dynamic-product-option-group .prod-option-btn').forEach((candidate) => {
+                    candidate.classList.toggle(
+                        'active',
+                        selectedValues[candidate.dataset.optionName] === candidate.dataset.optionValue
+                    );
+                });
+
+                saveAndRenderVariant(matchingVariant);
+            });
+            buttons.appendChild(button);
+        });
+
+        group.append(label, buttons);
+        optionGroupsRoot.appendChild(group);
+    });
+
+    // Fallback for apparel products whose Shopify options are not named Size/Colour.
+    if (!optionGroupsRoot.querySelector('.dynamic-product-option-group')) {
+        legacyOptionGroup.style.display = 'flex';
+    }
 } else {
-    // Otherwise, show the UI and render buttons
-    selectorGroup.style.display = 'grid';
-    if (optionsLabel) optionsLabel.style.display = 'block';
+    // Preserve the existing combined "Options" buttons for prints and editions.
+    legacyOptionGroup.style.display = 'flex';
+    optionsLabel.style.display = 'block';
 
     currentProductVariants.forEach((variantEdge) => {
         const variant = variantEdge.node;
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'prod-option-btn';
-        
-        if (variant.id === initialVariant.id) {
-            btn.classList.add('active');
-        }
-        
-        // Show a short label (e.g. "A2 / Print only" or "30×45cm / Print only")
-        // instead of the full Shopify variant title, which may include a
-        // parenthetical size (e.g. "A2 (42x59cm, 17x23") / Print only") or an
-        // inline inches measurement (e.g. "30×45cm, 12×18" / Print only").
-        // Strip both the parenthetical and the inches segment so only the cm
-        // size shows, keeping option buttons compact and uncluttered.
+        btn.classList.toggle('active', variant.id === initialVariant.id);
         btn.innerText = variant.title
             .replace(/\s*\([^)]*\)\s*/g, ' ')
             .replace(/,\s*\d+(?:\.\d+)?\s*[×x]\s*\d+(?:\.\d+)?\s*"\s*/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.prod-option-btn').forEach(b => b.classList.remove('active'));
+            selectorGroup.querySelectorAll('.prod-option-btn').forEach((button) => button.classList.remove('active'));
             this.classList.add('active');
-            if (!productSelectionState[handle]) productSelectionState[handle] = {};
-            productSelectionState[handle].variantId = variant.id;
-            updateProductUI(variant);
-            window.updateQty(0);
+            saveAndRenderVariant(variant);
         });
         selectorGroup.appendChild(btn);
     });
@@ -3846,6 +3951,20 @@ function updateProductUI(variant) {
 priceEl.dataset.basePrice = variantPrice;
     priceEl.dataset.variantId = variant.id;
     priceEl.innerText = `£${variantPrice.toFixed(2)} GBP`;
+
+    // Shopify can associate a different product image with each colour variant.
+    // When present, selecting that colour updates the main product image.
+    if (variant.image?.highres) {
+        const matchingImageIndex = productCarouselImages.findIndex((image) =>
+            image.highres === variant.image.highres
+        );
+        if (matchingImageIndex >= 0) {
+            productCarouselIndex = matchingImageIndex;
+            updateProductCarouselSelection({ scrollIntoView: true });
+        }
+        setProductMainImage(variant.image.highres, variant.title);
+        document.getElementById('prod-img').dataset.cartImage = variant.image.highres;
+    }
 
 }
 async function updateMainImage(url) {
@@ -3986,7 +4105,10 @@ document.addEventListener('keydown', (event) => {
 
 // Add this fetch logic
 const storeCollectionCache = {}; // Caches fetched products per collection handle so tabs don't re-fetch
-let currentStoreCollection = 'prints';
+const savedStoreCollection = localStorage.getItem('tm_store_collection');
+let currentStoreCollection = ['prints', 'apparel'].includes(savedStoreCollection)
+    ? savedStoreCollection
+    : 'prints';
 
 const COLLECTION_PRODUCT_QUERY = `
 query getCollectionProducts($handle: String!) {
@@ -4095,21 +4217,33 @@ async function loadStoreCollection(handle) {
     }
 }
 
-function switchStoreTab(handle, btnEl) {
-    if (handle === currentStoreCollection) return;
-    currentStoreCollection = handle;
+function syncStoreTabUI(handle) {
+    document.querySelectorAll('.store-tab').forEach((tab) => {
+        tab.classList.toggle('active', tab.dataset.collection === handle);
+    });
+}
 
-    document.querySelectorAll('.store-tab').forEach(tab => tab.classList.remove('active'));
-    btnEl.classList.add('active');
+function switchStoreTab(handle, btnEl) {
+    if (!['prints', 'apparel'].includes(handle)) return;
+
+    currentStoreCollection = handle;
+    localStorage.setItem('tm_store_collection', handle);
+    syncStoreTabUI(handle);
 
     loadStoreCollection(handle);
 }
 
 let isStoreLoaded = false;
 async function renderStore() {
-    if (isStoreLoaded) return; // Stop if we already loaded the products
+    syncStoreTabUI(currentStoreCollection);
+
+    if (isStoreLoaded) {
+        await loadStoreCollection(currentStoreCollection);
+        return;
+    }
+
     isStoreLoaded = true;
-    await loadStoreCollection(currentStoreCollection); // Editions is the default tab
+    await loadStoreCollection(currentStoreCollection);
 }
 // Add this below your openProduct function
 function closeProduct() {
@@ -4247,10 +4381,11 @@ async function addToCart(event) {
         productImageEl.dataset.cartImage ||
         productImageEl.dataset.path ||
         DEFAULT_SITE_IMAGE;
-    const activeOptionBtn = document.querySelector('.prod-option-btn.active');
-    const option = activeOptionBtn ? activeOptionBtn.innerText : 'Print Only';
-    
     const priceEl = document.getElementById('prod-price');
+    const selectedVariant = currentProductVariants.find(({ node }) =>
+        node.id === priceEl.dataset.variantId
+    )?.node;
+    const option = selectedVariant?.title || 'Print Only';
     const itemPrice = parseFloat(priceEl.dataset.basePrice); // Better than parsing innerText
     const variantId = priceEl.dataset.variantId; // Grab exact ID directly from the UI
 
@@ -4423,6 +4558,9 @@ const PRODUCT_QUERY = `
   query getProductByHandle($handle: String!) {
     productByHandle(handle: $handle) {
       title
+      productType
+      collections(first: 10) { nodes { handle } }
+      options { name values }
       descriptionHtml
       seo {
         title
@@ -4437,13 +4575,16 @@ const PRODUCT_QUERY = `
           } 
         }
       }
-      variants(first: 5) {
+      variants(first: 100) {
         edges {
           node {
             id
             title
+            selectedOptions { name value }
             price { amount currencyCode }
-            image { url(transform: {maxWidth: 1200, preferredContentType: WEBP}) } 
+            image {
+              highres: url(transform: {maxWidth: 1200, preferredContentType: WEBP})
+            }
             availableForSale
           }
         }
