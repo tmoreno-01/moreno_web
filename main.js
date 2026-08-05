@@ -3776,43 +3776,10 @@ if (currentProductVariants.length === 1 && currentProductVariants[0].node.title 
     )?.node;
 
     product.options.forEach((option) => {
-        let values = [...new Set(option.values || [])];
+        const values = [...new Set(option.values || [])];
         const normalizedName = option.name.trim().toLowerCase();
         const isColour = normalizedName === 'color' || normalizedName === 'colour';
         const isSize = normalizedName === 'size';
-
-        // Shopify can return apparel variants in creation order. Always present
-        // standard clothing sizes in a predictable S, M, L, XL sequence.
-        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
-        const compactSizeLabel = (value) => {
-            const normalized = String(value).trim().toUpperCase().replace(/[-_\s]+/g, ' ');
-            const aliases = {
-                'EXTRA SMALL': 'XS',
-                'X SMALL': 'XS',
-                'SMALL': 'S',
-                'MEDIUM': 'M',
-                'LARGE': 'L',
-                'EXTRA LARGE': 'XL',
-                'X LARGE': 'XL',
-                '2XL': 'XXL',
-                'XX LARGE': 'XXL',
-                'EXTRA EXTRA LARGE': 'XXL'
-            };
-            return aliases[normalized] || normalized.replace(/\s+/g, '');
-        };
-
-        if (isSize) {
-            values.sort((a, b) => {
-                const aLabel = compactSizeLabel(a);
-                const bLabel = compactSizeLabel(b);
-                const aIndex = sizeOrder.indexOf(aLabel);
-                const bIndex = sizeOrder.indexOf(bLabel);
-                if (aIndex !== -1 || bIndex !== -1) {
-                    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-                }
-                return String(a).localeCompare(String(b), undefined, { numeric: true });
-            });
-        }
 
         // A single fixed colour adds no useful choice. It will automatically
         // appear here as soon as another colour is added in Shopify.
@@ -3832,7 +3799,7 @@ if (currentProductVariants.length === 1 && currentProductVariants[0].node.title 
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'prod-option-btn';
-            button.innerText = isSize ? compactSizeLabel(value) : value;
+            button.innerText = value;
             button.dataset.optionName = option.name;
             button.dataset.optionValue = value;
             button.classList.toggle('active', selectedValues[option.name] === value);
@@ -4105,10 +4072,7 @@ document.addEventListener('keydown', (event) => {
 
 // Add this fetch logic
 const storeCollectionCache = {}; // Caches fetched products per collection handle so tabs don't re-fetch
-const savedStoreCollection = localStorage.getItem('tm_store_collection');
-let currentStoreCollection = ['prints', 'apparel'].includes(savedStoreCollection)
-    ? savedStoreCollection
-    : 'prints';
+let currentStoreCollection = 'prints';
 
 const COLLECTION_PRODUCT_QUERY = `
 query getCollectionProducts($handle: String!) {
@@ -4217,33 +4181,21 @@ async function loadStoreCollection(handle) {
     }
 }
 
-function syncStoreTabUI(handle) {
-    document.querySelectorAll('.store-tab').forEach((tab) => {
-        tab.classList.toggle('active', tab.dataset.collection === handle);
-    });
-}
-
 function switchStoreTab(handle, btnEl) {
-    if (!['prints', 'apparel'].includes(handle)) return;
-
+    if (handle === currentStoreCollection) return;
     currentStoreCollection = handle;
-    localStorage.setItem('tm_store_collection', handle);
-    syncStoreTabUI(handle);
+
+    document.querySelectorAll('.store-tab').forEach(tab => tab.classList.remove('active'));
+    btnEl.classList.add('active');
 
     loadStoreCollection(handle);
 }
 
 let isStoreLoaded = false;
 async function renderStore() {
-    syncStoreTabUI(currentStoreCollection);
-
-    if (isStoreLoaded) {
-        await loadStoreCollection(currentStoreCollection);
-        return;
-    }
-
+    if (isStoreLoaded) return; // Stop if we already loaded the products
     isStoreLoaded = true;
-    await loadStoreCollection(currentStoreCollection);
+    await loadStoreCollection(currentStoreCollection); // Editions is the default tab
 }
 // Add this below your openProduct function
 function closeProduct() {
@@ -8004,6 +7956,16 @@ window.addEventListener('resize', () => {
                Later rows arrive only after their own posters are decoded. */
             if (isInitial) {
                 grid.classList.remove('is-loading-initial');
+
+                /* The first decoded poster row is now visibly in the DOM.
+                   Remove the page-level loader immediately so it can never
+                   sit over already-rendered Motion artwork. */
+                if (motionPage) {
+                    motionPage.dispatchEvent(
+                        new CustomEvent('section:first-content-ready')
+                    );
+                    hideSectionPageLoader(motionPage, 0);
+                }
             }
 
             const newItems = Array.from(
