@@ -3755,6 +3755,17 @@ const isApparelProduct =
     collectionHandles.includes('apparel') ||
     /apparel|clothing|t-?shirt|tee|sweatshirt|hoodie/i.test(product.productType || '');
 
+// Keep the Store underneath the product overlay on the matching collection.
+// This is especially important for direct product URLs such as /store/up-at-night-tee/:
+// closing an apparel product should reveal Apparel, not the default Editions tab.
+const productStoreCollection = isApparelProduct ? 'apparel' : 'prints';
+currentStoreCollection = productStoreCollection;
+try {
+    localStorage.setItem('tm_store_collection', productStoreCollection);
+} catch (error) {}
+syncStoreTabUI(productStoreCollection);
+loadStoreCollection(productStoreCollection);
+
 const saveAndRenderVariant = (variant) => {
     if (!productSelectionState[handle]) productSelectionState[handle] = {};
     productSelectionState[handle].variantId = variant.id;
