@@ -4464,15 +4464,66 @@ const SHOPIFY_TOKEN = '2f651b3977eb3dee70624770ed102048';
 
 // Generic GraphQL Fetcher
 async function shopifyGraphQL(query, variables = {}) {
-    const response = await fetch(SHOPIFY_DOMAIN, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Shopify-Storefront-Access-Token': SHOPIFY_TOKEN
-        },
-        body: JSON.stringify({ query, variables })
-    });
-    return response.json();
+    const retryDelays = [350, 900];
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+        let response;
+
+        try {
+            response = await fetch(SHOPIFY_DOMAIN, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Shopify-Storefront-Access-Token': SHOPIFY_TOKEN
+                },
+                body: JSON.stringify({ query, variables })
+            });
+        } catch (error) {
+            if (attempt >= retryDelays.length) throw error;
+            await wait(retryDelays[attempt]);
+            continue;
+        }
+
+        let payload;
+        try {
+            payload = await response.json();
+        } catch (error) {
+            const retryableStatus = response.status === 429 || response.status >= 500;
+            if (!retryableStatus || attempt >= retryDelays.length) throw error;
+            await wait(retryDelays[attempt]);
+            continue;
+        }
+
+        const graphQLErrors = Array.isArray(payload?.errors) ? payload.errors : [];
+        const throttled = graphQLErrors.some((error) => {
+            const code = String(error?.extensions?.code || '').toUpperCase();
+            const message = String(error?.message || '').toLowerCase();
+            return code === 'THROTTLED' || message.includes('throttl');
+        });
+        const retryableStatus = response.status === 429 || response.status >= 500;
+
+        if ((retryableStatus || throttled) && attempt < retryDelays.length) {
+            const retryAfterSeconds = Number(response.headers.get('Retry-After'));
+            const delay = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+                ? Math.min(retryAfterSeconds * 1000, 3000)
+                : retryDelays[attempt];
+            await wait(delay);
+            continue;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Shopify request failed (${response.status})`);
+        }
+
+        if (throttled) {
+            throw new Error('Shopify request throttled');
+        }
+
+        return payload;
+    }
+
+    throw new Error('Shopify request failed after retry');
 }
 function removeLoadingOverlay(btn) {
     // Clear the failsafe timer so it doesn't trigger unexpectedly
