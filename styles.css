@@ -1672,9 +1672,16 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
 @supports (-webkit-touch-callout: none) {
     @media (max-width: 768px) {
         .studies-image-stage {
+            /* On real iPhone Safari the 94vw overflow clip can paint a 1px
+               compositor seam exactly on the stage edge. Make the stage fill
+               the viewer and remove that interior clipping boundary. */
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            overflow: visible;
         }
 
         .studies-viewer-image {

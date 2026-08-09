@@ -4222,14 +4222,21 @@ function renderStoreGrid(products, handle) {
 }
 
 async function loadStoreCollection(handle) {
-    // Serve from cache if we've already fetched this collection (Editions <-> Apparel switch)
+    // Serve from cache if we've already fetched this collection (Editions <-> Apparel switch).
+    // Only paint the collection that is still selected. Direct product URLs can start an
+    // Apparel request underneath the product overlay; on slower iPhone connections that
+    // stale request must not overwrite a later tap on Editions after the product is closed.
     if (storeCollectionCache[handle]) {
-        renderStoreGrid(storeCollectionCache[handle], handle);
+        if (handle === currentStoreCollection) {
+            renderStoreGrid(storeCollectionCache[handle], handle);
+        }
         return;
     }
 
     const grid = document.getElementById('store-grid');
-    grid.innerHTML = ''; // Clear previous tab's items while the new collection loads
+    if (handle === currentStoreCollection) {
+        grid.innerHTML = ''; // Clear only the collection that is currently being requested.
+    }
 
     try {
         const response = await shopifyGraphQL(COLLECTION_PRODUCT_QUERY, { handle: handle });
@@ -4237,6 +4244,10 @@ async function loadStoreCollection(handle) {
         const products = collection ? collection.products.edges : [];
 
         storeCollectionCache[handle] = products;
+
+        // A different tab may have been selected while this Shopify request was in flight.
+        // Cache the result, but never let an old response repaint the newly selected tab.
+        if (handle !== currentStoreCollection) return;
         renderStoreGrid(products, handle);
     } catch (error) {
         console.error(`Failed to load store collection "${handle}":`, error);
