@@ -1101,7 +1101,6 @@ function buildMediaTallCluster({
         false,
         plan.clusterHeight
     );
-    cluster.appendChild(tallEntry.item);
 
     plan.rows.forEach((row) => {
         const rowElement = document.createElement('div');
@@ -1112,7 +1111,15 @@ function buildMediaTallCluster({
         stack.appendChild(rowElement);
     });
 
-    cluster.appendChild(stack);
+    /* Individual tall studies can opt into the right side without changing
+       the layout behaviour of every other tall feature. */
+    if (tallEntry.item.dataset.tallSide === 'right') {
+        cluster.appendChild(stack);
+        cluster.appendChild(tallEntry.item);
+    } else {
+        cluster.appendChild(tallEntry.item);
+        cluster.appendChild(stack);
+    }
 }
 
 function layoutMediaTallSequence({
