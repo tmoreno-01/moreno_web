@@ -4253,11 +4253,45 @@ function switchStoreTab(handle, btnEl) {
     if (!['editions', 'apparel'].includes(handle)) return;
 
     currentStoreCollection = handle;
-    localStorage.setItem('tm_store_collection', handle);
+    try {
+        localStorage.setItem('tm_store_collection', handle);
+    } catch (error) {
+        // Safari/private-storage restrictions should never block the tab itself.
+    }
     syncStoreTabUI(handle);
 
     loadStoreCollection(handle);
 }
+
+/* iPhone Safari can occasionally turn a quick tap into hover/scroll intent before
+   dispatching the synthetic click. Bind the store tabs to pointerup on real touch
+   input, keep click for mouse/keyboard, and suppress the duplicate synthetic click. */
+function bindStoreTabInteractions() {
+    document.querySelectorAll('.store-tab').forEach((tab) => {
+        if (tab.dataset.storeTabBound === 'true') return;
+        tab.dataset.storeTabBound = 'true';
+
+        let lastTouchActivation = -1000;
+        const activate = () => switchStoreTab(tab.dataset.collection, tab);
+
+        tab.addEventListener('pointerup', (event) => {
+            if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+            lastTouchActivation = performance.now();
+            if (event.cancelable) event.preventDefault();
+            activate();
+        }, { passive: false });
+
+        tab.addEventListener('click', (event) => {
+            if (performance.now() - lastTouchActivation < 500) {
+                if (event.cancelable) event.preventDefault();
+                return;
+            }
+            activate();
+        });
+    });
+}
+
+bindStoreTabInteractions();
 
 let isStoreLoaded = false;
 async function renderStore() {

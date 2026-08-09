@@ -2429,6 +2429,10 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     cursor: pointer;
     transition: opacity 0.3s ease;
     position: relative;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .store-tab::after {
@@ -2442,7 +2446,9 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     transition: transform 0.3s ease;
 }
 
-.store-tab:hover { opacity: 0.8; }
+@media (hover: hover) and (pointer: fine) {
+    .store-tab:hover { opacity: 0.8; }
+}
 .store-tab.active { opacity: 1; }
 .store-tab.active::after { transform: scaleX(1); }
 
