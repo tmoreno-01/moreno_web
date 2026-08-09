@@ -44,7 +44,7 @@ function updatePageMeta(
 
     /* Keep the browser title aligned with the current route as well as the
        canonical, Open Graph, Twitter and structured-data metadata. */
-    document.title = pageTitle || DEFAULT_SITE_TITLE;
+    document.title = DEFAULT_SITE_TITLE;
     setMetaContent('meta[name="description"]', description);
     setMetaContent('meta[property="og:type"]', ogType);
     setMetaContent('meta[property="og:url"]', absoluteCanonical);

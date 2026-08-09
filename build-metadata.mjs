@@ -81,7 +81,7 @@ function setMetaTag(documentHtml, attributeName, key, content) {
 
 function injectRouteMetadata(documentHtml, { title, description, canonical, image, ogType, structuredData }) {
     let output = documentHtml;
-    output = output.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+    output = output.replace(/<title>[\s\S]*?<\/title>/i, '<title>Tyrone Moreno</title>');
 
     const canonicalTag = `<link rel="canonical" href="${escapeHtml(canonical)}">`;
     const canonicalPattern = /<link\b(?=[^>]*\brel=["']canonical["'])[^>]*>/i;
