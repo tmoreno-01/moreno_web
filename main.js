@@ -4842,13 +4842,15 @@ window.addEventListener('resize', () => {
 
 // --- MOTION PAGE: adaptive aspect-ratio cards and canvas-rendered seamless loops. ---
 (function () {
-    const MOTION_FOLDER = '/artwork/digital/motion/';
+    const MOTION_MEDIA_ORIGIN = 'https://media.tyronemoreno.com';
+    const MOTION_FOLDER = MOTION_MEDIA_ORIGIN + '/motion/';
     const MOTION_PHONE_FOLDER = MOTION_FOLDER + 'phone/';
-    const MOTION_POSTER_FOLDER = MOTION_FOLDER + 'posters/';
+    /* Keep lightweight WebP posters with the Pages site; only MP4s live in R2. */
+    const MOTION_POSTER_FOLDER = '/artwork/digital/motion/posters/';
 
-    /* Static GitHub Pages file list. Add any future MP4 filename here after
-       uploading it to artwork/digital/motion. The list is only used when the Digital
-       page is opened, so these files do not load on the home/gallery pages. */
+    /* R2-backed motion file list. Add any future MP4 filename here after
+       uploading the original to motion/ and its mobile encode to motion/phone/.
+       The list is only used when the Digital page is opened. */
     const MOTION_FILES = Object.freeze([
   'facecollage_01.mp4',
 'moneyman.mp4',
@@ -5376,9 +5378,8 @@ window.addEventListener('resize', () => {
     }
 
     function motionFileURL(filename) {
-        /* Encode each filename safely while keeping the same-origin Pages URL,
-           which preserves Safari byte-range loading and the current lazy-load
-           behaviour. */
+        /* Encode each filename safely. MP4s are served from the R2 custom
+           domain; the browser can still use normal HTTP range requests. */
         return MOTION_FOLDER + String(filename)
             .split('/')
             .map((part) => encodeURIComponent(part))
@@ -6361,6 +6362,9 @@ window.addEventListener('resize', () => {
             this.isTouchThumbnail = touchCapable && !this.parent.classList.contains('motion-video-stage');
 
             videos.forEach((video, index) => {
+                /* R2 MP4s are cross-origin. Set this before assigning src so
+                   video frames remain usable by the canvas renderer. */
+                video.crossOrigin = 'anonymous';
                 video.controls = false;
                 video.removeAttribute('controls');
                 video.loop = false;
