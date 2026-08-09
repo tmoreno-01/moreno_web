@@ -1296,7 +1296,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
             .top-left-logo { width: 125px; top: 15px; left: 15px; }
             .nav-links { 
     top: 28px; 
-    right: 12px; 
+    right: 22px; 
     gap: clamp(4px, 1.45vw, 7px); 
     max-width: calc(100vw - 145px); 
     justify-content: flex-end; 
