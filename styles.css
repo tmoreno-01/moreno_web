@@ -1415,7 +1415,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     margin: -16px 0 0 !important;
     padding: 0 !important;
 }
-.still-grid-page .works-grid.mode-studies .sketch-item {
+.still-grid-page .works-grid.mode-studies :is(.sketch-item, .study-item) {
     flex: 0 0 var(--study-item-width, 100%) !important;
     width: var(--study-item-width, 100%) !important;
     max-width: none !important;
@@ -1437,23 +1437,23 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     will-change: transform;
     -webkit-tap-highlight-color: transparent;
 }
-.still-grid-page .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
+.still-grid-page .works-grid.mode-studies :is(.sketch-item, .study-item):has(.work-image:hover) {
     opacity: 0.985 !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .still-grid-page .works-grid.mode-studies .sketch-item:has(.work-image:hover) {
+    .still-grid-page .works-grid.mode-studies :is(.sketch-item, .study-item):has(.work-image:hover) {
         transform: scale(1.035) !important;
         z-index: 20 !important;
     }
 }
 
 @media (hover: none), (pointer: coarse) {
-    .still-grid-page .works-grid.mode-studies .sketch-item:active {
+    .still-grid-page .works-grid.mode-studies :is(.sketch-item, .study-item):active {
         transform: scale(1.015) !important;
     }
 }
-.still-grid-page .works-grid.mode-studies .sketch-item .work-image {
+.still-grid-page .works-grid.mode-studies :is(.sketch-item, .study-item) .work-image {
     position: relative;
     width: 100% !important;
     height: var(--study-row-height, auto) !important;
@@ -1466,7 +1466,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     background: transparent !important;
     box-shadow: none !important;
 }
-.still-grid-page .works-grid.mode-studies .sketch-item .work-image img {
+.still-grid-page .works-grid.mode-studies :is(.sketch-item, .study-item) .work-image img {
     display: block !important;
     width: 100% !important;
     height: 100% !important;

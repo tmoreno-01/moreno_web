@@ -1563,9 +1563,9 @@ function layoutStillImagePage(page) {
     const grid = page.querySelector('.works-grid.mode-studies');
     if (!grid) return;
 
-    unwrapMediaTallClusters(grid, '.sketch-item');
+    unwrapMediaTallClusters(grid, '.sketch-item, .study-item');
 
-    const items = Array.from(grid.querySelectorAll('.sketch-item'));
+    const items = Array.from(grid.querySelectorAll('.sketch-item, .study-item'));
     const containerWidth = grid.clientWidth;
     if (!items.length || !containerWidth) return;
 
@@ -1709,9 +1709,9 @@ function scheduleStudiesRowLayout() {
     });
 }
 
-document.querySelectorAll('.still-grid-page .sketch-item img').forEach((image) => {
+document.querySelectorAll('.still-grid-page .sketch-item img, .still-grid-page .study-item img').forEach((image) => {
     if (image.complete && image.naturalWidth) {
-        image.closest('.sketch-item').dataset.studyRatio =
+        image.closest('.sketch-item, .study-item').dataset.studyRatio =
             String(image.naturalWidth / image.naturalHeight);
     } else {
         image.addEventListener('load', scheduleStudiesRowLayout, { once: true });
@@ -3333,7 +3333,7 @@ function initDragSystem() {
         // Keep the original rotation while dragging so it doesn't snap
         let dragRotation = originalRotation;
         
-        if (!item.classList.contains('sketch-item')) {
+        if (!item.matches('.sketch-item, .study-item')) {
             dragRotation = originalRotation * dampener;
         }
 
@@ -3346,7 +3346,7 @@ function initDragSystem() {
     draggedItem = null;
     item.releasePointerCapture(e.pointerId);
     
-    if (item.classList.contains('sketch-item')) {
+    if (item.matches('.sketch-item, .study-item')) {
         // 1. Add a nice springy easing curve for the rotation settling
         item.style.transition = 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1)';
         
@@ -3496,13 +3496,13 @@ function initCollageData() {
         const isExtremeOverlap = Math.random() > 0.85; 
         
         let pullUpDesk = isExtremeOverlap ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 3) + 1;
-        if (index < 4 && !item.classList.contains('sketch-item')) pullUpDesk = 0; 
+        if (index < 4 && !item.matches('.sketch-item, .study-item')) pullUpDesk = 0; 
         
         let rotateDesk = (Math.random() * 4) - 2; 
         let translateXDesk = (Math.random() * 3) - 1.5; 
 
 // 💥 CHAOTIC SCATTER & ASYMMETRIC COLS FOR SKETCHES ONLY 💥
-        if (item.classList.contains('sketch-item')) {
+        if (item.matches('.sketch-item, .study-item')) {
             rotateDesk = (Math.random() * 40) - 20; // Calmer rotations
             translateXDesk = (Math.random() * 50) - 25; // Tighter horizontal spread for less background gaps
 
@@ -3596,7 +3596,7 @@ items.forEach((item) => {
         });
     }
 
-    if (isCollageMode && item.classList.contains('sketch-item')) {
+    if (isCollageMode && item.matches('.sketch-item, .study-item')) {
         let spanPool;
         if (window.innerWidth <= 768) spanPool = [2, 3];
         else if (window.innerWidth <= 1024) spanPool = [3, 4];
@@ -3618,7 +3618,7 @@ items.forEach((item) => {
         let topRowY = null;
 
         if (sketchGrid) {
-            const sketchItems = sketchGrid.querySelectorAll('.sketch-item');
+            const sketchItems = sketchGrid.querySelectorAll('.sketch-item, .study-item');
             sketchItems.forEach(item => {
                 const top = Math.round(item.getBoundingClientRect().top);
                 if (topRowY === null || top < topRowY) topRowY = top;
@@ -3632,7 +3632,7 @@ items.forEach((item) => {
             let translateX = parseFloat(item.dataset.translateX);
             let pullUp = parseFloat(item.dataset.pullUp) * 0.20 * dampener;
 
-            if (item.classList.contains('sketch-item')) {
+            if (item.matches('.sketch-item, .study-item')) {
                 const isTopRow = Math.round(item.getBoundingClientRect().top) <= topRowY + 2;
 
                 if (isTopRow) {
