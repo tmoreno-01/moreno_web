@@ -37,14 +37,38 @@
 </head>
 <body>
 <script>
+// All browser preference/cart persistence goes through these two helpers so
+// Safari private mode or blocked storage can never stop page startup.
+window.safeStorageGet = function(key, fallbackValue = null) {
+    try {
+        const value = localStorage.getItem(key);
+        return value === null ? fallbackValue : value;
+    } catch (error) {
+        return fallbackValue;
+    }
+};
+
+window.safeStorageSet = function(key, value) {
+    try {
+        if (value === null || value === undefined) {
+            localStorage.removeItem(key);
+        } else {
+            localStorage.setItem(key, String(value));
+        }
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
 // Restore the complete saved appearance before any visible markup is painted.
 // The previous bootstrap restored only dark mode, so a saved custom colour
 // could briefly (or on an interrupted reload, apparently permanently) show white.
 (function () {
     try {
         var root = document.documentElement;
-        var savedCustomBg = localStorage.getItem('customBg');
-        var savedTheme = localStorage.getItem('theme');
+        var savedCustomBg = window.safeStorageGet('customBg');
+        var savedTheme = window.safeStorageGet('theme');
 
         if (savedCustomBg) {
             var channels = savedCustomBg.match(/\d+(?:\.\d+)?/g);

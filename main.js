@@ -10,6 +10,9 @@ const GALLERY_TITLE = 'Original Mixed Media Artworks | Tyrone Moreno';
 const GALLERY_DESCRIPTION = 'Explore original mixed-media artworks by Tyrone Moreno, including painting, collage, sculpture and works on paper, wood, skateboards and found objects.';
 const GALLERY_CANONICAL = `${SITE_ORIGIN}/gallery/`;
 
+const safeStorageGet = window.safeStorageGet;
+const safeStorageSet = window.safeStorageSet;
+
 function setMetaContent(selector, content) {
     const element = document.querySelector(selector);
     if (element && content) element.setAttribute('content', content);
@@ -24,6 +27,7 @@ function removeArtworkStructuredData() {
 }
 
 function removeRouteStructuredData() {
+    document.getElementById('server-route-structured-data')?.remove();
     removeProductStructuredData();
     removeArtworkStructuredData();
 }
@@ -38,10 +42,9 @@ function updatePageMeta(
     const absoluteCanonical = new URL(canonicalUrl, SITE_ORIGIN).href;
     const absoluteImage = new URL(imageUrl || DEFAULT_SITE_IMAGE, SITE_ORIGIN).href;
 
-    /* Keep the visible browser tab consistent across the single-page site.
-       Route-specific SEO remains in canonical, description, Open Graph,
-       Twitter and structured-data fields. */
-    document.title = 'Tyrone Moreno';
+    /* Keep the browser title aligned with the current route as well as the
+       canonical, Open Graph, Twitter and structured-data metadata. */
+    document.title = pageTitle || DEFAULT_SITE_TITLE;
     setMetaContent('meta[name="description"]', description);
     setMetaContent('meta[property="og:type"]', ogType);
     setMetaContent('meta[property="og:url"]', absoluteCanonical);
@@ -376,11 +379,11 @@ let isPaintingActive = true; // Add this line here
 
         // --- LOAD PREFERENCE ON STARTUP ---
         document.addEventListener('DOMContentLoaded', () => {
-            const savedCustomBg = localStorage.getItem('customBg');
-            const savedTheme = localStorage.getItem('theme');
-            const savedLayoutMode = localStorage.getItem('layoutMode');
+            const savedCustomBg = safeStorageGet('customBg');
+            const savedTheme = safeStorageGet('theme');
+            const savedLayoutMode = safeStorageGet('layoutMode');
 // Add this block to load the zoom level
-    const savedZoom = localStorage.getItem('collageZoomLevel');
+    const savedZoom = safeStorageGet('collageZoomLevel');
     if (savedZoom !== null) {
         collageZoomLevel = parseInt(savedZoom, 10);
     }
@@ -450,11 +453,9 @@ themeToggleBtn.addEventListener('click', (e) => {
         const randomColor = `rgb(${r}, ${g}, ${b})`;
 
         applyCustomBackground(randomColor);
-        try {
-            // A double click supersedes the provisional single-click choice.
-            localStorage.setItem('customBg', randomColor);
-            localStorage.removeItem('theme');
-        } catch (error) {}
+        // A double click supersedes the provisional single-click choice.
+        safeStorageSet('customBg', randomColor);
+        safeStorageSet('theme', null);
         lastThemeClickTime = 0;
     } else {
         // --- SINGLE CLICK: Toggle Dark/Light ---
@@ -466,15 +467,13 @@ themeToggleBtn.addEventListener('click', (e) => {
         const wasCustomBackground = isCustomBg;
         const nextDarkMode = wasCustomBackground ? false : !isDarkMode;
 
-        try {
-            if (wasCustomBackground) {
-                localStorage.removeItem('customBg');
-                localStorage.setItem('theme', 'light');
-            } else {
-                localStorage.setItem('theme', nextDarkMode ? 'dark' : 'light');
-                localStorage.removeItem('customBg');
-            }
-        } catch (error) {}
+        if (wasCustomBackground) {
+            safeStorageSet('customBg', null);
+            safeStorageSet('theme', 'light');
+        } else {
+            safeStorageSet('theme', nextDarkMode ? 'dark' : 'light');
+            safeStorageSet('customBg', null);
+        }
 
         themeClickTimer = setTimeout(() => {
             themeClickTimer = null;
@@ -3464,7 +3463,7 @@ function cycleCollageZoom() {
     collageZoomLevel = (collageZoomLevel + 1) % maxZoom;
     
     // Add this line to save the level to the browser
-    localStorage.setItem('collageZoomLevel', collageZoomLevel);
+    safeStorageSet('collageZoomLevel', collageZoomLevel);
     
     updateGalleryLayout();
 }
@@ -3472,7 +3471,7 @@ function cycleCollageZoom() {
         // --- GALLERY LAYOUT ENGINE (COLLAGE VS GRID) ---
         function toggleLayoutMode() {
             isCollageMode = !isCollageMode;
-            localStorage.setItem('layoutMode', isCollageMode ? 'collage' : 'rows');
+            safeStorageSet('layoutMode', isCollageMode ? 'collage' : 'rows');
 
             const iconGrid = document.querySelector('.icon-grid');
             const iconCollage = document.querySelector('.icon-collage');
@@ -3767,9 +3766,7 @@ const isApparelProduct =
 // closing an apparel product should reveal Apparel, not the default Editions tab.
 const productStoreCollection = isApparelProduct ? 'apparel' : 'editions';
 currentStoreCollection = productStoreCollection;
-try {
-    localStorage.setItem('tm_store_collection', productStoreCollection);
-} catch (error) {}
+safeStorageSet('tm_store_collection', productStoreCollection);
 syncStoreTabUI(productStoreCollection);
 loadStoreCollection(productStoreCollection);
 
@@ -4127,7 +4124,7 @@ document.addEventListener('keydown', (event) => {
 
 // Add this fetch logic
 const storeCollectionCache = {}; // Caches fetched products per collection handle so tabs don't re-fetch
-const savedStoreCollection = localStorage.getItem('tm_store_collection');
+const savedStoreCollection = safeStorageGet('tm_store_collection');
 let currentStoreCollection = ['editions', 'apparel'].includes(savedStoreCollection)
     ? savedStoreCollection
     : 'editions';
@@ -4264,11 +4261,7 @@ function switchStoreTab(handle, btnEl) {
     if (!['editions', 'apparel'].includes(handle)) return;
 
     currentStoreCollection = handle;
-    try {
-        localStorage.setItem('tm_store_collection', handle);
-    } catch (error) {
-        // Safari/private-storage restrictions should never block the tab itself.
-    }
+    safeStorageSet('tm_store_collection', handle);
     syncStoreTabUI(handle);
 
     loadStoreCollection(handle);
@@ -4316,18 +4309,16 @@ async function renderStore() {
     isStoreLoaded = true;
     await loadStoreCollection(currentStoreCollection);
 }
-// Add this below your openProduct function
-function closeProduct() {
-    const prodPage = document.getElementById('page-product');
-    prodPage.classList.remove('visible');
-    document.body.classList.remove('overlay-open');
-}
-
 // --- SHOPPING CART STATE ENGINE ---
-let cart = JSON.parse(localStorage.getItem('tm_cart')) || [];
+let cart = [];
+try {
+    cart = JSON.parse(safeStorageGet('tm_cart', '[]')) || [];
+} catch (error) {
+    cart = [];
+}
 let currentQty = 1;
 function saveCart() {
-    localStorage.setItem('tm_cart', JSON.stringify(cart));
+    safeStorageSet('tm_cart', JSON.stringify(cart));
 }
 
 window.updateQty = function(change) {
@@ -4748,7 +4739,7 @@ window.resetButtons = function() {
     });
 };
 function saveLastPage(pageId) {
-    localStorage.setItem('lastVisitedPage', pageId);
+    safeStorageSet('lastVisitedPage', pageId);
 }
 // Add this helper to your script section
 function removeAllLoadingIndicators() {
