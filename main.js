@@ -3758,7 +3758,7 @@ const isApparelProduct =
 // Keep the Store underneath the product overlay on the matching collection.
 // This is especially important for direct product URLs such as /store/up-at-night-tee/:
 // closing an apparel product should reveal Apparel, not the default Editions tab.
-const productStoreCollection = isApparelProduct ? 'apparel' : 'prints';
+const productStoreCollection = isApparelProduct ? 'apparel' : 'editions';
 currentStoreCollection = productStoreCollection;
 try {
     localStorage.setItem('tm_store_collection', productStoreCollection);
@@ -4121,9 +4121,9 @@ document.addEventListener('keydown', (event) => {
 // Add this fetch logic
 const storeCollectionCache = {}; // Caches fetched products per collection handle so tabs don't re-fetch
 const savedStoreCollection = localStorage.getItem('tm_store_collection');
-let currentStoreCollection = ['prints', 'apparel'].includes(savedStoreCollection)
+let currentStoreCollection = ['editions', 'apparel'].includes(savedStoreCollection)
     ? savedStoreCollection
-    : 'prints';
+    : 'editions';
 
 const COLLECTION_PRODUCT_QUERY = `
 query getCollectionProducts($handle: String!) {
@@ -4133,6 +4133,7 @@ query getCollectionProducts($handle: String!) {
         node {
           handle
           title
+          availableForSale
           images(first: 1) {
             edges {
               node {
@@ -4174,21 +4175,24 @@ function renderStoreGrid(products, handle) {
                 maximumFractionDigits: 2
               })
             : '0';
+        const isSoldOut = prod.availableForSale === false;
         const item = document.createElement('a');
-        item.className = 'store-item';
+        item.className = `store-item${isSoldOut ? ' sold-out' : ''}`;
         item.href = `/store/${encodeURIComponent(prod.handle)}/`;
 
         // Browser automatically loads thumbnail on mobile, high-res on desktop
         item.innerHTML = `
-        <img 
-            src="${thumbImg}" 
-            srcset="${thumbImg} 300w, ${highresImg} 600w"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            alt="${imageAlt.replace(/"/g, '&quot;')}"
-            loading="lazy"
-        >
+        <span class="store-item-media">
+            <img 
+                src="${thumbImg}" 
+                srcset="${thumbImg} 300w, ${highresImg} 600w"
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                alt="${imageAlt.replace(/"/g, '&quot;')}"
+                loading="lazy"
+            >
+        </span>
         <h3>${prod.title}</h3>
-        <p>From £${formattedPrice}</p> 
+        <p${isSoldOut ? ' class="sold-out-label"' : ''}>${isSoldOut ? 'SOLD OUT' : `From £${formattedPrice}`}</p>
         `;
 
         // Keep a real crawlable URL while preserving the current in-page
@@ -4239,7 +4243,7 @@ function syncStoreTabUI(handle) {
 }
 
 function switchStoreTab(handle, btnEl) {
-    if (!['prints', 'apparel'].includes(handle)) return;
+    if (!['editions', 'apparel'].includes(handle)) return;
 
     currentStoreCollection = handle;
     localStorage.setItem('tm_store_collection', handle);

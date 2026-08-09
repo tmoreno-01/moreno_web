@@ -2310,6 +2310,12 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     text-align: center;
 }
 
+.store-item-media {
+    position: relative;
+    display: block;
+    overflow: hidden;
+}
+
 .store-item img {
     width: 100%;
     height: clamp(320px, 31vw, 480px);
@@ -2318,6 +2324,19 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
     background-color: var(--overlay-bg); /* Shared square image stage keeps every product card aligned */
     display: block;
     transition: transform 0.3s ease;
+}
+
+.store-item.sold-out .store-item-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(110, 110, 110, 0.58);
+    pointer-events: none;
+}
+
+.store-item .sold-out-label {
+    opacity: 0.8;
+    font-weight: 600;
 }
 
 .store-item:hover img {
