@@ -10,6 +10,28 @@ const GALLERY_TITLE = 'Original Mixed Media Artworks | Tyrone Moreno';
 const GALLERY_DESCRIPTION = 'Explore original mixed-media artworks by Tyrone Moreno, including painting, collage, sculpture and works on paper, wood, skateboards and found objects.';
 const GALLERY_CANONICAL = `${SITE_ORIGIN}/gallery/`;
 
+// --- STORE DISPLAY SWITCH ---
+// Change data-display-store="yes" / "no" on the <html> tag in index.html.
+// This is the browser-side guard: when disabled, store UI and /store URLs are blocked.
+const STORE_ENABLED =
+    String(document.documentElement.dataset.displayStore || 'yes').trim().toLowerCase() === 'yes';
+
+function blockDisabledStoreRoute() {
+    if (STORE_ENABLED) return false;
+
+    const path = window.location.pathname || '/';
+    if (/^\/store(?:\/|$)/i.test(path)) {
+        window.history.replaceState(null, '', '/');
+    }
+
+    document.getElementById('page-store')?.classList.remove('visible', 'active');
+    document.getElementById('page-product')?.classList.remove('visible', 'active');
+    document.getElementById('cart-drawer')?.classList.remove('open', 'active');
+    document.getElementById('btn-store')?.classList.remove('active');
+    document.getElementById('btn-cart-nav')?.classList.add('hidden');
+    return true;
+}
+
 const safeStorageGet = window.safeStorageGet;
 const safeStorageSet = window.safeStorageSet;
 
@@ -291,10 +313,15 @@ function handleRouting() {
             document.body.classList.add('overlay-open');
             document.getElementById('btn-contact').classList.add('active');
         } else if (normalizedPath.includes('/store')) {
-            openStore();
-            const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
-            if (storeSlugMatch) {
-                openProduct(storeSlugMatch[1], false);
+            if (blockDisabledStoreRoute()) {
+                updatePageMeta("Tyrone Moreno");
+                clearNavigation();
+            } else {
+                openStore();
+                const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
+                if (storeSlugMatch) {
+                    openProduct(storeSlugMatch[1], false);
+                }
             }
         } else if (normalizedPath.includes('/time')) {
             updatePageMeta("Tyrone Moreno | Time");
@@ -716,11 +743,16 @@ async function openDuckPage() {
 const btnStore = document.getElementById('btn-store');
 const pageStore = document.getElementById('page-store');
 
-btnStore.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.history.pushState(null, '', '/store/');
-    openStore();
-});
+if (!STORE_ENABLED) {
+    btnStore?.setAttribute('aria-hidden', 'true');
+    blockDisabledStoreRoute();
+} else {
+    btnStore?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.history.pushState(null, '', '/store/');
+        openStore();
+    });
+}
 
    // --- NAVIGATION & HOVER LOGIC ---
         const btnGalleryLogo = document.getElementById('btn-gallery-logo');
@@ -1931,6 +1963,7 @@ function openAbout() {
     updateFooterIcons('other');
 }
 function openStore() {
+if (blockDisabledStoreRoute()) return;
 isPaintingActive = false;
     saveLastPage('store');
     ensureStoreConnections();
@@ -3683,6 +3716,7 @@ items.forEach((item) => {
 let currentProductVariants = [];
 
 async function openProduct(handle, shouldPushHistory = true) {
+if (blockDisabledStoreRoute()) return;
 window.closeCart();
     const productPath = `/store/${encodeURIComponent(handle)}/`;
     if (shouldPushHistory && window.location.pathname !== productPath) {
@@ -4834,14 +4868,19 @@ window.addEventListener('popstate', (event) => {
         }
     } 
     else if (normalizedPath.includes('/store')) {
-        openStore();
-        const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
-        if (storeSlugMatch) {
-            // If going back to a specific product
-            openProduct(storeSlugMatch[1], false);
+        if (blockDisabledStoreRoute()) {
+            clearNavigation();
+            updatePageMeta("Tyrone Moreno");
         } else {
-            // If going back to the main store from a product
-            closeProduct(); 
+            openStore();
+            const storeSlugMatch = normalizedPath.match(/\/store\/([^\/]+)/);
+            if (storeSlugMatch) {
+                // If going back to a specific product
+                openProduct(storeSlugMatch[1], false);
+            } else {
+                // If going back to the main store from a product
+                closeProduct(); 
+            }
         }
     }  
     else if (normalizedPath.endsWith('/time')) {
@@ -4870,7 +4909,8 @@ window.addEventListener('popstate', (event) => {
 });
 document.addEventListener('DOMContentLoaded', () => {
     window.resetButtons();
-    initStoreCountdown();
+    if (STORE_ENABLED) initStoreCountdown();
+    else blockDisabledStoreRoute();
 handleRouting();
     const addBtn = document.querySelector('.buy-btn.black:not([onclick])');
     if (addBtn) {

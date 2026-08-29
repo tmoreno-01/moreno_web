@@ -1,4 +1,4 @@
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 const ROOT = process.cwd();
@@ -9,8 +9,14 @@ const DEFAULT_SITE_IMAGE = `${SITE_ORIGIN}/random/logo.webp`;
 const DEFAULT_SITE_DESCRIPTION = 'Tyrone Moreno is a multidisciplinary artist and creator.';
 const STORE_DESCRIPTION = 'Shop signed limited-edition art prints, original artworks, apparel and objects by Tyrone Moreno, with certificates of authenticity and worldwide delivery.';
 
+function storeEnabledFromHtml(documentHtml) {
+    const value = documentHtml.match(/<html\b[^>]*\bdata-display-store=["']([^"']+)["']/i)?.[1];
+    return String(value || 'yes').trim().toLowerCase() === 'yes';
+}
+
 const html = await readFile(INDEX_PATH, 'utf8');
 const mainJs = await readFile(MAIN_JS_PATH, 'utf8');
+const STORE_ENABLED = storeEnabledFromHtml(html);
 
 function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -344,6 +350,10 @@ let storeCount = 0;
 
 if (process.argv.includes('--gallery-only')) {
     console.log(`Generated ${galleryCount} gallery metadata pages (gallery-only test mode).`);
+} else if (!STORE_ENABLED) {
+    // Remove any product metadata pages left behind by an earlier store-enabled build.
+    await rm(path.join(ROOT, 'store'), { recursive: true, force: true });
+    console.log(`Generated ${galleryCount} gallery pages. Store routes removed/skipped because data-display-store="no".`);
 } else {
     storeCount = await generateStorePages();
     console.log(`Generated ${galleryCount} gallery pages and ${storeCount} store product pages with route-specific metadata.`);
