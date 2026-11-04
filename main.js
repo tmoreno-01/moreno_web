@@ -5935,7 +5935,7 @@ window.addEventListener('resize', () => {
     }
 
     function prewarmAroundMotionIndex(index, includeCurrent = false) {
-        if (!motionVideoList.length) return;
+        if (!motionVideoList.length || index < 0) return;
         const current = normalizedMotionIndex(index, motionVideoList);
         const likely = includeCurrent
             ? [current]
@@ -5975,6 +5975,119 @@ window.addEventListener('resize', () => {
         observeMotionBatchTail();
     }
 
+    // Negative indexes address generative works; MP4 indexes stay unchanged.
+    let livingObserver = null, livingVisibilityObserver = null;
+    let livingWorks = [], livingFullscreen = null;
+    const livingTitles = ['Unsettled', 'Chromatic Tangle', 'Errata'];
+    const livingKinds = [12,7,8];
+
+    function syncLivingArtwork() {
+        const showingViewer = viewer.classList.contains('active');
+        livingWorks.forEach(work => {
+            const active = !document.hidden && isMotionPageActive() &&
+                (livingFullscreen === work ? showingViewer : work.inViewport && !showingViewer);
+            if (active && !work.frame.hasAttribute('src')) work.frame.src = work.url;
+            work.frame.contentWindow?.postMessage({type:'living-active',value:active}, location.origin);
+        });
+    }
+
+    // Dynamic module imports may complete after the iframe load event.
+    window.addEventListener('message', event => {
+        if (event.origin !== location.origin || !['living-ready','living-close'].includes(event.data?.type)) return;
+        const work = livingWorks.find(w => w.frame.contentWindow === event.source);
+        if (!work) return;
+        if (event.data.type === 'living-close') { if (livingFullscreen === work) closeViewer(); return; }
+        const api = work.frame.contentWindow?.livingArtwork;
+        if (api && work.restoreState) { api.restore(work.restoreState); work.restoreState = null; }
+        work.frame.style.opacity = '';
+        syncLivingArtwork();
+    });
+
+    function moveLivingFrame(work,target) {
+        if (!work || work.frame.parentElement === target) return;
+        // Preserve the iframe's renderer, worker and buffers during fullscreen moves.
+        if (typeof target.moveBefore === 'function' && target.isConnected && work.frame.isConnected) {
+            try {
+                target.moveBefore(work.frame, null);
+                work.restoreState = null;
+                work.frame.style.opacity = '';
+                return;
+            } catch { /* Older/unsupported DOM moves use the saved-state path below. */ }
+        }
+        const api = work.frame.contentWindow?.livingArtwork;
+        if (api) work.restoreState = api.snapshot();
+        work.frame.style.opacity = '0';
+        target.appendChild(work.frame);
+    }
+
+    function parkLivingArtwork() {
+        if (!livingFullscreen) return;
+        const work = livingFullscreen;
+        livingFullscreen = null;
+        moveLivingFrame(work,work.stage);
+        viewerStage.classList.remove('living-mode');
+        viewerStage.setAttribute('role','button');
+        viewerStage.setAttribute('aria-label','Play or pause video');
+        syncLivingArtwork();
+    }
+
+    function renderLivingViewer(index) {
+        const work = livingWorks[index + livingTitles.length];
+        if (!work) return;
+        if (livingFullscreen && livingFullscreen !== work) parkLivingArtwork();
+        viewerLooper.pause();
+        viewerVideos.forEach(video => video.pause());
+        hideViewerFreeze(); hideViewerHold(); hideViewerSafety(true);
+        viewerSource = 'living:' + work.kind;
+        viewerDisplayedIndex = index;
+        livingFullscreen = work;
+        viewerStage.classList.remove('is-switching');
+        viewerStage.classList.add('living-mode');
+        viewerStage.setAttribute('role','img');
+        viewerStage.setAttribute('aria-label',work.title + ' — evolving generative artwork');
+        moveLivingFrame(work,viewerStage);
+        viewer.classList.add('active');
+        syncLivingArtwork();
+    }
+
+    function mountLivingArtwork() {
+        livingObserver?.disconnect(); livingVisibilityObserver?.disconnect();
+        livingWorks = []; livingFullscreen = null;
+        const row = document.createElement('div');
+        row.className = 'living-artworks-row';
+        livingObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                const work = livingWorks.find(w => w.card === entry.target);
+                if (work) work.inViewport = entry.isIntersecting && entry.intersectionRatio > 0;
+            });
+            syncLivingArtwork();
+        }, {root:motionPage,threshold:[0,0.01]});
+        livingTitles.forEach((title,position) => {
+            const kind = livingKinds[position];
+            const card = document.createElement('div');
+            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature' : '');
+            card.innerHTML = '<div class="work-image living-stage">' +
+                '<iframe class="living-render" title="' + title + ' — evolving generative artwork" tabindex="-1"></iframe>' +
+                '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button></div>';
+            row.appendChild(card);
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===12?95:kind===8?84:82)+'&kind='+kind};
+            livingWorks.push(work);
+            work.frame.addEventListener('load', () => {
+                const api = work.frame.contentWindow?.livingArtwork;
+                if (api && work.restoreState) { api.restore(work.restoreState); work.restoreState = null; }
+                work.frame.style.opacity = '';
+                syncLivingArtwork();
+            });
+            card.querySelector('.living-open').addEventListener('click',event => window.openMotionViewer(event,position-livingTitles.length));
+            livingObserver.observe(card);
+        });
+        grid.prepend(row);
+        livingVisibilityObserver = new MutationObserver(syncLivingArtwork);
+        livingVisibilityObserver.observe(motionPage,{attributes:true,attributeFilter:['class']});
+        livingVisibilityObserver.observe(viewer,{attributes:true,attributeFilter:['class']});
+        scheduleMotionRowLayout();
+    }
+
     function buildGrid(filenames) {
         motionVideoList = filenames.map(motionFileURL);
         motionThumbnailVideoList = filenames.map((filename) =>
@@ -5983,6 +6096,7 @@ window.addEventListener('resize', () => {
                 : motionFileURL(filename)
         );
         grid.innerHTML = '';
+        mountLivingArtwork();
         renderedMotionCount = 0;
         setupMotionObservers();
         return loadInitialMotionRows();
@@ -7932,7 +8046,7 @@ window.addEventListener('resize', () => {
     }
 
     function initMotionItem(item) {
-        if (!item || item.dataset.motionBound === 'true') return;
+        if (!item || item.classList.contains('living-artwork') || item.dataset.motionBound === 'true') return;
         const index = Number(item.dataset.motionIndex);
         const workImage = item.querySelector('.work-image');
         const src = motionThumbnailVideoList[index] || motionVideoList[index];
@@ -8157,7 +8271,7 @@ window.addEventListener('resize', () => {
             renderedMotionCount = end;
 
             const newItems = Array.from(
-                grid.querySelectorAll('.motion-item')
+                grid.querySelectorAll('.motion-item[data-motion-index]')
             ).slice(start, end);
 
             initMotionItems(newItems);
@@ -8248,6 +8362,7 @@ window.addEventListener('resize', () => {
                 ).then(() => motionVideoList);
             }
         }
+        syncLivingArtwork();
         scheduleMotionRowLayout();
         requestAnimationFrame(() => requestAnimationFrame(refreshMotionViewport));
         return motionLoadPromise || Promise.resolve(motionVideoList);
@@ -8620,6 +8735,8 @@ window.addEventListener('resize', () => {
         fallbackIndex = viewerDisplayedIndex
     ) {
         const index = motionViewerIndex;
+        if (index < 0) { renderLivingViewer(index); return; }
+        parkLivingArtwork();
         const src = motionVideoList[index];
         if (!src) return;
 
@@ -8723,13 +8840,15 @@ window.addEventListener('resize', () => {
         const session = ++viewerSession;
         const closingSource = viewerSource;
         clearTimeout(viewerCloseTimer);
-        captureViewerFrame();
+        if (!livingFullscreen) captureViewerFrame();
         viewerLooper.pause();
         viewer.classList.remove('active');
+        syncLivingArtwork();
         document.body.style.overflow = '';
         viewerSource = '';
         viewerCloseTimer = setTimeout(() => {
             if (session !== viewerSession || viewer.classList.contains('active')) return;
+            parkLivingArtwork();
             viewerLooper.stop(false);
             viewerVideos.forEach((video) => {
                 video.pause();
@@ -8755,8 +8874,8 @@ window.addEventListener('resize', () => {
             ? viewerDisplayedIndex
             : motionViewerIndex;
         const session = ++viewerSession;
-        motionViewerIndex =
-            (motionViewerIndex + 1) % motionVideoList.length;
+        motionViewerIndex = motionViewerIndex >= motionVideoList.length - 1
+            ? -livingTitles.length : motionViewerIndex + 1;
         prewarmAroundMotionIndex(motionViewerIndex, true);
         renderViewer(false, session, outgoingIndex);
     }
@@ -8767,9 +8886,8 @@ window.addEventListener('resize', () => {
             ? viewerDisplayedIndex
             : motionViewerIndex;
         const session = ++viewerSession;
-        motionViewerIndex =
-            (motionViewerIndex - 1 + motionVideoList.length) %
-            motionVideoList.length;
+        motionViewerIndex = motionViewerIndex === -livingTitles.length
+            ? motionVideoList.length - 1 : motionViewerIndex - 1;
         prewarmAroundMotionIndex(motionViewerIndex, true);
         renderViewer(false, session, outgoingIndex);
     }
@@ -8789,7 +8907,7 @@ window.addEventListener('resize', () => {
 
     viewerNextButton.addEventListener('click', showNext);
     viewerPrevButton.addEventListener('click', showPrev);
-    bindReliableTap(viewerStage, () => viewerLooper.toggle());
+    bindReliableTap(viewerStage, () => { if (!livingFullscreen) viewerLooper.toggle(); });
     viewer.addEventListener('click', (event) => {
         if (event.target === viewer) closeViewer();
     });
@@ -8811,11 +8929,12 @@ window.addEventListener('resize', () => {
         else if (event.key === 'ArrowLeft') showPrev();
         else if (event.key === ' ' || event.key === 'Spacebar') {
             event.preventDefault();
-            viewerLooper.toggle();
+            if (!livingFullscreen) viewerLooper.toggle();
         }
     });
 
     window.pauseMotionPage = function () {
+        livingWorks.forEach(work => work.frame.contentWindow?.postMessage({type:'living-active',value:false}, location.origin));
         activeThumbnailItem = null;
         activeThumbnailLooper = null;
         clearMotionPrewarmers();
@@ -8824,10 +8943,11 @@ window.addEventListener('resize', () => {
         motionBatchAppendLocked = false;
         if (motionBatchObserver) motionBatchObserver.disconnect();
         Array.from(grid.querySelectorAll('.motion-item')).forEach(dehydrateMotionItem);
-        if (viewer.classList.contains('active')) closeViewer();
+        if (viewer.classList.contains('active') && !document.hidden) closeViewer();
     };
 
     document.addEventListener('visibilitychange', () => {
+        syncLivingArtwork();
         if (document.hidden) window.pauseMotionPage();
         else if (motionPage && motionPage.classList.contains('visible')) {
             runPosterWorker();
