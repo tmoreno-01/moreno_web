@@ -3253,3 +3253,5 @@ body.time-mode #ios-brush-selector {
 #page-motion #motion-grid > .living-artworks-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
 #page-motion .living-artworks-row > .living-square-feature { grid-column:1 / -1!important; }
 @media(max-width:600px){#page-motion #motion-grid > .living-artworks-row{grid-template-columns:1fr}}
+
+#page-motion .living-square-feature .living-stage { background:var(--bg-color)!important; }

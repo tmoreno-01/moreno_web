@@ -5976,12 +5976,22 @@ window.addEventListener('resize', () => {
     }
 
     // Negative indexes address generative works; MP4 indexes stay unchanged.
-    let livingObserver = null, livingVisibilityObserver = null;
+    let livingObserver = null, livingVisibilityObserver = null, livingThemeObserver = null;
     let livingWorks = [], livingFullscreen = null;
     const livingTitles = ['Unsettled', 'Chromatic Tangle', 'Errata'];
     const livingKinds = [12,7,8];
 
+    function syncLivingTheme() {
+        const style = getComputedStyle(document.body);
+        const background = style.getPropertyValue('--bg-color').trim() || '#ffffff';
+        const ink = style.getPropertyValue('--text-color').trim() || '#1a1a1a';
+        livingWorks.filter(work => work.kind === 12).forEach(work => {
+            work.frame.contentWindow?.postMessage({type:'living-theme',background,ink}, location.origin);
+        });
+    }
+
     function syncLivingArtwork() {
+        syncLivingTheme();
         const showingViewer = viewer.classList.contains('active');
         livingWorks.forEach(work => {
             const active = !document.hidden && isMotionPageActive() &&
@@ -6051,7 +6061,7 @@ window.addEventListener('resize', () => {
     }
 
     function mountLivingArtwork() {
-        livingObserver?.disconnect(); livingVisibilityObserver?.disconnect();
+        livingObserver?.disconnect(); livingVisibilityObserver?.disconnect(); livingThemeObserver?.disconnect();
         livingWorks = []; livingFullscreen = null;
         const row = document.createElement('div');
         row.className = 'living-artworks-row';
@@ -6070,7 +6080,7 @@ window.addEventListener('resize', () => {
                 '<iframe class="living-render" title="' + title + ' — evolving generative artwork" tabindex="-1"></iframe>' +
                 '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button></div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===12?95:kind===8?84:82)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===12?99:kind===8?84:82)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', () => {
                 const api = work.frame.contentWindow?.livingArtwork;
@@ -6082,6 +6092,9 @@ window.addEventListener('resize', () => {
             livingObserver.observe(card);
         });
         grid.prepend(row);
+        livingThemeObserver = new MutationObserver(syncLivingTheme);
+        livingThemeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class','style']});
+        livingThemeObserver.observe(document.body,{attributes:true,attributeFilter:['class','style']});
         livingVisibilityObserver = new MutationObserver(syncLivingArtwork);
         livingVisibilityObserver.observe(motionPage,{attributes:true,attributeFilter:['class']});
         livingVisibilityObserver.observe(viewer,{attributes:true,attributeFilter:['class']});
