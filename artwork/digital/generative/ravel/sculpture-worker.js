@@ -1,0 +1,2 @@
+import {renderSculpture} from './sculpture-canvas.js?edition=72';
+let canvas,ctx;onmessage=e=>{let m=e.data;try{if(m.type==='init'){canvas=m.canvas;ctx=canvas.getContext('2d',{alpha:false});postMessage({type:'ready'});}else if(m.type==='frame'){if(canvas.width!==m.size)canvas.width=canvas.height=m.size;let start=performance.now();renderSculpture(ctx,m.size,m.world,m.quality);postMessage({type:'frame',ms:performance.now()-start});}}catch(error){postMessage({type:'error',message:error.message});}};

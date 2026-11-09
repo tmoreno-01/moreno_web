@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Misfiled — Tyrone Moreno</title>
+  <style>html,body{margin:0;height:100%;overflow:hidden;background:#241711}#error{position:fixed;inset:45% 1rem 0;color:#ddd0b8;font:14px system-ui;text-align:center;display:none}</style>
+</head>
+<body>
+  <div id="error" role="status">The artwork couldn't start. Reload to try again.</div>
+  <script type="module">import('./player.js?edition=130').catch(e=>{console.error(e);document.querySelector('[aria-label="Loading artwork"]')?.remove();document.querySelector('#error').style.display='block';});</script>
+</body>
+</html>

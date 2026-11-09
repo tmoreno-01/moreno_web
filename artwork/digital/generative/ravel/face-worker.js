@@ -1,0 +1,3 @@
+import {Face} from './face-world.js?edition=74';
+import {renderFace} from './face-render.js?edition=74';
+let canvas,ctx,world;onmessage=e=>{const m=e.data;try{if(m.type==='init'){canvas=m.canvas;ctx=canvas.getContext('2d',{alpha:false});world=new Face(m.seed);postMessage({type:'ready'});}else if(m.type==='restore'){world.restore(m.state);}else if(m.type==='frame'){const start=performance.now();for(let dt=m.dt;dt>0;dt-=.04)world.update(Math.min(dt,.04));if(canvas.width!==m.size)canvas.width=canvas.height=m.size;renderFace(ctx,m.size,world,m.quality);postMessage({type:'frame',renderer:'worker-relief',ms:performance.now()-start,state:world.snapshot()});}}catch(error){postMessage({type:'error',message:error.message});}};
