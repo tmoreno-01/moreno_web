@@ -5113,15 +5113,13 @@ window.addEventListener('resize', () => {
         const ratioTotal = row.reduce((sum, entry) => sum + entry.ratio, 0);
         const gapTotal = gap * Math.max(0, row.length - 1);
 
-        /* Flex wrapping is pixel-sensitive. A mathematically exact row can
-           still exceed the browser's usable width by a fraction of a pixel
-           after each card width is rounded, causing the final card (notably
-           the 16:9 clip) to jump onto the next line and leave a huge hole.
-           Keep a tiny invisible fitting allowance so the row selected by the
-           layout algorithm always remains on that physical flex line. */
-        const rowFitAllowance = justify ? 4 : 0;
-        const available = Math.max(1, containerWidth - gapTotal - rowFitAllowance);
-        let height = Number.isFinite(forcedHeight) && forcedHeight > 0
+        const hasForcedHeight = Number.isFinite(forcedHeight) && forcedHeight > 0;
+        const alignEdges = justify && !hasForcedHeight && (touchCapable || window.innerWidth <= 1024);
+        // Whole-pixel widths prevent rounded cards from wrapping on touch
+        // layouts. Assign the remaining width to the last card.
+        const rowFitAllowance = justify && !alignEdges ? 4 : 0;
+        const available = Math.max(1, (alignEdges ? Math.floor(containerWidth) : containerWidth) - gapTotal - rowFitAllowance);
+        let height = hasForcedHeight
             ? forcedHeight
             : justify
                 ? available / ratioTotal
@@ -5129,13 +5127,18 @@ window.addEventListener('resize', () => {
 
         /* Never inflate a sparse/final row beyond the established card scale.
            Completed rows can move slightly either side of the target. */
-        if (!justify && !(Number.isFinite(forcedHeight) && forcedHeight > 0)) {
+        if (!justify && !hasForcedHeight) {
             height = Math.min(height, targetHeight);
         }
         height = Math.max(1, height);
 
-        row.forEach((entry) => {
-            const width = Math.max(1, entry.ratio * height);
+        let remaining = available;
+        row.forEach((entry, index) => {
+            const naturalWidth = Math.max(1, entry.ratio * height);
+            const width = alignEdges
+                ? (index === row.length - 1 ? remaining : Math.floor(naturalWidth))
+                : naturalWidth;
+            remaining -= width;
             entry.item.style.setProperty('--motion-item-width', width.toFixed(3) + 'px');
             entry.item.style.setProperty('--motion-row-height', height.toFixed(3) + 'px');
         });
@@ -5262,6 +5265,8 @@ window.addEventListener('resize', () => {
         unwrapMediaTallClusters(grid, '.motion-item');
         const items = Array.from(grid.querySelectorAll('.motion-item'));
         if (!items.length) return;
+        const containerWidth = Math.floor(grid.getBoundingClientRect().width);
+        if (!containerWidth) return;
 
         const tallEntries = items.map((item) => ({
             item,
@@ -5272,8 +5277,6 @@ window.addEventListener('resize', () => {
         );
 
         if (hasExtraTallMedia) {
-            const containerWidth = grid.clientWidth;
-            if (!containerWidth) return;
             const gap = window.innerWidth <= 768
                 ? 14
                 : motionRowGap();
@@ -5331,8 +5334,6 @@ window.addEventListener('resize', () => {
            programming selects only consecutive row breaks, preventing both
            miniature mixed rows and aspect-ratio grouping at the bottom. */
         if (window.innerWidth <= 1024) {
-            const containerWidth = grid.clientWidth;
-            if (!containerWidth) return;
 
             const gap = window.innerWidth <= 768 ? 14 : 16;
             const portraitRatios = items
@@ -5393,8 +5394,6 @@ window.addEventListener('resize', () => {
         /* Desktop retains its curated source order. */
         items.forEach((item) => item.style.removeProperty('order'));
 
-        const containerWidth = grid.clientWidth;
-        if (!containerWidth) return;
         const gap = motionRowGap();
         const targetHeight = motionTargetRowHeight(containerWidth);
         const minAcceptedHeight = targetHeight * 0.88;
@@ -5978,8 +5977,8 @@ window.addEventListener('resize', () => {
     // Negative indexes address generative works; MP4 indexes stay unchanged.
     let livingObserver = null, livingVisibilityObserver = null, livingThemeObserver = null;
     let livingWorks = [], livingFullscreen = null;
-    const livingTitles = ['Unsettled', 'Chromatic Tangle', 'Errata'];
-    const livingKinds = [12,7,8];
+    const livingTitles = ['Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
+    const livingKinds = [13,12,7,8];
 
     function syncLivingTheme() {
         const style = getComputedStyle(document.body);
@@ -5996,25 +5995,37 @@ window.addEventListener('resize', () => {
         livingWorks.forEach(work => {
             const active = !document.hidden && isMotionPageActive() &&
                 (livingFullscreen === work ? showingViewer : work.inViewport && !showingViewer);
+            work.card.dataset.livingActive = String(active);
             if (active && !work.frame.hasAttribute('src')) work.frame.src = work.url;
             work.frame.contentWindow?.postMessage({type:'living-active',value:active}, location.origin);
         });
     }
 
+    async function restoreLivingState(work,api){
+        if(api&&work.restoreState&&!work.restoringState){
+            const state=work.restoreState;work.restoreState=null;
+            work.restoringState=Promise.resolve(api.restore(state)).finally(()=>{work.restoringState=null;});
+        }
+        if(work.restoringState)await work.restoringState;
+    }
+
     // Dynamic module imports may complete after the iframe load event.
-    window.addEventListener('message', event => {
+    window.addEventListener('message', async event => {
         if (event.origin !== location.origin || !['living-ready','living-close'].includes(event.data?.type)) return;
         const work = livingWorks.find(w => w.frame.contentWindow === event.source);
         if (!work) return;
         if (event.data.type === 'living-close') { if (livingFullscreen === work) closeViewer(); return; }
         const api = work.frame.contentWindow?.livingArtwork;
-        if (api && work.restoreState) { api.restore(work.restoreState); work.restoreState = null; }
+        if (api?.backend) work.frame.dataset.backend = api.backend;
+        await restoreLivingState(work,api);
         work.frame.style.opacity = '';
         syncLivingArtwork();
     });
 
     function moveLivingFrame(work,target) {
-        if (!work || work.frame.parentElement === target) return;
+        if (!work) return;
+        const move = work.pendingMove = (work.pendingMove || 0) + 1;
+        if (work.frame.parentElement === target) return;
         // Preserve the iframe's renderer, worker and buffers during fullscreen moves.
         if (typeof target.moveBefore === 'function' && target.isConnected && work.frame.isConnected) {
             try {
@@ -6025,6 +6036,15 @@ window.addEventListener('resize', () => {
             } catch { /* Older/unsupported DOM moves use the saved-state path below. */ }
         }
         const api = work.frame.contentWindow?.livingArtwork;
+        if (work.kind === 13 && api?.snapshotAsync) {
+            api.snapshotAsync().then(state => {
+                if (move !== work.pendingMove) return;
+                work.restoreState = state;
+                work.frame.style.opacity = '0';
+                target.appendChild(work.frame);
+            }).catch(error => console.error('Artwork state transfer failed', error));
+            return;
+        }
         if (api) work.restoreState = api.snapshot();
         work.frame.style.opacity = '0';
         target.appendChild(work.frame);
@@ -6035,7 +6055,7 @@ window.addEventListener('resize', () => {
         const work = livingFullscreen;
         livingFullscreen = null;
         moveLivingFrame(work,work.stage);
-        viewerStage.classList.remove('living-mode');
+        viewerStage.classList.remove('living-mode','living-landscape-mode','living-panorama-mode');
         viewerStage.setAttribute('role','button');
         viewerStage.setAttribute('aria-label','Play or pause video');
         syncLivingArtwork();
@@ -6053,6 +6073,8 @@ window.addEventListener('resize', () => {
         livingFullscreen = work;
         viewerStage.classList.remove('is-switching');
         viewerStage.classList.add('living-mode');
+        viewerStage.classList.toggle('living-landscape-mode',work.kind===12||work.kind===13);
+        viewerStage.classList.toggle('living-panorama-mode',work.kind===13);
         viewerStage.setAttribute('role','img');
         viewerStage.setAttribute('aria-label',work.title + ' — evolving generative artwork');
         moveLivingFrame(work,viewerStage);
@@ -6075,20 +6097,23 @@ window.addEventListener('resize', () => {
         livingTitles.forEach((title,position) => {
             const kind = livingKinds[position];
             const card = document.createElement('div');
-            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature' : '');
+            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : kind === 13 ? ' living-paint-feature living-landscape' : '');
             card.innerHTML = '<div class="work-image living-stage">' +
-                '<iframe class="living-render" title="' + title + ' — evolving generative artwork" tabindex="-1"></iframe>' +
+                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="-1"></iframe>' +
                 '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button></div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===12?99:kind===8?84:82)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===13?141:kind===12?101:kind===8?84:82)+'&kind='+kind};
             livingWorks.push(work);
-            work.frame.addEventListener('load', () => {
+            work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
-                if (api && work.restoreState) { api.restore(work.restoreState); work.restoreState = null; }
+                await restoreLivingState(work,api);
                 work.frame.style.opacity = '';
                 syncLivingArtwork();
             });
-            card.querySelector('.living-open').addEventListener('click',event => window.openMotionViewer(event,position-livingTitles.length));
+            card.querySelector('.living-open').addEventListener('click',event => {
+                if (kind === 12 && event.detail > 0) event.currentTarget.blur();
+                window.openMotionViewer(event,position-livingTitles.length);
+            });
             livingObserver.observe(card);
         });
         grid.prepend(row);

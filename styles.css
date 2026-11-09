@@ -1307,7 +1307,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
         @media (max-width: 768px) {
             .top-left-logo { width: 125px; top: 15px; left: 15px; }
             .nav-links { 
-    top: 28px; 
+    top: 6px;
     right: 22px; 
     gap: clamp(4px, 1.45vw, 7px); 
     max-width: calc(100vw - 145px); 
@@ -1321,12 +1321,18 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 white-space: nowrap;
                 text-align: center;
             }
-            /* Keep the iPhone Gallery submenu compact: Notes and Play
-               should read as two closely grouped choices, not oversized rows. */
-            .dropdown-content { padding-top: 6px; gap: 0; }
-            .dropdown-content a {
-                padding: 6px 15px;
-                min-height: 0;
+            .nav-links .dropdown > .dropbtn {
+                box-sizing: border-box;
+                min-height: 40px;
+                padding: 14px 2px 0;
+                margin-inline: -2px;
+                justify-content: center;
+            }
+            .nav-links .dropdown-content { padding-top: 3px; }
+            .nav-links .dropdown-content a {
+                padding: 3px 15px;
+                min-height: 36px;
+                align-items: flex-start;
                 line-height: 1.05;
             }
 
@@ -1341,7 +1347,7 @@ contain: content; /* Tells browser to isolate layout/paint for this element */
                 transform: translateX(-50%);
                 align-items: center;
             }
-            .contact-dropdown .dropdown-content a {
+            .nav-links .contact-dropdown .dropdown-content a {
                 width: auto;
                 padding-left: 12px;
                 padding-right: 12px;
@@ -3238,7 +3244,7 @@ body.time-mode #ios-brush-selector {
 /* Six independent living artworks, in two rows of three. */
 #page-motion #motion-grid > .living-artworks-row { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; width:100%!important; flex:0 0 100%!important; grid-column:1 / -1; }
 #page-motion .living-artworks-row > .living-artwork { width:100%!important; min-width:0; max-width:none!important; margin:0!important; }
-#page-motion .living-artworks-row .living-stage { position:relative; width:100%!important; height:auto!important; aspect-ratio:1!important; overflow:hidden; background:#dedbd1; }
+#page-motion .living-artworks-row .living-stage { position:relative; width:100%!important; max-width:none!important; margin:0!important; height:auto!important; aspect-ratio:1!important; overflow:hidden; background:#dedbd1; }
 @media(min-width:1400px){#page-motion #motion-grid > .living-artworks-row{gap:25px}}
 @media(max-width:1024px){#page-motion #motion-grid > .living-artworks-row{gap:16px}}
 @media(max-width:600px){#page-motion #motion-grid > .living-artworks-row{gap:8px}}
@@ -3254,4 +3260,18 @@ body.time-mode #ios-brush-selector {
 #page-motion .living-artworks-row > .living-square-feature { grid-column:1 / -1!important; }
 @media(max-width:600px){#page-motion #motion-grid > .living-artworks-row{grid-template-columns:1fr}}
 
-#page-motion .living-square-feature .living-stage { background:var(--bg-color)!important; }
+#page-motion .living-square-feature .living-stage,
+.living-render.living-squares-render { background:var(--bg-color)!important; }
+.living-square-feature .living-open { appearance:none; padding:0; -webkit-tap-highlight-color:transparent; }
+
+/* Two independent 3:2 artworks above the original pair. */
+#page-motion .living-artworks-row > .living-landscape { grid-column:1 / -1!important; }
+#page-motion .living-artworks-row .living-landscape .living-stage { aspect-ratio:3 / 2!important; }
+.motion-video-stage.living-landscape-mode { width:96vw!important; height:96dvh!important; }
+.motion-video-stage.living-landscape-mode > .living-render { width:min(96vw,144dvh); height:min(64vw,96dvh); aspect-ratio:3 / 2; }
+@media(max-width:600px){.motion-video-stage.living-landscape-mode > .living-render{width:min(100vw,135dvh);height:min(66.6667vw,90dvh)}}
+
+/* Borrowed Earth is one-third shorter than its previous 3:2 canvas. */
+#page-motion .living-artworks-row .living-paint-feature .living-stage { aspect-ratio:2 / 1!important; }
+.motion-video-stage.living-panorama-mode > .living-render { width:min(96vw,192dvh); height:min(48vw,96dvh); aspect-ratio:2 / 1; }
+@media(max-width:600px){.motion-video-stage.living-panorama-mode > .living-render{width:min(100vw,202.5dvh);height:min(44.4444vw,90dvh)}}
