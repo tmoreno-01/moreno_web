@@ -5977,28 +5977,49 @@ window.addEventListener('resize', () => {
     // Negative indexes address generative works; MP4 indexes stay unchanged.
     let livingObserver = null, livingVisibilityObserver = null, livingThemeObserver = null;
     let livingWorks = [], livingFullscreen = null;
-    const livingTitles = ['Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
-    const livingKinds = [13,12,7,8];
+    const livingTitles = ['Till Further Notice', 'Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
+    const livingKinds = [18,13,12,7,8];
 
+    let livingSyncFrame = 0;
     function syncLivingTheme() {
+        const work = livingWorks.find(item => item.kind === 12 && item.frame.hasAttribute('src'));
+        if (!work) return;
         const style = getComputedStyle(document.body);
         const background = style.getPropertyValue('--bg-color').trim() || '#ffffff';
         const ink = style.getPropertyValue('--text-color').trim() || '#1a1a1a';
-        livingWorks.filter(work => work.kind === 12).forEach(work => {
-            work.frame.contentWindow?.postMessage({type:'living-theme',background,ink}, location.origin);
+        const theme = background + '|' + ink;
+        if (work.sentTheme === theme) return;
+        work.sentTheme = theme;
+        work.frame.contentWindow?.postMessage({type:'living-theme',background,ink}, location.origin);
+    }
+
+    function scheduleLivingArtwork() {
+        if (livingSyncFrame) return;
+        livingSyncFrame = requestAnimationFrame(() => {
+            livingSyncFrame = 0;
+            syncLivingArtwork();
         });
     }
 
     function syncLivingArtwork() {
-        syncLivingTheme();
         const showingViewer = viewer.classList.contains('active');
-        livingWorks.forEach(work => {
-            const active = !document.hidden && isMotionPageActive() &&
-                (livingFullscreen === work ? showingViewer : work.inViewport && !showingViewer);
-            work.card.dataset.livingActive = String(active);
+        const available = !document.hidden && isMotionPageActive();
+        for (const work of livingWorks) {
+            const active = available && (showingViewer ? livingFullscreen === work : work.inViewport);
             if (active && !work.frame.hasAttribute('src')) work.frame.src = work.url;
-            work.frame.contentWindow?.postMessage({type:'living-active',value:active}, location.origin);
-        });
+            const expanded = work.kind === 15 && showingViewer && livingFullscreen === work;
+            if (!work.frame.hasAttribute('src') || (work.sentActive === active && work.sentExpanded === expanded)) continue;
+            work.sentExpanded = expanded;
+            work.sentActive = active;
+            work.card.dataset.livingActive = String(active);
+            work.frame.contentWindow?.postMessage({type:'living-active',value:active,phase:work.phase,expanded}, location.origin);
+        }
+        syncLivingTheme();
+    }
+
+    function resetLivingMessages(work) {
+        work.sentActive = undefined;
+        work.sentTheme = undefined;
     }
 
     async function restoreLivingState(work,api){
@@ -6017,6 +6038,7 @@ window.addEventListener('resize', () => {
         if (event.data.type === 'living-close') { if (livingFullscreen === work) closeViewer(); return; }
         const api = work.frame.contentWindow?.livingArtwork;
         if (api?.backend) work.frame.dataset.backend = api.backend;
+        resetLivingMessages(work);
         await restoreLivingState(work,api);
         work.frame.style.opacity = '';
         syncLivingArtwork();
@@ -6036,8 +6058,8 @@ window.addEventListener('resize', () => {
             } catch { /* Older/unsupported DOM moves use the saved-state path below. */ }
         }
         const api = work.frame.contentWindow?.livingArtwork;
-        if (work.kind === 13 && api?.snapshotAsync) {
-            api.snapshotAsync().then(state => {
+        if (api?.snapshotAsync) {
+            api.snapshotAsync().catch(() => api.snapshot()).then(state => {
                 if (move !== work.pendingMove) return;
                 work.restoreState = state;
                 work.frame.style.opacity = '0';
@@ -6055,7 +6077,7 @@ window.addEventListener('resize', () => {
         const work = livingFullscreen;
         livingFullscreen = null;
         moveLivingFrame(work,work.stage);
-        viewerStage.classList.remove('living-mode','living-landscape-mode','living-panorama-mode');
+        viewerStage.classList.remove('living-mode','living-landscape-mode','living-panorama-mode','living-story-mode','living-receipt-mode');
         viewerStage.setAttribute('role','button');
         viewerStage.setAttribute('aria-label','Play or pause video');
         syncLivingArtwork();
@@ -6073,8 +6095,10 @@ window.addEventListener('resize', () => {
         livingFullscreen = work;
         viewerStage.classList.remove('is-switching');
         viewerStage.classList.add('living-mode');
-        viewerStage.classList.toggle('living-landscape-mode',work.kind===12||work.kind===13);
+        viewerStage.classList.toggle('living-landscape-mode',work.kind>=12);
         viewerStage.classList.toggle('living-panorama-mode',work.kind===13);
+        viewerStage.classList.toggle('living-story-mode',work.kind===15 || work.kind===16 || work.kind===17 || work.kind===18);
+        viewerStage.classList.toggle('living-receipt-mode',work.kind===18);
         viewerStage.setAttribute('role','img');
         viewerStage.setAttribute('aria-label',work.title + ' — evolving generative artwork');
         moveLivingFrame(work,viewerStage);
@@ -6090,22 +6114,26 @@ window.addEventListener('resize', () => {
         livingObserver = new IntersectionObserver(entries => {
             entries.forEach(entry => {
                 const work = livingWorks.find(w => w.card === entry.target);
-                if (work) work.inViewport = entry.isIntersecting && entry.intersectionRatio > 0;
+                if (work) {
+                    const visible = work.inViewport ? 0.012 : 0.045;
+                    work.inViewport = entry.isIntersecting && entry.intersectionRatio >= visible;
+                }
             });
-            syncLivingArtwork();
-        }, {root:motionPage,threshold:[0,0.01]});
+            scheduleLivingArtwork();
+        }, {root:motionPage,threshold:[0,0.012,0.045]});
         livingTitles.forEach((title,position) => {
             const kind = livingKinds[position];
             const card = document.createElement('div');
-            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : kind === 13 ? ' living-paint-feature living-landscape' : '');
+            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : kind === 13 ? ' living-paint-feature living-landscape' : kind === 18 ? ' living-receipt-feature living-story-feature living-landscape' : '');
             card.innerHTML = '<div class="work-image living-stage">' +
-                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="-1"></iframe>' +
+                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 ? '0' : '-1') + '"></iframe>' +
                 '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button></div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===13?141:kind===12?101:kind===8?84:82)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:position%2 ? 0 : 1000/60,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?20:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
+                resetLivingMessages(work);
                 await restoreLivingState(work,api);
                 work.frame.style.opacity = '';
                 syncLivingArtwork();
@@ -6117,10 +6145,10 @@ window.addEventListener('resize', () => {
             livingObserver.observe(card);
         });
         grid.prepend(row);
-        livingThemeObserver = new MutationObserver(syncLivingTheme);
+        livingThemeObserver = new MutationObserver(scheduleLivingArtwork);
         livingThemeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class','style']});
         livingThemeObserver.observe(document.body,{attributes:true,attributeFilter:['class','style']});
-        livingVisibilityObserver = new MutationObserver(syncLivingArtwork);
+        livingVisibilityObserver = new MutationObserver(scheduleLivingArtwork);
         livingVisibilityObserver.observe(motionPage,{attributes:true,attributeFilter:['class']});
         livingVisibilityObserver.observe(viewer,{attributes:true,attributeFilter:['class']});
         scheduleMotionRowLayout();

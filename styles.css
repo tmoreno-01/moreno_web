@@ -3236,7 +3236,7 @@ body.time-mode #ios-brush-selector {
 /* Live artwork uses the same grid and fullscreen viewer as the MP4s. */
 #page-motion .living-artwork .living-stage { background:#dedbd1; }
 .living-stage iframe { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; pointer-events:none; }
-.living-stage .living-open { position:absolute; inset:0; width:100%; height:100%; border:0; background:transparent; cursor:pointer; z-index:2; }
+.living-stage .living-open { position:absolute; inset:0; width:100%; height:100%; border:0; background:transparent; cursor:pointer; z-index:2; appearance:none; touch-action:pan-y; -webkit-tap-highlight-color:transparent; }
 .living-stage .living-open:focus-visible { outline:3px solid #632b1c; outline-offset:-5px; }
 .motion-video-stage.living-mode > :not(.living-render) { display:none!important; }
 .motion-video-stage > .living-render { position:absolute; inset:0; margin:auto; width:min(96vw,96dvh); height:min(96vw,96dvh); max-width:100%; max-height:100%; aspect-ratio:1; border:0; display:block; pointer-events:auto; background:#dedbd1; }
@@ -3275,3 +3275,26 @@ body.time-mode #ios-brush-selector {
 #page-motion .living-artworks-row .living-paint-feature .living-stage { aspect-ratio:2 / 1!important; }
 .motion-video-stage.living-panorama-mode > .living-render { width:min(96vw,192dvh); height:min(48vw,96dvh); aspect-ratio:2 / 1; }
 @media(max-width:600px){.motion-video-stage.living-panorama-mode > .living-render{width:min(100vw,202.5dvh);height:min(44.4444vw,90dvh)}}
+
+#page-motion .living-artworks-row .living-story-feature .living-stage { aspect-ratio:15 / 8!important; background:#121920!important; }
+.motion-video-stage.living-story-mode > .living-render { width:min(96vw,180dvh); height:min(51.2vw,96dvh); aspect-ratio:15 / 8; background:#121920; }
+@media(max-width:600px){
+    .motion-video-stage.living-story-mode > .living-render { width:min(100vw,168.75dvh); height:min(53.3333vw,90dvh); }
+}
+
+.copyright a { pointer-events:auto; color:inherit; padding:8px 2px; }
+
+#page-motion .living-artworks-row .living-receipt-feature .living-stage {
+    aspect-ratio:75 / 32!important;
+    background:transparent!important;
+}
+.motion-video-stage.living-receipt-mode > .living-render {
+    width:min(96vw,225dvh);
+    height:min(40.96vw,96dvh);
+    aspect-ratio:75 / 32;
+    background:transparent!important;
+}
+@media(max-width:600px) and (orientation:portrait){
+    #page-motion .living-artworks-row .living-receipt-feature .living-stage { aspect-ratio:6 / 7!important; }
+    .motion-video-stage.living-receipt-mode > .living-render { width:min(100vw,77.1429dvh); height:min(116.6667vw,90dvh); aspect-ratio:6 / 7; }
+}
