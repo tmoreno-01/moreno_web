@@ -169,7 +169,7 @@ function update(dt) {
     if (besideFood && !detourTried) {
       detourTried = true;
       const sideRoads = choices.filter(choice => route[choice.index] !== food);
-      if (sideRoads.length && Math.random() < .22) {
+      if (sideRoads.length && Math.random() < .85) {
         next = sideRoads.reduce((a,b) => a.advance < b.advance ? a : b).index;
         detours++;
       }

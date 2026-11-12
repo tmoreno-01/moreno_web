@@ -6146,7 +6146,7 @@ window.addEventListener('resize', () => {
                 '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 ? '0' : '-1') + '"></iframe>' +
                 (isSnake ? '' : '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button>') + '</div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isSnake ? '/artwork/digital/generative/snake/index.html?edition=15' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?28:kind===13?147:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isSnake ? '/artwork/digital/generative/snake/index.html?edition=16' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?28:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
