@@ -7,7 +7,9 @@ const directions = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 let columns, rows, route, positions, body, food;
 let elapsed = 0;
 let journeyTime = 0;
-let detourTried = false;
+let detourAttempts = 0;
+let detoursThisMeal = 0;
+let doubleDetours = 0;
 let detours = 0;
 let ink = '#1a1a1a';
 let dirty = true;
@@ -51,7 +53,7 @@ function distance(from, to) {
 }
 
 function placeFood() {
-  detourTried = false;
+  detourAttempts = 0; detoursThisMeal = 0;
   // Food is an absolute board cell, chosen once and kept until contact.
   const occupied = new Set(body.map(index => route[index]));
   const empty = [];
@@ -117,7 +119,7 @@ function reset(nextColumns, nextRows) {
   birthVotes.forEach(vote => voteCounts[vote]++);
   full = false;
   turnHistory = ""; phrases = new Map(); noveltyChoices = 0;
-  elapsed = 0; journeyTime = 0; detours = 0;
+  elapsed = 0; journeyTime = 0; detours = 0; doubleDetours = 0;
   dirty = true;
   placeFood();
 }
@@ -163,15 +165,16 @@ function update(dt) {
       pick -= choice.weight;
       if (pick <= 0) { next = choice.index; break; }
     }
-    // Once per meal, occasionally pass up reachable food for a safe side road.
+    // Up to twice per meal, pass up reachable food for a safe side road.
     // All alternatives still precede the food on the cycle: return is guaranteed.
     const besideFood = Math.abs(x - food % columns) + Math.abs(y - Math.floor(food / columns)) === 1;
-    if (besideFood && !detourTried) {
-      detourTried = true;
+    if (besideFood && detourAttempts < (detoursThisMeal === 1 ? 2 : 1)) {
+      detourAttempts++;
       const sideRoads = choices.filter(choice => route[choice.index] !== food);
-      if (sideRoads.length && Math.random() < .85) {
+      if (sideRoads.length && Math.random() < (detoursThisMeal === 0 ? .85 : .4)) {
         next = sideRoads.reduce((a,b) => a.advance < b.advance ? a : b).index;
-        detours++;
+        detours++; detoursThisMeal++;
+        if (detoursThisMeal === 2) doubleDetours++;
       }
     }
   }
@@ -234,11 +237,13 @@ resize();
 
 window.livingArtwork = {
   backend: 'canvas-snake',
-  snapshot: () => ({ columns, rows, route: [...route], body: [...body], food, elapsed, journeyTime, detourTried, detours, full, turnHistory, phrases: [...phrases], noveltyChoices, birthVotes: [...birthVotes], voteCounts: [...voteCounts] }),
+  snapshot: () => ({ columns, rows, route: [...route], body: [...body], food, elapsed, journeyTime, detourAttempts, detoursThisMeal, doubleDetours, detours, full, turnHistory, phrases: [...phrases], noveltyChoices, birthVotes: [...birthVotes], voteCounts: [...voteCounts] }),
   restore(state) {
     ({ columns, rows, route, body, food, elapsed, full } = state);
     journeyTime = state.journeyTime || 0;
-    detourTried = !!state.detourTried; detours = state.detours || 0;
+    detourAttempts = state.detourAttempts ?? (state.detourTried ? 1 : 0);
+    detoursThisMeal = state.detoursThisMeal || 0; doubleDetours = state.doubleDetours || 0;
+    detours = state.detours || 0;
     turnHistory = state.turnHistory || "";
     phrases = new Map(state.phrases || []);
     noveltyChoices = state.noveltyChoices || 0;
@@ -250,7 +255,7 @@ window.livingArtwork = {
     dirty = true;
     draw();
   },
-  stats: () => ({ filled: body.length, capacity: route.length, full, active: activity.running, patience: Math.min(1, journeyTime / 240), detours, rememberedPhrases: phrases.size, noveltyChoices, votes: [...voteCounts] }),
+  stats: () => ({ filled: body.length, capacity: route.length, full, active: activity.running, patience: Math.min(1, journeyTime / 240), detours, doubleDetours, rememberedPhrases: phrases.size, noveltyChoices, votes: [...voteCounts] }),
 };
 addEventListener('message', event => {
   if (event.source !== parent || event.origin !== location.origin || event.data?.type !== 'living-theme') return;
