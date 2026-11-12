@@ -5975,7 +5975,15 @@ window.addEventListener('resize', () => {
     }
 
     // Negative indexes address generative works; MP4 indexes stay unchanged.
-    let livingObserver = null, livingVisibilityObserver = null, livingThemeObserver = null;
+    let livingObserver = null, livingWarmObserver = null, livingVisibilityObserver = null, livingThemeObserver = null;
+    let receiptPriorityReleased = false, receiptPriorityTimer = 0;
+
+    function releaseReceiptPriority() {
+        clearTimeout(receiptPriorityTimer);
+        receiptPriorityTimer = 0;
+        receiptPriorityReleased = true;
+        scheduleLivingArtwork();
+    }
     let livingWorks = [], livingFullscreen = null;
     const livingTitles = ['Till Further Notice', 'Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
     const livingKinds = [18,13,12,7,8];
@@ -6004,9 +6012,16 @@ window.addEventListener('resize', () => {
     function syncLivingArtwork() {
         const showingViewer = viewer.classList.contains('active');
         const available = !document.hidden && isMotionPageActive();
+        const receipt = livingWorks[0];
+        if (available && receipt && !receipt.frame.hasAttribute('src')) {
+            receipt.frame.src = receipt.url;
+            receiptPriorityTimer = window.setTimeout(releaseReceiptPriority, 2000);
+        }
         for (const work of livingWorks) {
             const active = available && (showingViewer ? livingFullscreen === work : work.inViewport);
-            if (active && !work.frame.hasAttribute('src')) work.frame.src = work.url;
+            const warmBooks = available && !showingViewer && work.kind === 13 && work.nearViewport;
+            const canLoad = work.kind !== 13 || receiptPriorityReleased;
+            if ((active || warmBooks) && canLoad && !work.frame.hasAttribute('src')) work.frame.src = work.url;
             const expanded = work.kind === 15 && showingViewer && livingFullscreen === work;
             if (!work.frame.hasAttribute('src') || (work.sentActive === active && work.sentExpanded === expanded)) continue;
             work.sentExpanded = expanded;
@@ -6038,6 +6053,7 @@ window.addEventListener('resize', () => {
         if (event.data.type === 'living-close') { if (livingFullscreen === work) closeViewer(); return; }
         const api = work.frame.contentWindow?.livingArtwork;
         if (api?.backend) work.frame.dataset.backend = api.backend;
+        if (work.kind === 18 && api) releaseReceiptPriority();
         resetLivingMessages(work);
         await restoreLivingState(work,api);
         work.frame.style.opacity = '';
@@ -6107,7 +6123,10 @@ window.addEventListener('resize', () => {
     }
 
     function mountLivingArtwork() {
-        livingObserver?.disconnect(); livingVisibilityObserver?.disconnect(); livingThemeObserver?.disconnect();
+        livingObserver?.disconnect(); livingWarmObserver?.disconnect();
+        livingVisibilityObserver?.disconnect(); livingThemeObserver?.disconnect();
+        clearTimeout(receiptPriorityTimer);
+        receiptPriorityReleased = false;
         livingWorks = []; livingFullscreen = null;
         const row = document.createElement('div');
         row.className = 'living-artworks-row';
@@ -6121,6 +6140,12 @@ window.addEventListener('resize', () => {
             });
             scheduleLivingArtwork();
         }, {root:motionPage,threshold:[0,0.012,0.045]});
+        livingWarmObserver = new IntersectionObserver(([entry]) => {
+            const books = livingWorks.find(work => work.card === entry.target);
+            if (!books) return;
+            books.nearViewport = entry.isIntersecting;
+            scheduleLivingArtwork();
+        }, {root:motionPage,rootMargin:'0px 0px 480px'});
         livingTitles.forEach((title,position) => {
             const kind = livingKinds[position];
             const card = document.createElement('div');
@@ -6129,7 +6154,7 @@ window.addEventListener('resize', () => {
                 '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 ? '0' : '-1') + '"></iframe>' +
                 '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button></div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:position%2 ? 0 : 1000/60,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?20:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:position%2 ? 0 : 1000/60,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?27:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
@@ -6143,6 +6168,7 @@ window.addEventListener('resize', () => {
                 window.openMotionViewer(event,position-livingTitles.length);
             });
             livingObserver.observe(card);
+            if (kind === 13) livingWarmObserver.observe(card);
         });
         grid.prepend(row);
         livingThemeObserver = new MutationObserver(scheduleLivingArtwork);
@@ -9074,7 +9100,8 @@ const form = document.getElementById('contactForm');
 // assets from trapping visitors behind the loader.
 const PRELOADER_MIN_VISIBLE_MS = 900;
 const PRELOADER_MAX_VISIBLE_MS = 2500;
-const PRELOADER_FADE_MS = 450;
+const digitalEntry = /^\/digital\/?$/.test(location.pathname) || pageMotion?.classList.contains('visible');
+const PRELOADER_FADE_MS = digitalEntry ? 140 : 450;
 const preloaderStartedAt = performance.now();
 
 let preloaderMinTimer = null;
@@ -9090,6 +9117,7 @@ function hidePreloader() {
     preloaderMinTimer = null;
     preloaderMaxTimer = null;
 
+    if (digitalEntry) preloader.style.transition = 'opacity 140ms ease, visibility 0s linear 140ms';
     preloader.classList.add('loaded');
     preloader.setAttribute('aria-hidden', 'true');
     document.body.classList.add('site-loaded');
@@ -9115,7 +9143,11 @@ function hidePreloaderAfterMinimum() {
     );
 }
 
-if (initialPageLoadFinished) {
+if (digitalEntry) {
+    // The Digital cards have their own loading states. Reveal their layout
+    // on the next paint, without waiting for art, images or other resources.
+    requestAnimationFrame(hidePreloader);
+} else if (initialPageLoadFinished) {
     hidePreloaderAfterMinimum();
 } else {
     window.addEventListener(
