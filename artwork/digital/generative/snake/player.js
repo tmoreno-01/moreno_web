@@ -20,20 +20,53 @@ function placeFood() {
     food = null;
     return;
   }
-  const reach = Math.min(room, body.length > route.length * .65 ? 3 : 7);
+  const reach = Math.min(room, body.length > route.length * .65 ? 3 : 24);
   food = (body[0] + 1 + Math.floor(Math.random() * reach)) % route.length;
 }
 
 function reset(nextColumns, nextRows) {
   columns = nextColumns;
   rows = nextRows;
-  route = [0];
-  for (let y = 0; y < rows; y++) {
-    for (let x = 1; x < columns; x++) {
-      route.push(y * columns + (y % 2 ? columns - x : x));
+  // Join small loops along a random spanning tree. The resulting single cycle
+  // visits every square, but winds through irregular pockets instead of rows.
+  const links = Array.from({ length: columns * rows }, () => new Set());
+  const connect = (a, b) => { links[a].add(b); links[b].add(a); };
+  const disconnect = (a, b) => { links[a].delete(b); links[b].delete(a); };
+  const width = columns / 2, height = rows / 2;
+  const parents = Array.from({ length: width * height }, (_, i) => i);
+  const root = i => {
+    while (parents[i] !== i) { parents[i] = parents[parents[i]]; i = parents[i]; }
+    return i;
+  };
+  const edges = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const a = y * 2 * columns + x * 2;
+      connect(a, a + 1); connect(a + 1, a + columns + 1);
+      connect(a + columns + 1, a + columns); connect(a + columns, a);
+      const tile = y * width + x;
+      if (x + 1 < width) edges.push([tile, tile + 1, a + 1, a + columns + 1, a + 2, a + columns + 2]);
+      if (y + 1 < height) edges.push([tile, tile + width, a + columns, a + columns + 1, a + 2 * columns, a + 2 * columns + 1]);
     }
   }
-  for (let y = rows - 1; y > 0; y--) route.push(y * columns);
+  for (let i = edges.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [edges[i], edges[j]] = [edges[j], edges[i]];
+  }
+  for (const [from, to, a, b, c, d] of edges) {
+    const first = root(from), second = root(to);
+    if (first === second) continue;
+    parents[first] = second;
+    disconnect(a, b); disconnect(c, d);
+    connect(a, c); connect(b, d);
+  }
+  route = [];
+  let previous = -1, cell = 0;
+  do {
+    route.push(cell);
+    const next = [...links[cell]].find(neighbour => neighbour !== previous);
+    previous = cell; cell = next;
+  } while (cell !== 0);
   if (Math.random() < .5) route.reverse();
   positions = [];
   route.forEach((cell, index) => { positions[cell] = index; });
