@@ -1,9 +1,9 @@
-import {motionBounds,minimumFlightTime,motionProgress,clearPair,clearAisle} from './rigid.js?141';
+import {motionBounds,minimumFlightTime,motionProgress,clearPair,clearAisle} from './rigid.js?142';
 
 // Local coordinates: u runs across one wall, s goes down the tunnel, r is out.
 export const BAY = 4.56, R = 2.48, WIDTH = 2 * R;
 export const FRONT = R + .12, BACK = R + .97;
-export const SIDES = 4, AHEAD = 15, SPEED = 1.05, VERSION = 141;
+export const SIDES = 4, AHEAD = 15, SPEED = 1.05, VERSION = 142;
 const WIDTHS = [.105, .146, .202, .267, .325];
 export const EDITIONS_PER_TIER=32, BOOK_COUNT=WIDTHS.length*EDITIONS_PER_TIER;
 const MAX_HEIGHT=1.19;
@@ -355,7 +355,7 @@ export class LibraryWorld {
   }
 
   restore(state) {
-    if(![125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,VERSION].includes(state?.version))return false;
+    if(![125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,VERSION].includes(state?.version))return false;
     Object.assign(this,{seed:state.seed,time:state.time,travel:state.travel,next:state.next,
       events:state.events,departures:state.departures??0,exchangeCount:state.exchangeCount,current:state.current??null});
     this.r=random(state.rng);

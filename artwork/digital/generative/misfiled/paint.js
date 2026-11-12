@@ -1,9 +1,11 @@
-import {hash,random,bookFormat} from './world.js?141';
+import {hash,random,bookFormat} from './world.js?142';
 
 const palette = ['#982f22','#772f35','#292324','#2e3d3e','#35605c','#5b6749','#7c7437','#ac7738','#b65331','#b9aa86','#e2d6bb','#cdc4aa','#424757','#3b536a','#684657','#826c52','#222b28','#b48f61','#694132','#aa4d41','#536b6b','#2b353f','#d6ceb3','#543d31'];
 const woods = [[143,98,65],[99,68,52],[176,131,87],[127,82,58],[114,80,59],[157,116,78],[139,108,80],[86,64,51]];
 export function canvas(w,h) {
-  const c=document.createElement('canvas'); c.width=Math.max(1,Math.round(w)); c.height=Math.max(1,Math.round(h)); return c;
+  const width=Math.max(1,Math.round(w)),height=Math.max(1,Math.round(h));
+  if(typeof document==='undefined')return new OffscreenCanvas(width,height);
+  const c=document.createElement('canvas'); c.width=width;c.height=height;return c;
 }
 function noise(ctx,w,h,r,amount=20){
   const pix=ctx.getImageData(0,0,w,h);
@@ -14,7 +16,16 @@ function noise(ctx,w,h,r,amount=20){
   ctx.putImageData(pix,0,0);
 }
 // Rift, quarter and flat cuts expose different parts of the growth rings.
-export function paintWood(ctx,w,h,index){
+export function paintWood(ctx,w,h,index,draft=false){
+  if(draft){
+    const [r,g,b]=woods[index%woods.length];
+    const grain=ctx.createLinearGradient(0,0,0,h);
+    grain.addColorStop(0,`rgb(${r-19},${g-16},${b-12})`);
+    grain.addColorStop(.42,`rgb(${r+9},${g+7},${b+5})`);
+    grain.addColorStop(1,`rgb(${r-13},${g-11},${b-9})`);
+    ctx.fillStyle=grain;ctx.fillRect(0,0,w,h);
+    return;
+  }
   const species=index%woods.length, r=random(hash(index,7612));
   const rgb=woods[species], cut=Math.floor(index/woods.length), drift=(r.next()-.5)*.55;
   const bend=.15+r.next()*.80, center=.14+r.next()*.72;
@@ -75,8 +86,9 @@ function fitText(ctx,text,desired,max,family,style=''){
 function printColor(index){
   return [9,10,11,17,22].includes(colorIndex(index))?'#3a2b20':'#f2dfb7';
 }
-function cloth(ctx,w,h,index){
+function cloth(ctx,w,h,index,draft){
   ctx.fillStyle=bookColor(index);ctx.fillRect(0,0,w,h);
+  if(draft)return;
   const r=random(hash(index,981));
   const leather=index%5===0;
   noise(ctx,w,h,r,leather?17:19);
@@ -107,8 +119,8 @@ function cloth(ctx,w,h,index){
   ctx.fillStyle=wear;ctx.fillRect(0,0,w,h);
 }
 
-export function paintSpine(ctx,w,h,index,title){
-  cloth(ctx,w,h,index);
+export function paintSpine(ctx,w,h,index,title,draft=false){
+  cloth(ctx,w,h,index,draft);
   const physical=bookFormat(index),sw=physical.w*160,sh=physical.h*160;
   const edge=ctx.createLinearGradient(0,0,w,0);
   edge.addColorStop(0,'#180c0a8a');edge.addColorStop(.067,'#fff0cd66');
@@ -155,8 +167,8 @@ function coverLines(ctx,title,limit){
   if(line)lines.push(line);
   return lines;
 }
-export function paintCover(ctx,w,h,index,title){
-  cloth(ctx,w,h,index);
+export function paintCover(ctx,w,h,index,title,draft=false){
+  cloth(ctx,w,h,index,draft);
   const physical=bookFormat(index),cw=physical.d,ch=physical.h;
   const lip=ctx.createLinearGradient(0,0,w,0);
   lip.addColorStop(0,'#0c060b75');lip.addColorStop(.034,'#f6e7be58');lip.addColorStop(.08,'#29180d31');lip.addColorStop(.17,'#fff0d300');
@@ -189,8 +201,8 @@ export function paintCover(ctx,w,h,index,title){
   ctx.restore();
 }
 // Backs use the same binding stock, with their own wear and sparse marks.
-export function paintBack(ctx,w,h,index){
-  cloth(ctx,w,h,index);
+export function paintBack(ctx,w,h,index,draft=false){
+  cloth(ctx,w,h,index,draft);
   const edge=ctx.createLinearGradient(0,0,w,0);
   edge.addColorStop(0,'#0f080e7d');edge.addColorStop(.045,'#e2c99e33');
   edge.addColorStop(.11,'#2110192e');edge.addColorStop(.40,'#d3c4a100');edge.addColorStop(1,'#0c040957');
@@ -214,11 +226,12 @@ export function paintBack(ctx,w,h,index){
   }
 }
 
-export function paintPaper(ctx,w,h,index,vertical=false){
+export function paintPaper(ctx,w,h,index,vertical=false,draft=false){
   const r=random(hash(index,1902));
   const g=ctx.createLinearGradient(0,0,vertical?w:0,vertical?0:h);
   g.addColorStop(0,'#9c8868');g.addColorStop(.12,'#cbbb98');g.addColorStop(.52,'#efe6cb');g.addColorStop(.85,'#ddd0b1');g.addColorStop(1,'#a38d6d');
   ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  if(draft)return;
   for(let i=1,n=vertical?w:h;i<n;i+=.73+r.next()*1.74){
     const line=r.next(),width=.36+r.next()*.55;
     ctx.fillStyle=line<.16?'#55432d49':line>.83?'#fff8dd56':'#59493225';

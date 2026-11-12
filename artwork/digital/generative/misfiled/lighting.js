@@ -1,5 +1,5 @@
-import {BAY,AHEAD,R,hash,random} from './world.js?141';
-import {STRIDE,faces,fixture,LAMP_Y} from './geometry.js?141';
+import {BAY,AHEAD,R,hash,random} from './world.js?142';
+import {STRIDE,faces,fixture,LAMP_Y} from './geometry.js?142';
 
 export const SHADOW_SIZE=96, SHADOW_COUNT=6, LIGHT_COUNT=AHEAD+2, SHADOW_SPREAD=2.15;
 const MIN=.14, REACH=BAY*1.09;
@@ -49,6 +49,7 @@ export class Lighting {
   constructor(){
     this.lamps=new Float32Array(LIGHT_COUNT*4);
     this.uplights=new Float32Array(LIGHT_COUNT*4);
+    this.shadowWeights=new Float64Array(LIGHT_COUNT);
     this.maps=new Float32Array(SHADOW_SIZE*SHADOW_SIZE*SHADOW_COUNT);
     this.stationary=new Float32Array(this.maps.length);
     this.staticStamp=-1;
@@ -140,6 +141,12 @@ export class Lighting {
     return 1-.91*(a+(b-a)*fy);
   }
 
+  setView(eye){
+    for(let i=0;i<LIGHT_COUNT;i++){
+      this.shadowWeights[i]=1-smooth(clamp01((this.lamps[i*4+1]-eye-SHADOW_FADE_START)/(SHADOW_FADE_END-SHADOW_FADE_START)));
+    }
+  }
+
   key(x,y,z,nx,ny,nz,airborne,eye){
     const drop=y-LAMP_Y,rise=UPLIGHT_Y-y;
     const bay=Math.floor(z/BAY)+1;
@@ -165,7 +172,7 @@ export class Lighting {
       const cone=clamp01((drop/length-.21)*3.55);
       if(cone===0)continue;
       const falloff=1-smooth(clamp01((Math.abs(dz)/REACH-.63)/.37));
-      const shadowWeight=1-smooth(clamp01((this.lamps[j+1]-eye-SHADOW_FADE_START)/(SHADOW_FADE_END-SHADOW_FADE_START)));
+      const shadowWeight=eye===undefined?this.shadowWeights[i]:1-smooth(clamp01((this.lamps[j+1]-eye-SHADOW_FADE_START)/(SHADOW_FADE_END-SHADOW_FADE_START)));
       const shade=shadowWeight>0?1-shadowWeight*(1-this.visibility(i,dx,drop,dz,nx,nz,incidence,airborne)):1;
       result+=this.lamps[j+2]*incidence/length*cone*falloff*shade/(.67+.275*squared);
     }

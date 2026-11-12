@@ -1,5 +1,5 @@
-import {BAY,R,WIDTH,BACK,anchor,pose,clamp,BOOK_COUNT,bookFormat,hash,random} from './world.js?141';
-import {axes,motionProgress} from './rigid.js?141';
+import {BAY,R,WIDTH,BACK,anchor,pose,clamp,BOOK_COUNT,bookFormat,hash,random} from './world.js?142';
+import {axes,motionProgress} from './rigid.js?142';
 export {BOOK_COUNT};
 
 export const NEAR=.24, FAR=174;
@@ -107,11 +107,20 @@ export function furniture(bay){
   return boxes;
 }
 
+// Stationary objects use the same basis until a book changes slots.
+const furnitureBases=new WeakMap(), seatedBases=new WeakMap();
+
 export function putFurniture(data,i,boxes,base,travel){
   for(const b of boxes){
     // The long frame boards can cross the near clip plane.
     if(b.p.s+Math.max(b.w,b.d)/2<travel+NEAR)continue;
-    putBox(data,i,b.p,b.w,b.h,b.d,b.material,b.light,b.grain);
+    let basis=furnitureBases.get(b);
+    if(!basis){
+      basis=new Float32Array(STRIDE);
+      putBox(basis,0,b.p,b.w,b.h,b.d,b.material,b.light,b.grain);
+      furnitureBases.set(b,basis);
+    }
+    data.set(basis,i);
     data[i+11]-=base;
     i+=STRIDE;
   }
@@ -124,7 +133,14 @@ export function putSeated(data,i,bay,base,travel){
     for(const slot of wall.slots){
       const book=slot.book;
       if(!book||bay.index*BAY+slot.x<travel+1.65)continue;
-      putBox(data,i,anchor(slot,book),book.w,book.h,book.d,book.design,light);
+      let cached=seatedBases.get(slot);
+      if(cached?.book!==book){
+        const basis=new Float32Array(STRIDE);
+        putBox(basis,0,anchor(slot,book),book.w,book.h,book.d,book.design,light);
+        cached={book,basis};
+        seatedBases.set(slot,cached);
+      }
+      data.set(cached.basis,i);
       data[i+11]-=base;
       // Past the near cubbies, the front spine still reads at this scale.
       if(bay.index*BAY+slot.x>travel+24)data[i+15]=1;

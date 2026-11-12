@@ -1,5 +1,5 @@
-import {BOUNCE_BASE,BOUNCE_FLOOR} from './lighting.js?141';
-import {NEAR,FAR,STRIDE,BOOK_COUNT,WOOD,faces,tileIndex} from './geometry.js?141';
+import {BOUNCE_BASE,BOUNCE_FLOOR} from './lighting.js?145';
+import {NEAR,FAR,STRIDE,BOOK_COUNT,WOOD,faces,tileIndex} from './geometry.js?142';
 
 const SKY=0xff111217, RB=0x00ff00ff, G=0x0000ff00;
 function blend(a,b,weight){
@@ -70,7 +70,9 @@ export class SoftwareProjector {
     const [nx,ny,nz]=normal;
     const scale=256*base*(1-fog);
     const bounce=BOUNCE_BASE+BOUNCE_FLOOR*Math.max(0,ny);
-    const fillR=wash*(.723+.133*mood)+bounce,fillG=wash*(.871+.069*mood)+bounce*.69,fillB=wash*(1.205-.115*mood)+bounce*.42;
+    const fillR=wash*(isWood?.79+.075*mood:.723+.133*mood)+bounce;
+    const fillG=wash*(isWood?.89+.05*mood:.871+.069*mood)+bounce*.69;
+    const fillB=wash*(isWood?.99-.04*mood:1.205-.115*mood)+bounce*.42;
     let rGain=scale*(fillR+key*1.205);
     let gGain=scale*(fillG+key*.935);
     let bGain=scale*(fillB+key*.625);
@@ -94,8 +96,8 @@ export class SoftwareProjector {
             // a staircase at a shadow boundary.
             const step=Math.min(13,Math.max(1,right-x-1));
             const farZ=1/(q+qx*step);
-            keyStart=lighting.key((x+.5-cx)*z/focal,(sampleY-cy)*z/focal,z+eye,nx,ny,nz,airborne,eye);
-            const keyEnd=lighting.key((x+step+.5-cx)*farZ/focal,(sampleY-cy)*farZ/focal,farZ+eye,nx,ny,nz,airborne,eye);
+            keyStart=lighting.key((x+.5-cx)*z/focal,(sampleY-cy)*z/focal,z+eye,nx,ny,nz,airborne);
+            const keyEnd=lighting.key((x+step+.5-cx)*farZ/focal,(sampleY-cy)*farZ/focal,farZ+eye,nx,ny,nz,airborne);
             keySlope=(keyEnd-keyStart)/step;
             lightFrom=x;
             lightAt=x+step;
@@ -131,6 +133,7 @@ export class SoftwareProjector {
     this.lighting=lighting;
     this.focal=focal;
     this.eye=eye;
+    lighting.setView(eye);
     this.resize(w,h);
     this.color.fill(SKY);
     this.depth.fill(0);
@@ -179,7 +182,7 @@ export class SoftwareProjector {
         const occlusion=material<BOOK_COUNT?0:grain>1.5?3:side<2&&grain<.5?1:side<4?2:0;
         const area=(Math.min(w,maxX)-Math.max(0,minX))*(Math.min(h,maxY)-Math.max(0,minY));
         const level=area>2400?0:area>640?1:area>125?2:3;
-        const key=lighting.key(px,py,pz+eye,nx,ny,nz,airborne,eye);
+        const key=lighting.key(px,py,pz+eye,nx,ny,nz,airborne);
         const tile=tileIndex(material,side);
         for(let j=1;j<poly.length-1;j++){
           this.triangle(poly[0],poly[j],poly[j+1],tile,level,[nx,ny,nz],base,wash,key,fog,occlusion,mood,airborne);

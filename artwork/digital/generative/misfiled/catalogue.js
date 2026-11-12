@@ -1,4 +1,4 @@
-import {BOOK_COUNT,hash,random} from './world.js?141';
+import {BOOK_COUNT,hash,random} from './world.js?142';
 
 // Drawn from the gallery's recurring objects, titles, materials and asides.
 const objects=[
@@ -39,6 +39,7 @@ export async function readGallery(){
   try{
     if(parent!==window)embedded=galleryTitles(parent.document);
   }catch{ /* Standalone and cross-origin frames can read the site's public gallery. */ }
+  if(embedded.length)return embedded;
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),1200);
   try{

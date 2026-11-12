@@ -1,10 +1,11 @@
-import {BAY} from './world.js?141';
-import {ATLAS_COLS,ATLAS_ROWS,BOOK_COUNT,WOOD,WOOD_COLS,WOOD_ROWS,STRIDE,NEAR,FAR,LAMP_Y} from './geometry.js?141';
+import {BAY} from './world.js?142';
+import {ATLAS_COLS,ATLAS_ROWS,BOOK_COUNT,WOOD,WOOD_VARIANTS,STRIDE,NEAR,FAR,LAMP_Y} from './geometry.js?142';
 
-import {LIGHT_COUNT,SHADOW_COUNT,SHADOW_SIZE,SHADOW_SPREAD,SHADOW_FADE_START,SHADOW_FADE_END,BOUNCE_BASE,BOUNCE_FLOOR,HIGHLIGHT_KNEE,HIGHLIGHT_SOFTNESS,UPLIGHT_Y,UPLIGHT_REACH} from './lighting.js?141';
+import {LIGHT_COUNT,SHADOW_COUNT,SHADOW_SIZE,SHADOW_SPREAD,SHADOW_FADE_START,SHADOW_FADE_END,BOUNCE_BASE,BOUNCE_FLOOR,HIGHLIGHT_KNEE,HIGHLIGHT_SOFTNESS,UPLIGHT_Y,UPLIGHT_REACH} from './lighting.js?142';
 
 const vertex=`#version 300 es
 precision highp float;
+precision highp int;
 layout(location=0) in vec4 axisX;
 layout(location=1) in vec4 axisY;
 layout(location=2) in vec4 axisZ;
@@ -51,8 +52,9 @@ void main(){
 
 const fragment=`#version 300 es
 precision highp float;
-uniform sampler2D atlas;
-uniform sampler2D timber;
+precision highp int;
+uniform highp sampler2D atlas;
+uniform highp sampler2DArray timber;
 uniform highp sampler2D shadowDepth;
 uniform vec4 lamps[${LIGHT_COUNT}];
 uniform vec4 uplights[${LIGHT_COUNT}];
@@ -85,11 +87,12 @@ float transmission(int i,vec3 offset){
 }
 void main(){
   vec3 albedo;
-  if(tile>=${WOOD}){
-    int index=tile-${WOOD};
-    vec2 cell=vec2(float(index%${WOOD_COLS}),float(index/${WOOD_COLS}));
-    vec2 coord=(cell+mix(vec2(.009),vec2(.991),uv))/vec2(${WOOD_COLS}.0,${WOOD_ROWS}.0);
-    albedo=texture(timber,coord).rgb;
+  bool wood=tile>=${WOOD};
+  // Evaluate gradients before the material branch at book/shelf edges.
+  vec2 woodUV=mix(vec2(.014,.024),vec2(.986,.976),uv);
+  vec2 woodDx=dFdx(woodUV),woodDy=dFdy(woodUV);
+  if(wood){
+    albedo=textureGrad(timber,vec3(woodUV,float(tile-${WOOD})),woodDx,woodDy).rgb;
   }else{
     vec2 cell=vec2(float(tile%${ATLAS_COLS}),float(tile/${ATLAS_COLS}));
     vec2 coord=(cell+mix(vec2(.011),vec2(.989),uv))/vec2(${ATLAS_COLS}.0,${ATLAS_ROWS}.0);
@@ -146,7 +149,9 @@ void main(){
   float rolloff=max(0.,key-${HIGHLIGHT_KNEE});
   key=key-rolloff+rolloff/(1.+${HIGHLIGHT_SOFTNESS}*rolloff);
   float bounce=${BOUNCE_BASE}+${BOUNCE_FLOOR}*max(0.,normal.y);
-  vec3 light=wash*vec3(.723+.133*mood,.871+.069*mood,1.205-.115*mood)+bounce*vec3(1.,.69,.42)+key*vec3(1.205,.935,.625);
+  vec3 ambient=wood?vec3(.79+.075*mood,.89+.05*mood,.99-.04*mood)
+    :vec3(.723+.133*mood,.871+.069*mood,1.205-.115*mood);
+  vec3 light=wash*ambient+bounce*vec3(1.,.69,.42)+key*vec3(1.205,.935,.625);
   vec3 lit=albedo*materialGain*light*ao+highlight*vec3(1.,.84,.61);
   lit=lit/(1.+.16*max(vec3(0.),lit-.72));
   color=vec4(mix(lit,vec3(.067,.064,.079),fog),1.);
@@ -185,9 +190,8 @@ export class Accelerator {
       gl.vertexAttribPointer(i,4,gl.FLOAT,false,STRIDE*4,i*16);
       gl.vertexAttribDivisor(i,1);
     }
-    this.texture=gl.createTexture();
-    this.timber=gl.createTexture();
     this.anisotropic=gl.getExtension('EXT_texture_filter_anisotropic');
+    gl.uniform1i(gl.getUniformLocation(program,'atlas'),0);
     gl.uniform1i(gl.getUniformLocation(program,'timber'),2);
     this.uploadAtlas(atlas);
     this.shadows=gl.createTexture();
@@ -205,19 +209,45 @@ export class Accelerator {
 
   uploadAtlas(atlas){
     const gl=this.gl;
-    for(const [unit,texture,image] of [[gl.TEXTURE0,this.texture,atlas.books],[gl.TEXTURE2,this.timber,atlas.wood]]){
-      gl.activeTexture(unit);
-      gl.bindTexture(gl.TEXTURE_2D,texture);
-      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAX_LEVEL,3);
-      gl.generateMipmap(gl.TEXTURE_2D);
-      if(texture===this.texture&&this.anisotropic){
+    const books=gl.createTexture(),timber=gl.createTexture();
+    const configure=target=>{
+      gl.texParameteri(target,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(target,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(target,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(target,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(target,gl.TEXTURE_MAX_LEVEL,3);
+      gl.generateMipmap(target);
+    };
+    try{
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D,books);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE,atlas.books);
+      configure(gl.TEXTURE_2D);
+      if(this.anisotropic){
         const {TEXTURE_MAX_ANISOTROPY_EXT,MAX_TEXTURE_MAX_ANISOTROPY_EXT}=this.anisotropic;
         gl.texParameterf(gl.TEXTURE_2D,TEXTURE_MAX_ANISOTROPY_EXT,Math.min(4,gl.getParameter(MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
       }
+      const {width,height,pixels}=atlas.wood;
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D_ARRAY,timber);
+      // Upload opaque RGBA bytes directly. Each timber cut gets independent
+      // filtering and mipmaps, including at the edges of shelf boards.
+      gl.texImage3D(gl.TEXTURE_2D_ARRAY,0,gl.RGBA8,width,height,WOOD_VARIANTS,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+      configure(gl.TEXTURE_2D_ARRAY);
+      if(gl.getError()!==gl.NO_ERROR)throw new Error('Could not upload the bookshelf textures');
+    }catch(error){
+      gl.deleteTexture(books);
+      gl.deleteTexture(timber);
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D_ARRAY,this.timber??null);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D,this.texture??null);
+      throw error;
     }
+    gl.deleteTexture(this.texture??null);
+    gl.deleteTexture(this.timber??null);
+    this.texture=books;
+    this.timber=timber;
     gl.activeTexture(gl.TEXTURE0);
   }
 

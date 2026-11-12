@@ -1,10 +1,10 @@
-import {BAY,AHEAD} from './world.js?141';
-import {canvas} from './paint.js?141';
-import {makeAtlas,softwareTextures} from './atlas.js?141';
-import {STRIDE,furniture,horizon,putFurniture,putSeated,putFlying} from './geometry.js?141';
-import {Accelerator} from './accelerator.js?141';
-import {Lighting} from './lighting.js?141';
-import {SoftwareProjector} from './projection.js?141';
+import {BAY,AHEAD} from './world.js?142';
+import {canvas} from './paint.js?142';
+import {makeAtlas,makeAtlasInSlices,softwareTextures} from './atlas.js?147';
+import {STRIDE,furniture,horizon,putFurniture,putSeated,putFlying} from './geometry.js?145';
+import {Accelerator} from './accelerator.js?147';
+import {Lighting} from './lighting.js?145';
+import {SoftwareProjector} from './projection.js?145';
 
 const css=document.createElement('style');
 css.textContent=`html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171211}.misfiled-view{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}`;
@@ -15,7 +15,8 @@ export class Scenery {
     this.sim=world;
     this.materialSeed=world.seed;
     this.galleryTitles=titles;
-    this.atlas=makeAtlas(world.seed,titles);
+    this.atlas=makeAtlas(world.seed,titles,true);
+    this.detail='draft';
     this.root=canvas(1,1);
     this.useHardware=false;
     this.renderer='canvas-depth';
@@ -55,12 +56,14 @@ export class Scenery {
 
   decorate(){
     this.root.className='misfiled-view';
+    this.root.dataset.textureDetail=this.detail;
     this.root.setAttribute('role','img');
     this.root.setAttribute('aria-label','Misfiled. A tunnel of deep timber shelves with books drifting across the aisle and trading places.');
   }
 
   useSoftware(){
     this.backend=new SoftwareProjector(this.root,softwareTextures(this.atlas));
+    this.atlas.books.close?.();
     this.atlas=null;
     this.resize();
   }
@@ -74,16 +77,63 @@ export class Scenery {
     this.focal=this.root.height*.94;
   }
 
+  applyAtlas(atlas,detail){
+    if(this.useHardware){
+      try{
+        this.backend.uploadAtlas(atlas);
+      }catch{
+        atlas.books.close?.();
+        return;
+      }
+      this.atlas?.books.close?.();
+      this.atlas=atlas;
+    }else{
+      this.backend.textures=softwareTextures(atlas);
+      atlas.books.close?.();
+    }
+    this.detail=detail;
+    this.root.dataset.textureDetail=detail;
+  }
+
+  refineMaterials(){
+    const seed=this.materialSeed,titles=this.galleryTitles;
+    const apply=atlas=>{
+      if(seed!==this.materialSeed||titles!==this.galleryTitles){
+        atlas.books.close?.();
+        return;
+      }
+      this.applyAtlas(atlas,'full');
+      this.draw(false);
+    };
+    const fallback=()=>makeAtlasInSlices(seed,titles).then(apply);
+    if(typeof Worker!=='function'||typeof OffscreenCanvas!=='function'){
+      fallback();
+      return;
+    }
+    let worker;
+    try{
+      worker=new Worker(new URL('./atlas-worker.js?147',import.meta.url),{type:'module'});
+      worker.onmessage=({data})=>{
+        worker.terminate();
+        apply(data);
+      };
+      worker.onerror=()=>{
+        worker.terminate();
+        fallback();
+      };
+      worker.postMessage({seed,titles});
+    }catch{
+      worker?.terminate();
+      fallback();
+    }
+  }
+
   reset(titles=this.galleryTitles){
     if(this.materialSeed!==this.sim.seed||titles.join('\n')!==this.galleryTitles.join('\n')){
       this.galleryTitles=titles;
       this.materialSeed=this.sim.seed;
-      this.atlas=makeAtlas(this.materialSeed,this.galleryTitles);
-      if(this.useHardware)this.backend.uploadAtlas(this.atlas);
-      else{
-        this.backend.textures=softwareTextures(this.atlas);
-        this.atlas=null;
-      }
+      this.applyAtlas(makeAtlas(this.materialSeed,this.galleryTitles,true),'draft');
+      this.refineMaterials();
     }
     this.rooms.clear();
     this.at=undefined;
