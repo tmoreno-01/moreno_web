@@ -110,7 +110,6 @@ function update(dt) {
   }
   body.unshift(next);
   if (route[next] === food) {
-    elapsed = -.22; // Briefly hold the contact so eating reads clearly.
     if (body.length === route.length) {
       food = null;
       full = true;
