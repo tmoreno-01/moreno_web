@@ -1,4 +1,7 @@
-import {HEIGHT,cropTop,SLOPE,BODY_SCALE,mouth,paperSurface,floorLevel,casePlanes,caseDepth,sourceCasePoint} from './pile.js?edition=20';
+import {HEIGHT,cropTop,artworkScale,SLOPE,BODY_SCALE,mouth,paperSurface,floorLevel,casePlanes,caseDepth,sourceCasePoint} from './pile.js?edition=28';
+
+const makeCanvas=()=>typeof document==='undefined'
+    ?new OffscreenCanvas(1,1):document.createElement('canvas');
 
 export const INK_WIDTH=360;
 const TILE=1024,TILE_PAD=18,TILE_HEIGHT=TILE+2*TILE_PAD,INK_STRIDE=INK_WIDTH+1;
@@ -76,7 +79,7 @@ function inkTiles(){
             lastScale=scale;
         }
         if(tiles.has(index))return tiles.get(index);
-        const canvas=document.createElement('canvas');
+        const canvas=makeCanvas();
         canvas.width=INK_WIDTH;canvas.height=TILE_HEIGHT;
         const ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
         ctx.fillStyle='#f9f6ed';
@@ -210,8 +213,8 @@ function raster(frame,a,b,c,u0,v0,u1,v1,u2,v2,ink,nextInk,shade0,shade1,shade2,i
                     if(s>=-.025&&s<=1.025&&t>=-.025&&t<=1.025&&Math.abs(jac)>=.08){
                         texU=patch.u+patch.du*clamp(s,0,1);
                         texV=patch.v+patch.dv*clamp(t,0,1);
-                        filterU=Math.abs(patch.du/jac)*Math.hypot(dx,dy);
-                        filterV=Math.abs(patch.dv/jac)*Math.hypot(bx,by);
+                        filterU=Math.abs(patch.du/jac)*Math.sqrt(dx*dx+dy*dy);
+                        filterV=Math.abs(patch.dv/jac)*Math.sqrt(bx*bx+by*by);
                     }
                 }
                 const next=nextInk&&texV<TILE_PAD;
@@ -225,12 +228,13 @@ function raster(frame,a,b,c,u0,v0,u1,v1,u2,v2,ink,nextInk,shade0,shade1,shade2,i
     }
 }
 
-function project(points,slot,frame){
-    return points.map(p=>({
-        x:frame.left+(slot.x+p.x)*frame.scale,
-        y:frame.top+(slot.y+p.y+SLOPE*p.z)*frame.scale,
-        z:p.z-SLOPE*p.y
-    }));
+function project(points,slot,frame,out){
+    for(let i=0;i<3;i++){
+        const p=points[i],q=out[i];
+        q.x=frame.left+(slot.x+p.x)*frame.scale;
+        q.y=frame.top+(slot.y+p.y+SLOPE*p.z)*frame.scale;
+        q.z=p.z-SLOPE*p.y;
+    }
 }
 
 function lighting(rows,i){
@@ -244,14 +248,23 @@ function lighting(rows,i){
     return .027+.117*(1-clamp(light,0,1));
 }
 
-function drawPaper(frame,state,ink,texture){
-    const rows=[...state.rows,mouth(state)];
-    const surfaces=[...paperSurface(state),rows.at(-1).points];
-    const projected=surfaces.map(points=>project(points,state.layout.slot,frame));
-    const shades=surfaces.map((_,i)=>lighting(surfaces,i));
+function drawPaper(frame,state,ink,texture,surface){
+    const feed=mouth(state),surfaces=[...(surface??paperSurface(state)),feed.points];
+    const {projected,shades,order}=frame;
+    projected.length=Math.min(projected.length,surfaces.length);
+    order.length=surfaces.length-1;
+    for(let i=0;i<surfaces.length;i++){
+        const points=projected[i]??(projected[i]=[{},{},{}]);
+        project(surfaces[i],state.layout.slot,frame,points);
+        shades[i]=lighting(surfaces,i);
+        if(i>0)order[i-1]=i;
+    }
+    if(order.length>200){
+        order.sort((a,b)=>projected[b-1][1].z+projected[b][1].z-projected[a-1][1].z-projected[a][1].z);
+    }
     const inkScale=INK_WIDTH/state.band;
-    for(let i=1;i<rows.length;i++){
-        const lower=rows[i-1].at*inkScale,upper=rows[i].at*inkScale;
+    for(const i of order){
+        const lower=state.rows[i-1].at*inkScale,upper=(state.rows[i]?.at??feed.at)*inkScale;
         if(upper-lower<.001)continue;
         const a=projected[i-1],b=projected[i];
         const oldShade=shades[i-1],newShade=shades[i];
@@ -419,9 +432,9 @@ function drawCaseShadow(ctx,edge,x,y,size,scale){
 
 function createFrame(width,height,state,photo,photoPixels,caseEdge){
     const crop=cropTop(state.width),viewHeight=HEIGHT-crop;
-    const scale=Math.min(width/state.width,height/viewHeight)*(state.layout.phone?.98:.80);
+    const scale=artworkScale(state,width,height);
     const left=(width-state.width*scale)/2,top=(height-viewHeight*scale)/2-crop*scale;
-    const stage=document.createElement('canvas'),paper=document.createElement('canvas');
+    const stage=makeCanvas(),paper=makeCanvas();
     stage.width=paper.width=width;stage.height=paper.height=height;
     const base=stage.getContext('2d'),paperCtx=paper.getContext('2d');
     const image=paperCtx.createImageData(width,height);
@@ -447,18 +460,28 @@ function createFrame(width,height,state,photo,photoPixels,caseEdge){
     drawCaseShadow(base,caseEdge,x,y,size,scale);
     base.drawImage(photo,x,y,size,size);
     return {width,height,scale,left,top,depth:new Float32Array(width*height),mask,pixels:image.data,
-        image,stage,paper,paperCtx,layout:state.layout};
+        image,stage,paper,paperCtx,layout:state.layout,projected:[],shades:[],order:[]};
 }
 
 export async function scene(canvas,slotScale){
     const ctx=canvas.getContext('2d');
-    const photo=new Image();
-    photo.src=new URL('./printer.webp',import.meta.url);
-    await photo.decode();
-    const printer=document.createElement('canvas');
-    printer.width=photo.naturalWidth;printer.height=photo.naturalHeight;
+    const sourceURL=new URL('./printer.webp',import.meta.url);
+    let photo;
+    if(typeof Image==='function'){
+        photo=new Image();
+        photo.src=sourceURL;
+        await photo.decode();
+    }else{
+        const response=await fetch(sourceURL);
+        if(!response.ok)throw new Error('Printer image unavailable');
+        photo=await createImageBitmap(await response.blob());
+    }
+    const printer=makeCanvas();
+    printer.width=photo.naturalWidth??photo.width;
+    printer.height=photo.naturalHeight??photo.height;
     const printerCtx=printer.getContext('2d',{willReadFrequently:true});
     printerCtx.drawImage(photo,0,0);
+    photo.close?.();
     const data=printerCtx.getImageData(0,0,printer.width,printer.height);
     const source=new Uint8ClampedArray(data.data);
     const w=printer.width,h=printer.height;
@@ -513,32 +536,24 @@ export async function scene(canvas,slotScale){
     const caseEdge=caseBaseContour(projected.data,w,h);
     const texture=inkTiles();
     let frame;
-    return (state,ink,measure=false)=>{
-        const ratio=Math.min(1.55,devicePixelRatio||1,1580/Math.max(1,canvas.clientWidth));
-        const width=Math.max(1,Math.round(canvas.clientWidth*ratio));
-        const height=Math.max(1,Math.round(canvas.clientHeight*ratio));
+    return (state,ink,surface=null,viewport=null)=>{
+        const clientWidth=viewport?.width??canvas.clientWidth;
+        const clientHeight=viewport?.height??canvas.clientHeight;
+        const pixelRatio=viewport?.ratio??globalThis.devicePixelRatio??1;
+        const ratio=Math.min(1.55,pixelRatio,1580/Math.max(1,clientWidth));
+        const width=Math.max(1,Math.round(clientWidth*ratio));
+        const height=Math.max(1,Math.round(clientHeight*ratio));
         if(!frame||frame.width!==width||frame.height!==height||frame.layout!==state.layout){
             canvas.width=width;canvas.height=height;
             frame=createFrame(width,height,state,printer,projected.data,caseEdge);
         }
         frame.depth.fill(-Infinity);
         frame.pixels.fill(0);
-        const surfaces=drawPaper(frame,state,ink,texture);
+        const surfaces=drawPaper(frame,state,ink,texture,surface);
         frame.paperCtx.putImageData(frame.image,0,0);
         ctx.clearRect(0,0,width,height);
         drawPaperShadow(ctx,surfaces,state,frame);
         ctx.drawImage(frame.stage,0,0);
         ctx.drawImage(frame.paper,0,0);
-        if(!measure)return 0;
-        let visible=0,samples=0;
-        const maxX=frame.left+state.width*frame.scale,maxY=frame.top+HEIGHT*frame.scale;
-        const minY=frame.top+cropTop(state.width)*frame.scale;
-        for(let y=Math.max(0,Math.floor(minY+4));y<maxY;y+=8){
-            for(let x=Math.max(0,Math.floor(frame.left+4));x<maxX;x+=8){
-                samples++;
-                if(frame.pixels[(y*width+x)*4+3])visible++;
-            }
-        }
-        return visible/Math.max(1,samples);
     };
 }

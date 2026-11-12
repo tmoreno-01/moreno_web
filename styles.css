@@ -3273,8 +3273,16 @@ body.time-mode #ios-brush-selector {
 
 /* Borrowed Earth is one-third shorter than its previous 3:2 canvas. */
 #page-motion .living-artworks-row .living-paint-feature .living-stage { aspect-ratio:2 / 1!important; }
+#page-motion .living-artworks-row .living-snake .living-stage,
+.living-render.living-snake-render { background:var(--bg-color); }
 .motion-video-stage.living-panorama-mode > .living-render { width:min(96vw,192dvh); height:min(48vw,96dvh); aspect-ratio:2 / 1; }
 @media(max-width:600px){.motion-video-stage.living-panorama-mode > .living-render{width:min(100vw,202.5dvh);height:min(44.4444vw,90dvh)}}
+@media(max-width:600px) and (orientation:portrait){
+    #page-motion .living-artworks-row .living-snake .living-stage { aspect-ratio:4 / 5!important; }
+    .motion-video-stage.living-panorama-mode > .living-snake-render {
+        width:min(100vw,72dvh); height:min(125vw,90dvh); aspect-ratio:4 / 5;
+    }
+}
 
 #page-motion .living-artworks-row .living-story-feature .living-stage { aspect-ratio:15 / 8!important; background:#121920!important; }
 .motion-video-stage.living-story-mode > .living-render { width:min(96vw,180dvh); height:min(51.2vw,96dvh); aspect-ratio:15 / 8; background:#121920; }

@@ -9,9 +9,9 @@ export function createActivityLoop({update,draw,fps=30,embedded=window.parent!==
   const rate=typeof fps==='function'?fps():fps,interval=1000/rate;
   const next=Math.floor((now-offset+.9)/interval);
   if(next!==slot){
-   const dt=previous===null?0:Math.min(.08,(now-previous)/1000);
+   const elapsed=previous===null?0:(now-previous)/1000;
    previous=now;slot=next;
-   update(dt);draw();
+   update(Math.min(.08,elapsed),elapsed);draw();
   }
   if(running()&&!frame)frame=requestAnimationFrame(tick);
  }

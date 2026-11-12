@@ -5760,7 +5760,9 @@ window.addEventListener('resize', () => {
         const start = renderedMotionCount;
 
         const warm = () => {
-            if (!isMotionPageActive()) return;
+            if (!isMotionPageActive() || document.hidden) return;
+            const tail = grid.querySelector('.motion-item:last-child');
+            if (!tail || tail.getBoundingClientRect().top > motionPage.getBoundingClientRect().bottom + motionPage.clientHeight) return;
             preloadNextMotionPosterRow(start, 'low');
         };
 
@@ -5951,24 +5953,11 @@ window.addEventListener('resize', () => {
     }
 
     async function loadInitialMotionRows() {
-        /* First row gets the highest priority and becomes visible immediately
-           after every poster in that row has decoded. Rows two and three then
-           follow one at a time instead of blocking the first screen. */
+        // Additional poster rows load as the visitor approaches the video gallery.
         await appendNextMotionBatch(true, {
             observeTail: false,
             scheduleWarm: false
         });
-
-        for (let row = 1; row < 3; row++) {
-            if (renderedMotionCount >= motionVideoList.length) break;
-            await new Promise((resolve) =>
-                requestAnimationFrame(resolve)
-            );
-            await appendNextMotionBatch(false, {
-                observeTail: false,
-                scheduleWarm: false
-            });
-        }
 
         scheduleNextMotionPosterWarmup();
         observeMotionBatchTail();
@@ -5985,20 +5974,21 @@ window.addEventListener('resize', () => {
         scheduleLivingArtwork();
     }
     let livingWorks = [], livingFullscreen = null;
-    const livingTitles = ['Till Further Notice', 'Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
-    const livingKinds = [18,13,12,7,8];
+    const snakeKind = 19;
+    const livingTitles = ['Snake', 'Till Further Notice', 'Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
+    const livingKinds = [snakeKind,18,13,12,7,8];
 
     let livingSyncFrame = 0;
     function syncLivingTheme() {
-        const work = livingWorks.find(item => item.kind === 12 && item.frame.hasAttribute('src'));
-        if (!work) return;
         const style = getComputedStyle(document.body);
         const background = style.getPropertyValue('--bg-color').trim() || '#ffffff';
         const ink = style.getPropertyValue('--text-color').trim() || '#1a1a1a';
         const theme = background + '|' + ink;
-        if (work.sentTheme === theme) return;
-        work.sentTheme = theme;
-        work.frame.contentWindow?.postMessage({type:'living-theme',background,ink}, location.origin);
+        for (const work of livingWorks) {
+            if ((work.kind !== 12 && work.kind !== snakeKind) || !work.frame.hasAttribute('src') || work.sentTheme === theme) continue;
+            work.sentTheme = theme;
+            work.frame.contentWindow?.postMessage({type:'living-theme',background,ink}, location.origin);
+        }
     }
 
     function scheduleLivingArtwork() {
@@ -6012,15 +6002,15 @@ window.addEventListener('resize', () => {
     function syncLivingArtwork() {
         const showingViewer = viewer.classList.contains('active');
         const available = !document.hidden && isMotionPageActive();
-        const receipt = livingWorks[0];
-        if (available && receipt && !receipt.frame.hasAttribute('src')) {
+        const receipt = livingWorks.find(work => work.kind === 18);
+        if (available && receipt && (showingViewer ? livingFullscreen === receipt : receipt.inViewport) && !receipt.frame.hasAttribute('src')) {
             receipt.frame.src = receipt.url;
             receiptPriorityTimer = window.setTimeout(releaseReceiptPriority, 2000);
         }
         for (const work of livingWorks) {
             const active = available && (showingViewer ? livingFullscreen === work : work.inViewport);
             const warmBooks = available && !showingViewer && work.kind === 13 && work.nearViewport;
-            const canLoad = work.kind !== 13 || receiptPriorityReleased;
+            const canLoad = work.kind !== 13 || receiptPriorityReleased || (active && !receipt?.frame.hasAttribute('src'));
             if ((active || warmBooks) && canLoad && !work.frame.hasAttribute('src')) work.frame.src = work.url;
             const expanded = work.kind === 15 && showingViewer && livingFullscreen === work;
             if (!work.frame.hasAttribute('src') || (work.sentActive === active && work.sentExpanded === expanded)) continue;
@@ -6112,7 +6102,7 @@ window.addEventListener('resize', () => {
         viewerStage.classList.remove('is-switching');
         viewerStage.classList.add('living-mode');
         viewerStage.classList.toggle('living-landscape-mode',work.kind>=12);
-        viewerStage.classList.toggle('living-panorama-mode',work.kind===13);
+        viewerStage.classList.toggle('living-panorama-mode',work.kind === 13 || work.kind === snakeKind);
         viewerStage.classList.toggle('living-story-mode',work.kind===15 || work.kind===16 || work.kind===17 || work.kind===18);
         viewerStage.classList.toggle('living-receipt-mode',work.kind===18);
         viewerStage.setAttribute('role','img');
@@ -6148,13 +6138,15 @@ window.addEventListener('resize', () => {
         }, {root:motionPage,rootMargin:'0px 0px 480px'});
         livingTitles.forEach((title,position) => {
             const kind = livingKinds[position];
+            const isSnake = kind === snakeKind;
             const card = document.createElement('div');
-            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : kind === 13 ? ' living-paint-feature living-landscape' : kind === 18 ? ' living-receipt-feature living-story-feature living-landscape' : '');
+            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : (kind === 13 || isSnake) ? ' living-paint-feature living-landscape' : kind === 18 ? ' living-receipt-feature living-story-feature living-landscape' : '');
+            if (isSnake) card.classList.add('living-snake');
             card.innerHTML = '<div class="work-image living-stage">' +
-                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 ? '0' : '-1') + '"></iframe>' +
-                '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button></div>';
+                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 ? '0' : '-1') + '"></iframe>' +
+                (isSnake ? '' : '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button>') + '</div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:position%2 ? 0 : 1000/60,restoreState:null,url:'/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?27:kind===13?147:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isSnake ? '/artwork/digital/generative/snake/index.html?edition=7' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?28:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
@@ -6163,7 +6155,7 @@ window.addEventListener('resize', () => {
                 work.frame.style.opacity = '';
                 syncLivingArtwork();
             });
-            card.querySelector('.living-open').addEventListener('click',event => {
+            card.querySelector('.living-open')?.addEventListener('click',event => {
                 if (kind === 12 && event.detail > 0) event.currentTarget.blur();
                 window.openMotionViewer(event,position-livingTitles.length);
             });
@@ -9026,7 +9018,11 @@ window.addEventListener('resize', () => {
     });
 
     window.pauseMotionPage = function () {
-        livingWorks.forEach(work => work.frame.contentWindow?.postMessage({type:'living-active',value:false}, location.origin));
+        livingWorks.forEach(work => {
+            work.sentActive = false;
+            work.card.dataset.livingActive = 'false';
+            work.frame.contentWindow?.postMessage({type:'living-active',value:false}, location.origin);
+        });
         activeThumbnailItem = null;
         activeThumbnailLooper = null;
         clearMotionPrewarmers();

@@ -56,7 +56,7 @@ async function fetchDay(now) {
             const label=labels.find(label=>!/^20\d\d\b|^(?:[A-Z][a-z]+day|United States|United Kingdom)$/i.test(label))
                 ?? labels[0]??null;
             const category=topics.find(([, ,pattern])=>pattern.test(text))?.[0]??'general';
-            stories.push({text,label,category,day});
+            stories.push({text,label,labels,category,day});
         }
         return stories;
     } finally {
@@ -76,7 +76,7 @@ async function loadEdition() {
     let cached;
     try {
         cached=JSON.parse(localStorage.getItem(cacheKey));
-        if(cached?.key===key&&cached.expiry>Date.now()&&Array.isArray(cached.stories))return cached;
+        if(cached?.key===key&&cached.expiry>Date.now()&&Array.isArray(cached.stories)&&cached.stories.every(story=>Array.isArray(story.labels)))return cached;
     } catch {}
     const days=await Promise.all([0,1,2].map(daysAgo=>
         fetchDay(new Date(now.getTime()-daysAgo*86400000)).catch(()=>[])));
