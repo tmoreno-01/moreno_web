@@ -6,9 +6,43 @@ const stepSeconds = .085;
 const directions = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 let columns, rows, route, positions, body, food;
 let elapsed = 0;
+let journeyTime = 0;
 let ink = '#1a1a1a';
 let dirty = true;
 let full = false;
+let turnHistory = "";
+let phrases = new Map();
+let noveltyChoices = 0;
+let birthVotes = [];
+let voteCounts = [0, 0, 0, 0];
+
+function turnFor(index) {
+  const head = route[body[0]], behind = route[body[1]], next = route[index];
+  const ax = head % columns - behind % columns;
+  const ay = Math.floor(head / columns) - Math.floor(behind / columns);
+  const bx = next % columns - head % columns;
+  const by = Math.floor(next / columns) - Math.floor(head / columns);
+  const cross = ax * by - ay * bx;
+  return cross === 0 ? 'S' : cross > 0 ? 'R' : 'L';
+}
+
+function repetitionCost(turn) {
+  const sequence = turnHistory + turn;
+  let cost = 0;
+  for (let size = 2; size <= Math.min(7, sequence.length); size++) {
+    cost += (phrases.get(sequence.slice(-size)) || 0) * 2 ** size;
+  }
+  return cost;
+}
+
+function rememberTurn(turn) {
+  const sequence = turnHistory + turn;
+  for (let size = 2; size <= Math.min(7, sequence.length); size++) {
+    const phrase = sequence.slice(-size);
+    phrases.set(phrase, (phrases.get(phrase) || 0) + 1);
+  }
+  turnHistory = sequence.slice(-6);
+}
 
 function distance(from, to) {
   return (to - from + route.length) % route.length;
@@ -72,14 +106,22 @@ function reset(nextColumns, nextRows) {
   route.forEach((cell, index) => { positions[cell] = index; });
   const head = Math.floor(Math.random() * route.length);
   body = Array.from({ length: 4 }, (_, i) => (head - i + route.length) % route.length);
+  birthVotes = body.map((index,i) => {
+    const a=route[index], b=route[body[i+1] ?? (index-1+route.length)%route.length];
+    return directions.findIndex(([dx,dy])=>dx===a%columns-b%columns && dy===Math.floor(a/columns)-Math.floor(b/columns));
+  });
+  voteCounts = [0,0,0,0];
+  birthVotes.forEach(vote => voteCounts[vote]++);
   full = false;
-  elapsed = 0;
+  turnHistory = ""; phrases = new Map(); noveltyChoices = 0;
+  elapsed = 0; journeyTime = 0;
   dirty = true;
   placeFood();
 }
 
 function update(dt) {
   if (full) return;
+  journeyTime += dt;
   elapsed += dt;
   if (elapsed < stepSeconds) return;
   elapsed -= stepSeconds;
@@ -87,8 +129,8 @@ function update(dt) {
   let next = (head + 1) % route.length;
   const cell = route[head], x = cell % columns, y = Math.floor(cell / columns);
   const room = distance(head, body.at(-1));
-  // Choose among safe forward neighbours, favouring turns and occasionally
-  // taking a longer winding approach. Never skip over the fixed food cell.
+  // Prefer the least repeated phrase of 2–7 relative turns among safe moves.
+  // Safety wins when repetition is unavoidable; food never moves or gets skipped.
   if (food !== null && room > 2) {
     const previousCell = route[body[1]];
     const headingX = x - previousCell % columns;
@@ -100,16 +142,31 @@ function update(dt) {
       const advance = distance(head, index);
       if (advance < 1 || advance > distance(head, positions[food]) || advance >= room) return [];
       const turn = dx !== headingX || dy !== headingY;
-      return [{ index, weight: (turn ? 2.4 : 1) * (advance > 1 ? 1.5 : 1) }];
+      const vote = directions.findIndex(([vx,vy]) => vx===dx && vy===dy);
+      const support = .65 + 2 * voteCounts[vote] / body.length;
+      return [{ index, advance, cost: repetitionCost(turnFor(index)), weight: support * (turn ? 2.4 : 1) * (advance > 1 ? 1.5 : 1) }];
     });
-    let pick = Math.random() * choices.reduce((sum, choice) => sum + choice.weight, 0);
-    for (const choice of choices) {
+    // Over four minutes of visible movement, increasingly decline shortcuts.
+    // Taking the next cycle square preserves a longer, safe route to fixed food.
+    const patience = Math.min(1, journeyTime / 240);
+    const scenic = choices.length > 1 && Math.random() < patience * .92;
+    const shortestAdvance = Math.min(...choices.map(choice => choice.advance));
+    const candidates = scenic ? choices.filter(choice => choice.advance === shortestAdvance) : choices;
+    const lowest = Math.min(...candidates.map(choice => choice.cost));
+    const fresh = candidates.filter(choice => choice.cost === lowest);
+    if (fresh.length < choices.length) noveltyChoices++;
+    let pick = Math.random() * fresh.reduce((sum, choice) => sum + choice.weight, 0);
+    for (const choice of fresh) {
       pick -= choice.weight;
       if (pick <= 0) { next = choice.index; break; }
     }
   }
+  rememberTurn(turnFor(next));
   body.unshift(next);
   if (route[next] === food) {
+    const vote = directions.findIndex(([dx,dy]) => dx===route[next]%columns-x && dy===Math.floor(route[next]/columns)-y);
+    birthVotes.unshift(vote);
+    voteCounts[vote]++;
     if (body.length === route.length) {
       food = null;
       full = true;
@@ -163,16 +220,22 @@ resize();
 
 window.livingArtwork = {
   backend: 'canvas-snake',
-  snapshot: () => ({ columns, rows, route: [...route], body: [...body], food, elapsed, full }),
+  snapshot: () => ({ columns, rows, route: [...route], body: [...body], food, elapsed, journeyTime, full, turnHistory, phrases: [...phrases], noveltyChoices, birthVotes: [...birthVotes], voteCounts: [...voteCounts] }),
   restore(state) {
     ({ columns, rows, route, body, food, elapsed, full } = state);
+    journeyTime = state.journeyTime || 0;
+    turnHistory = state.turnHistory || "";
+    phrases = new Map(state.phrases || []);
+    noveltyChoices = state.noveltyChoices || 0;
+    birthVotes = state.birthVotes ? [...state.birthVotes] : body.map((_,i)=>i%4);
+    voteCounts = [0,0,0,0]; birthVotes.forEach(vote=>voteCounts[vote]++);
     positions = [];
     route.forEach((cell, index) => { positions[cell] = index; });
     activity.setLost(full);
     dirty = true;
     draw();
   },
-  stats: () => ({ filled: body.length, capacity: route.length, full, active: activity.running }),
+  stats: () => ({ filled: body.length, capacity: route.length, full, active: activity.running, patience: Math.min(1, journeyTime / 240), rememberedPhrases: phrases.size, noveltyChoices, votes: [...voteCounts] }),
 };
 addEventListener('message', event => {
   if (event.source !== parent || event.origin !== location.origin || event.data?.type !== 'living-theme') return;
