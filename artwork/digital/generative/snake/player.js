@@ -7,6 +7,8 @@ const directions = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 let columns, rows, route, positions, body, food;
 let elapsed = 0;
 let journeyTime = 0;
+let detourTried = false;
+let detours = 0;
 let ink = '#1a1a1a';
 let dirty = true;
 let full = false;
@@ -49,6 +51,7 @@ function distance(from, to) {
 }
 
 function placeFood() {
+  detourTried = false;
   // Food is an absolute board cell, chosen once and kept until contact.
   const occupied = new Set(body.map(index => route[index]));
   const empty = [];
@@ -114,7 +117,7 @@ function reset(nextColumns, nextRows) {
   birthVotes.forEach(vote => voteCounts[vote]++);
   full = false;
   turnHistory = ""; phrases = new Map(); noveltyChoices = 0;
-  elapsed = 0; journeyTime = 0;
+  elapsed = 0; journeyTime = 0; detours = 0;
   dirty = true;
   placeFood();
 }
@@ -159,6 +162,17 @@ function update(dt) {
     for (const choice of fresh) {
       pick -= choice.weight;
       if (pick <= 0) { next = choice.index; break; }
+    }
+    // Once per meal, occasionally pass up reachable food for a safe side road.
+    // All alternatives still precede the food on the cycle: return is guaranteed.
+    const besideFood = Math.abs(x - food % columns) + Math.abs(y - Math.floor(food / columns)) === 1;
+    if (besideFood && !detourTried) {
+      detourTried = true;
+      const sideRoads = choices.filter(choice => route[choice.index] !== food);
+      if (sideRoads.length && Math.random() < .22) {
+        next = sideRoads.reduce((a,b) => a.advance < b.advance ? a : b).index;
+        detours++;
+      }
     }
   }
   rememberTurn(turnFor(next));
@@ -220,10 +234,11 @@ resize();
 
 window.livingArtwork = {
   backend: 'canvas-snake',
-  snapshot: () => ({ columns, rows, route: [...route], body: [...body], food, elapsed, journeyTime, full, turnHistory, phrases: [...phrases], noveltyChoices, birthVotes: [...birthVotes], voteCounts: [...voteCounts] }),
+  snapshot: () => ({ columns, rows, route: [...route], body: [...body], food, elapsed, journeyTime, detourTried, detours, full, turnHistory, phrases: [...phrases], noveltyChoices, birthVotes: [...birthVotes], voteCounts: [...voteCounts] }),
   restore(state) {
     ({ columns, rows, route, body, food, elapsed, full } = state);
     journeyTime = state.journeyTime || 0;
+    detourTried = !!state.detourTried; detours = state.detours || 0;
     turnHistory = state.turnHistory || "";
     phrases = new Map(state.phrases || []);
     noveltyChoices = state.noveltyChoices || 0;
@@ -235,7 +250,7 @@ window.livingArtwork = {
     dirty = true;
     draw();
   },
-  stats: () => ({ filled: body.length, capacity: route.length, full, active: activity.running, patience: Math.min(1, journeyTime / 240), rememberedPhrases: phrases.size, noveltyChoices, votes: [...voteCounts] }),
+  stats: () => ({ filled: body.length, capacity: route.length, full, active: activity.running, patience: Math.min(1, journeyTime / 240), detours, rememberedPhrases: phrases.size, noveltyChoices, votes: [...voteCounts] }),
 };
 addEventListener('message', event => {
   if (event.source !== parent || event.origin !== location.origin || event.data?.type !== 'living-theme') return;
