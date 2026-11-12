@@ -15,13 +15,13 @@ function distance(from, to) {
 }
 
 function placeFood() {
-  const room = distance(body[0], body.at(-1)) - 1;
-  if (room < 1) {
-    food = null;
-    return;
+  // Food is an absolute board cell, chosen once and kept until contact.
+  const occupied = new Set(body.map(index => route[index]));
+  const empty = [];
+  for (let cell = 0; cell < route.length; cell++) {
+    if (!occupied.has(cell)) empty.push(cell);
   }
-  const reach = Math.min(room, body.length > route.length * .65 ? 3 : 24);
-  food = (body[0] + 1 + Math.floor(Math.random() * reach)) % route.length;
+  food = empty.length ? empty[Math.floor(Math.random() * empty.length)] : null;
 }
 
 function reset(nextColumns, nextRows) {
@@ -87,19 +87,30 @@ function update(dt) {
   let next = (head + 1) % route.length;
   const cell = route[head], x = cell % columns, y = Math.floor(cell / columns);
   const room = distance(head, body.at(-1));
-  // Shortcuts go forward through free space, so the growing snake never traps itself.
-  if (food !== null && room > 30 && Math.random() < .65) {
-    const jumps = directions.flatMap(([dx, dy]) => {
+  // Choose among safe forward neighbours, favouring turns and occasionally
+  // taking a longer winding approach. Never skip over the fixed food cell.
+  if (food !== null && room > 2) {
+    const previousCell = route[body[1]];
+    const headingX = x - previousCell % columns;
+    const headingY = y - Math.floor(previousCell / columns);
+    const choices = directions.flatMap(([dx, dy]) => {
       const nx = x + dx, ny = y + dy;
       if (nx < 0 || nx >= columns || ny < 0 || ny >= rows) return [];
       const index = positions[ny * columns + nx];
       const advance = distance(head, index);
-      return advance > 1 && advance <= distance(head, food) && advance < room ? [index] : [];
+      if (advance < 1 || advance > distance(head, positions[food]) || advance >= room) return [];
+      const turn = dx !== headingX || dy !== headingY;
+      return [{ index, weight: (turn ? 2.4 : 1) * (advance > 1 ? 1.5 : 1) }];
     });
-    next = jumps[Math.floor(Math.random() * jumps.length)] ?? next;
+    let pick = Math.random() * choices.reduce((sum, choice) => sum + choice.weight, 0);
+    for (const choice of choices) {
+      pick -= choice.weight;
+      if (pick <= 0) { next = choice.index; break; }
+    }
   }
   body.unshift(next);
-  if (next === food) {
+  if (route[next] === food) {
+    elapsed = -.22; // Briefly hold the contact so eating reads clearly.
     if (body.length === route.length) {
       food = null;
       full = true;
@@ -129,7 +140,7 @@ function draw() {
       top + Math.floor(cell / columns) * cellSize + inset, size, size);
   }
   for (const index of body) square(index, 1);
-  if (food !== null) square(food, .45);
+  if (food !== null) square(positions[food], .45);
   if (full) activity.setLost(true);
 }
 
