@@ -2,8 +2,8 @@ import {createActivityLoop} from '../activity.js';
 import {createLoader} from '../assemblage/loader.js?edition=124';
 import {makeEntry,random} from './lines.js?edition=8';
 import {getEdition,CHECK_INTERVAL} from './news.js?edition=8';
-import {scene,INK_WIDTH,lineCapacity,layoutInk} from './scene.js?edition=19';
-import {createPile,stepPile,VIEW_HEIGHT} from './pile.js?edition=19';
+import {scene,INK_WIDTH,lineCapacity,layoutInk} from './scene.js?edition=20';
+import {createPile,stepPile,HEIGHT,VIEW_HEIGHT,cropTop} from './pile.js?edition=20';
 
 document.title='Till Further Notice — Tyrone Moreno';
 document.documentElement.style.background='transparent';
@@ -15,16 +15,19 @@ const canvas=document.createElement('canvas');
 canvas.setAttribute('role','img');
 canvas.setAttribute('aria-label','Till Further Notice. A receipt printer feeds paper into a growing pile.');
 document.body.prepend(canvas);
+const aspect=canvas.clientHeight ? canvas.clientWidth/canvas.clientHeight : 75/32;
+const ratio=Math.max(.775,aspect);
+const viewHeight=HEIGHT-cropTop(Math.round(VIEW_HEIGHT*ratio));
+const width=Math.round(viewHeight*ratio);
+const phone=width<=520||Math.min(screen.width,screen.height)<=600;
+const seed=crypto.getRandomValues(new Uint32Array(1))[0];
+let pile=createPile(seed,width,phone);
 const initialNews=getEdition();
 const [paint,firstEdition]=await Promise.all([
-    scene(canvas),
+    scene(canvas,pile.layout.slotScale),
     Promise.race([initialNews,new Promise(resolve=>setTimeout(()=>resolve(null),850))])
 ]);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)');
-const seed=crypto.getRandomValues(new Uint32Array(1))[0];
-const aspect=canvas.clientHeight ? canvas.clientWidth/canvas.clientHeight : 75/32;
-const width=Math.round(VIEW_HEIGHT*Math.max(.775,aspect));
-let pile=createPile(seed,width);
 let time=0,index=0,subtotal=0,saleItems=0,saleSize=9,edition=firstEdition;
 let ink=[],inkEnd=0,recent=[],nextNewsAt=firstEdition?.expiry??Date.now()+CHECK_INTERVAL,nextContextAt=0,nextLabelAt=0,context={};
 function applyEdition(value){

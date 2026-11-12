@@ -18,15 +18,20 @@ function ease(value){
     return t*t*(3-2*t);
 }
 
-export function printerLayout(width){
+export function cropTop(width){
+    return CROP_TOP+(width<=520?16:0);
+}
+
+export function printerLayout(width,phone=width<=520){
     const previous=Math.min(HEIGHT*1.005,width*.855);
     const size=previous*BODY_SCALE;
     const x=(width-size)/2,y=HEIGHT*.475-size/2;
-    return {x,y,size,band:previous*.232/AX,slot:{x:x+size*.439,y:y+size*.419}};
+    const slotScale=phone?1.02:1.07;
+    return {x,y,size,phone,slotScale,band:previous*.232/AX*slotScale,slot:{x:x+size*.439,y:y+size*.419}};
 }
 
-export function createPile(seed,width){
-    const layout=printerLayout(width),band=layout.band;
+export function createPile(seed,width,phone){
+    const layout=printerLayout(width,phone),band=layout.band;
     return {seed,width,layout,band,spacing:band/21,head:0,full:false,rows:[],
         layer:0,accumulator:0,nextRow:0,revision:0,load:0,clock:0,spread:0,
         radius:band*(.62+(seed%101)*.00045)};

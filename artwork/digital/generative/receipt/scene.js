@@ -1,4 +1,4 @@
-import {HEIGHT,CROP_TOP,VIEW_HEIGHT,SLOPE,BODY_SCALE,mouth,paperSurface,floorLevel,casePlanes,caseDepth,sourceCasePoint} from './pile.js?edition=19';
+import {HEIGHT,cropTop,SLOPE,BODY_SCALE,mouth,paperSurface,floorLevel,casePlanes,caseDepth,sourceCasePoint} from './pile.js?edition=20';
 
 export const INK_WIDTH=360;
 const TILE=1024,TILE_PAD=18,TILE_HEIGHT=TILE+2*TILE_PAD,INK_STRIDE=INK_WIDTH+1;
@@ -418,8 +418,9 @@ function drawCaseShadow(ctx,edge,x,y,size,scale){
 }
 
 function createFrame(width,height,state,photo,photoPixels,caseEdge){
-    const scale=Math.min(width/state.width,height/VIEW_HEIGHT);
-    const left=(width-state.width*scale)/2,top=(height-VIEW_HEIGHT*scale)/2-CROP_TOP*scale;
+    const crop=cropTop(state.width),viewHeight=HEIGHT-crop;
+    const scale=Math.min(width/state.width,height/viewHeight)*(state.layout.phone?.98:.80);
+    const left=(width-state.width*scale)/2,top=(height-viewHeight*scale)/2-crop*scale;
     const stage=document.createElement('canvas'),paper=document.createElement('canvas');
     stage.width=paper.width=width;stage.height=paper.height=height;
     const base=stage.getContext('2d'),paperCtx=paper.getContext('2d');
@@ -449,7 +450,7 @@ function createFrame(width,height,state,photo,photoPixels,caseEdge){
         image,stage,paper,paperCtx,layout:state.layout};
 }
 
-export async function scene(canvas){
+export async function scene(canvas,slotScale){
     const ctx=canvas.getContext('2d');
     const photo=new Image();
     photo.src=new URL('./printer.webp',import.meta.url);
@@ -461,14 +462,19 @@ export async function scene(canvas){
     const data=printerCtx.getImageData(0,0,printer.width,printer.height);
     const source=new Uint8ClampedArray(data.data);
     const w=printer.width,h=printer.height;
-    // Keep the slot at its previous scale while shrinking the rest of the case.
+    // Expand the slot along its long axis and blend the change into the
+    // surrounding casing. The physical feed uses the same width factor.
+    const widthInset=1-1/slotScale;
     for(let iy=Math.floor(h*.30);iy<h*.53;iy++){
         for(let ix=Math.floor(w*.28);ix<w*.60;ix++){
             const x=ix/w-.439,y=iy/h-.419;
             const across=Math.abs(x),along=Math.abs(y-x*.50);
-            const amount=(1-BODY_SCALE)*clamp((.159-across)/.036,0,1)*clamp((.038-along)/.024,0,1);
-            if(!amount)continue;
-            const sx=Math.round(ix-x*w*amount),sy=Math.round(iy-y*h*amount);
+            const blend=clamp((.159-across)/.036,0,1)*clamp((.038-along)/.024,0,1);
+            if(!blend)continue;
+            const bodyInset=(1-BODY_SCALE)*blend;
+            const slotInset=x*widthInset*blend;
+            const sx=Math.round(ix-(x*bodyInset+slotInset)*w);
+            const sy=Math.round(iy-(y*bodyInset+slotInset*.50)*h);
             const from=(sy*w+sx)*4,to=(iy*w+ix)*4;
             for(let channel=0;channel<3;channel++)data.data[to+channel]=source[from+channel];
         }
@@ -526,7 +532,8 @@ export async function scene(canvas){
         if(!measure)return 0;
         let visible=0,samples=0;
         const maxX=frame.left+state.width*frame.scale,maxY=frame.top+HEIGHT*frame.scale;
-        for(let y=Math.max(0,Math.floor(frame.top+4));y<maxY;y+=8){
+        const minY=frame.top+cropTop(state.width)*frame.scale;
+        for(let y=Math.max(0,Math.floor(minY+4));y<maxY;y+=8){
             for(let x=Math.max(0,Math.floor(frame.left+4));x<maxX;x+=8){
                 samples++;
                 if(frame.pixels[(y*width+x)*4+3])visible++;
