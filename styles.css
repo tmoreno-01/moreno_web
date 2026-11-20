@@ -3306,3 +3306,13 @@ body.time-mode #ios-brush-selector {
     #page-motion .living-artworks-row .living-receipt-feature .living-stage { aspect-ratio:6 / 7!important; }
     .motion-video-stage.living-receipt-mode > .living-render { width:min(100vw,77.1429dvh); height:min(116.6667vw,90dvh); aspect-ratio:6 / 7; }
 }
+
+#page-motion .living-artworks-row .living-scaffold .living-stage{background:#000;aspect-ratio:1 / 1!important}
+@media(max-width:768px){#page-motion .living-artworks-row .living-scaffold .living-stage{aspect-ratio:1 / 1!important}}
+
+.forest-credit{display:block;text-align:right;font-family:inherit;font-size:10px;line-height:1.5;color:inherit;opacity:.45;margin-top:6px;text-decoration:none}.forest-credit:hover{opacity:1}
+
+/* Out of Place: direct interaction, landscape tablet/desktop, square phone. */
+#page-motion .living-artworks-row .living-scaffold .living-stage{aspect-ratio:16 / 10!important;background:#c8c8c8}
+.living-scaffold .living-stage iframe{pointer-events:auto}
+@media(max-width:600px){#page-motion .living-artworks-row .living-scaffold .living-stage{aspect-ratio:1 / 1!important}}

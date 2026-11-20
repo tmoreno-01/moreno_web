@@ -105,6 +105,7 @@ stepPile(pile,.52,pile.band*1.05);
 ensureInk();
 
 let geometry=null,worker=null,checkpoint=pile,inFlight=false;
+let activity=null,deferredFrame=null;
 const surface=[];
 let renderer=null,renderReady=false,renderBusy=false,renderDisabled=false;
 let renderInk=null,renderLayout=null;
@@ -118,7 +119,9 @@ function advanceWorker(){
     pending-=chunk;
     worker.postMessage({type:'step',dt:chunk,speed:workerSpeed,stopFeed:time>=PRINT_SECONDS});
 }
-function receiveFrame({points,state,checkpoint:stateCheckpoint,generation:responseGeneration}){
+function receiveFrame(data){
+    if(!activity?.running){inFlight=false;deferredFrame=data;return;}
+    const {points,state,checkpoint:stateCheckpoint,generation:responseGeneration}=data;
     if(responseGeneration!==generation)return;
     inFlight=false;
     if(stateCheckpoint)checkpoint=stateCheckpoint;
@@ -157,6 +160,9 @@ function startWorker(){
     worker.postMessage({type:'reset',pile,generation:++generation});
 }
 function update(dt,visibleElapsed){
+    if(deferredFrame){const frame=deferredFrame;deferredFrame=null;receiveFrame(frame);}
+    canvas.dataset.printTime=time.toFixed(3);
+    canvas.dataset.printActive=String(activity?.running);
     if(finished)return;
     time=Math.min(PRINT_SECONDS,time+visibleElapsed);
     if(time>=nextContextAt){
@@ -207,7 +213,7 @@ function startRenderWorker(){
             }
             renderBusy=false;
             const {bitmap}=data;
-            if(data.generation===generation&&geometry){
+            if(activity?.running&&data.generation===generation&&geometry){
                 if(canvas.width!==bitmap.width)canvas.width=bitmap.width;
                 if(canvas.height!==bitmap.height)canvas.height=bitmap.height;
                 const ctx=canvas.getContext('2d');
@@ -223,6 +229,7 @@ function startRenderWorker(){
 }
 let lastWidth=0,lastHeight=0;
 function draw(){
+    if(!activity?.running)return;
     const width=canvas.clientWidth,height=canvas.clientHeight;
     if(!dirty&&width===lastWidth&&height===lastHeight)return;
     if(geometry&&pile.rows.length>=120)startRenderWorker();
@@ -247,7 +254,13 @@ function snapshot(state=pile){
     return {pile:state,time,index,subtotal,saleItems,saleSize,edition,ink,inkEnd,recent,nextNewsAt};
 }
 startWorker();
-const activity=createActivityLoop({fps:()=>reduce.matches?18:40,update,draw});
+activity=createActivityLoop({fps:()=>reduce.matches?18:40,update,draw});
+addEventListener('message',event=>{
+    if(event.origin!==location.origin||event.source!==parent||event.data?.type!=='living-active')return;
+    canvas.dataset.printActive=String(!!event.data.value);
+    if(!event.data.value)pending=0;
+    else dirty=true;
+});
 new ResizeObserver(()=>{if(finished)draw();}).observe(canvas);
 window.livingArtwork={
     backend:'canvas-receipt',

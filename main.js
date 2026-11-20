@@ -5975,8 +5975,9 @@ window.addEventListener('resize', () => {
     }
     let livingWorks = [], livingFullscreen = null;
     const snakeKind = 19;
-    const livingTitles = ['Snake', 'Till Further Notice', 'Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
-    const livingKinds = [snakeKind,18,13,12,7,8];
+    const scaffoldKind = 20;
+    const livingTitles = ['Snake', 'Out of Place', 'Till Further Notice', 'Misfiled', 'Unsettled', 'Chromatic Tangle', 'Errata'];
+    const livingKinds = [snakeKind,scaffoldKind,18,13,12,7,8];
 
     let livingSyncFrame = 0;
     function syncLivingTheme() {
@@ -5999,6 +6000,12 @@ window.addEventListener('resize', () => {
         });
     }
 
+    function artworkIntersectsViewport(work) {
+        const rect=work.stage.getBoundingClientRect(),clip=motionPage.getBoundingClientRect();
+        return rect.width>0&&rect.height>0&&Math.min(rect.bottom,clip.bottom,innerHeight)>Math.max(rect.top,clip.top,0)&&Math.min(rect.right,clip.right,innerWidth)>Math.max(rect.left,clip.left,0);
+    }
+    // IntersectionObserver alone can lag behind fast scrolls and fullscreen moves.
+    document.addEventListener('scroll',scheduleLivingArtwork,{capture:true,passive:true});
     function syncLivingArtwork() {
         const showingViewer = viewer.classList.contains('active');
         const available = !document.hidden && isMotionPageActive();
@@ -6008,7 +6015,7 @@ window.addEventListener('resize', () => {
             receiptPriorityTimer = window.setTimeout(releaseReceiptPriority, 2000);
         }
         for (const work of livingWorks) {
-            const active = available && (showingViewer ? livingFullscreen === work : work.inViewport);
+            const active = available && (showingViewer ? livingFullscreen === work : work.inViewport && artworkIntersectsViewport(work));
             const warmBooks = available && !showingViewer && work.kind === 13 && work.nearViewport;
             const canLoad = work.kind !== 13 || receiptPriorityReleased || (active && !receipt?.frame.hasAttribute('src'));
             if ((active || warmBooks) && canLoad && !work.frame.hasAttribute('src')) work.frame.src = work.url;
@@ -6128,7 +6135,7 @@ window.addEventListener('resize', () => {
                     work.inViewport = entry.isIntersecting && entry.intersectionRatio >= visible;
                 }
             });
-            scheduleLivingArtwork();
+            syncLivingArtwork();
         }, {root:motionPage,threshold:[0,0.012,0.045]});
         livingWarmObserver = new IntersectionObserver(([entry]) => {
             const books = livingWorks.find(work => work.card === entry.target);
@@ -6139,14 +6146,16 @@ window.addEventListener('resize', () => {
         livingTitles.forEach((title,position) => {
             const kind = livingKinds[position];
             const isSnake = kind === snakeKind;
+            const isScaffold = kind === scaffoldKind;
             const card = document.createElement('div');
-            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : (kind === 13 || isSnake) ? ' living-paint-feature living-landscape' : kind === 18 ? ' living-receipt-feature living-story-feature living-landscape' : '');
+            card.className = 'work-item living-artwork poster-ready' + (kind === 12 ? ' living-square-feature living-landscape' : (kind === 13 || isSnake || isScaffold) ? ' living-paint-feature living-landscape' : kind === 18 ? ' living-receipt-feature living-story-feature living-landscape' : '');
             if (isSnake) card.classList.add('living-snake');
+            if (isScaffold) card.classList.add('living-scaffold');
             card.innerHTML = '<div class="work-image living-stage">' +
-                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 ? '0' : '-1') + '"></iframe>' +
-                (isSnake ? '' : '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button>') + '</div>';
+                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 || isScaffold ? '0' : '-1') + '"></iframe>' +
+                ((isSnake || isScaffold) ? '' : '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button>') + '</div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isSnake ? '/artwork/digital/generative/snake/index.html?edition=17' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?28:kind===13?147:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=1' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;

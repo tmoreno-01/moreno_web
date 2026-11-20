@@ -12,6 +12,7 @@ let detoursThisMeal = 0;
 let doubleDetours = 0;
 let detours = 0;
 let ink = '#1a1a1a';
+let background = '#ffffff';
 let dirty = true;
 let full = false;
 let turnHistory = "";
@@ -199,7 +200,8 @@ function update(dt) {
 function draw() {
   if (!dirty) return;
   dirty = false;
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = background;
+  context.fillRect(0, 0, canvas.width, canvas.height);
   const cellSize = Math.min(canvas.width / columns, canvas.height / rows);
   const left = (canvas.width - columns * cellSize) / 2;
   const top = (canvas.height - rows * cellSize) / 2;
@@ -259,10 +261,14 @@ window.livingArtwork = {
 };
 addEventListener('message', event => {
   if (event.source !== parent || event.origin !== location.origin || event.data?.type !== 'living-theme') return;
-  const colour = event.data.ink;
-  if (typeof colour !== 'string' || colour === ink || !CSS.supports('color', colour)) return;
-  ink = colour;
-  dirty = true;
-  draw();
+  let changed = false;
+  for (const key of ['background', 'ink']) {
+    const colour = event.data[key];
+    if (typeof colour !== 'string' || !CSS.supports('color', colour)) continue;
+    if (key === 'background' && colour !== background) { background = colour; document.documentElement.style.background = colour; document.body.style.background = colour; changed = true; }
+    if (key === 'ink' && colour !== ink) { ink = colour; changed = true; }
+  }
+  if (changed) { dirty = true; draw(); }
+
 });
 if (parent !== window) parent.postMessage({ type: 'living-ready' }, location.origin);
