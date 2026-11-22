@@ -6201,6 +6201,7 @@ window.addEventListener('resize', () => {
         );
         grid.innerHTML = '';
         mountLivingArtwork();
+        setupUnifiedCollage();
         renderedMotionCount = 0;
         setupMotionObservers();
         return loadInitialMotionRows();
@@ -8347,34 +8348,110 @@ window.addEventListener('resize', () => {
         if (lastItem) motionBatchObserver.observe(lastItem);
     }
 
-    // Place real video cards between living artworks; keep Snake at the top.
-    // Position the five portrait cards among the generative pieces.
-    // CSS multi-columns pack them vertically without grid-row holes.
-    function positionFeaturedMotionCards(items) {
-        const livingRow = grid.querySelector(':scope > .living-artworks-row');
-        if (!livingRow) return;
-        const placements = [
-            { name: 'citydreamer-web.mp4', after: 20 },
-            { name: 'highercar-web.mp4', after: 'citydreamer-web.mp4' },
-            { name: 'highstreet-web.mp4', after: 13 },
-            { name: 'underground-web.mp4', after: 'highstreet-web.mp4' },
-            { name: 'sidetrack-web.mp4', after: 12 }
-        ];
-        const findAnchor = kind => livingWorks.find(work => work.kind === kind)?.card;
-        const findFeatured = name => Array.from(livingRow.querySelectorAll('.motion-featured'))
-            .find(item => MOTION_FILES[Number(item.dataset.motionIndex)] === name);
-        placements.forEach(({name,after}) => {
-            const card = items.find(item => MOTION_FILES[Number(item.dataset.motionIndex)] === name);
-            if (!card) return;
-            const anchor = typeof after === 'number' ? findAnchor(after) : findFeatured(after);
-            if (!anchor) return;
-            card.classList.add('motion-featured');
-            card.dataset.motionCollage = 'true';
-            anchor.after(card);
+    // Unified responsive masonry for every generative piece and MP4.
+    // Unlike CSS columns, the grid never balances content into a narrow strip;
+    // unlike ordinary CSS grid, tall portraits do not reserve empty rows.
+    let collageLayoutFrame = 0;
+    let collageObserver = null;
+    let lastCollageWidth = -1;
+    function scheduleUnifiedCollage() {
+        if (collageLayoutFrame) return;
+        collageLayoutFrame = requestAnimationFrame(layoutUnifiedCollage);
+    }
+    function layoutUnifiedCollage() {
+        collageLayoutFrame = 0;
+        const row = grid.querySelector(':scope > .living-artworks-row');
+        if (!row || !row.isConnected) return;
+        const width = row.getBoundingClientRect().width;
+        if (width < 20) return;
+        const gap = window.innerWidth <= 650 ? 10 : 16;
+        const minWidth = window.innerWidth <= 650 ? 165 : 295;
+        const columns = Math.max(1,Math.min(9,Math.floor((width + gap)/(minWidth + gap))));
+        row.style.setProperty('--collage-columns',String(columns));
+        row.style.setProperty('--collage-gap',gap+'px');
+        const cards = Array.from(row.children).filter(card =>
+            card.classList.contains('living-artwork') || card.classList.contains('motion-item'));
+        cards.forEach(card => {
+            const kind = livingWorks.find(work => work.card === card)?.kind;
+            const wide = kind === snakeKind || kind === scaffoldKind || kind === 18 ||
+                kind === 13 || kind === 12;
+            // At wide browser zoom settings use spare columns for neighbour artworks,
+            // instead of stretching one piece across the entire viewport.
+            const span = wide ? Math.min(columns, columns >= 6 ? 3 : 2) : 1;
+            card.style.setProperty('--collage-colspan',String(span));
+        });
+        // Let CSS resolve column widths before measuring real stage heights.
+        requestAnimationFrame(() => {
+            const unit = 8;
+            cards.forEach(card => {
+                const stage = card.querySelector('.work-image');
+                if (!stage) return;
+                if (card.classList.contains('motion-item')) {
+                    const ratio = readMotionRatio(card);
+                    card.style.setProperty('--collage-aspect',String(ratio));
+                }
+                const bounds=stage.getBoundingClientRect();
+                const ratio=card.classList.contains('motion-item')
+                    ? readMotionRatio(card)
+                    : bounds.width / Math.max(1,bounds.height);
+                const height=card.classList.contains('motion-item')
+                    ? bounds.width / Math.max(0.1,ratio)
+                    : bounds.height;
+                const span=Math.max(1,Math.ceil((height+gap)/(unit+gap)));
+                card.style.setProperty('--collage-rowspan',String(span));
+            });
         });
     }
+    function setupUnifiedCollage() {
+        const row=grid.querySelector(':scope > .living-artworks-row');
+        if (!row) return;
+        if (!collageObserver && typeof ResizeObserver !== 'undefined') {
+            collageObserver=new ResizeObserver(() => {
+                const width=Math.round(row.getBoundingClientRect().width);
+                if (width !== lastCollageWidth) {
+                    lastCollageWidth=width;
+                    scheduleUnifiedCollage();
+                }
+            });
+            collageObserver.observe(row);
+        }
+        if (!row.dataset.collageEvents) {
+            row.dataset.collageEvents='true';
+            row.addEventListener('load',event => {
+                if(event.target?.matches?.('.motion-poster')) scheduleUnifiedCollage();
+            },true);
+        }
+        scheduleUnifiedCollage();
+    }
+    window.addEventListener('resize',scheduleUnifiedCollage,{passive:true});
 
-
+    function positionFeaturedMotionCards(items) {
+        const row=grid.querySelector(':scope > .living-artworks-row');
+        if(!row) return;
+        // The five portraits are interspersed just below snake, around books
+        // and squares. Every old MP4 joins the same grid, filling leftover holes.
+        const places = [
+            ['citydreamer-web.mp4', 20],
+            ['highercar-web.mp4', 'citydreamer-web.mp4'],
+            ['highstreet-web.mp4', 13],
+            ['underground-web.mp4', 'highstreet-web.mp4'],
+            ['sidetrack-web.mp4', 12]
+        ];
+        const findCard = name => Array.from(row.querySelectorAll('.motion-item'))
+            .find(el => MOTION_FILES[Number(el.dataset.motionIndex)] === name);
+        const findLiving = kind => livingWorks.find(work => work.kind === kind)?.card;
+        items.forEach(card => {
+            const name=MOTION_FILES[Number(card.dataset.motionIndex)];
+            card.classList.add('motion-featured');
+            card.dataset.motionCollage='true';
+            const placement=places.find(pair => pair[0] === name);
+            const anchor=placement && (typeof placement[1] === 'number'
+                ? findLiving(placement[1]) : findCard(placement[1]));
+            if(anchor) anchor.after(card);
+            else row.appendChild(card);
+        });
+        setupUnifiedCollage();
+    }
 
     function appendNextMotionBatch(
         isInitial = false,

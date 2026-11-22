@@ -3317,115 +3317,87 @@ body.time-mode #ios-brush-selector {
 .living-scaffold .living-stage iframe{pointer-events:auto}
 @media(max-width:600px){#page-motion .living-artworks-row .living-scaffold .living-stage{aspect-ratio:1 / 1!important}}
 
-/* New portrait-video collage, keeping original living-artwork rendering intact. */
-#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {
-    width:100%!important; flex:none!important; min-width:0!important;
-    max-width:100%!important; grid-column:span 1!important;
-    --motion-item-width:100%; --motion-row-height:auto;
-}
-#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .work-image {
-    width:100%!important; height:auto!important; aspect-ratio:9 / 16!important;
-}
-@media(max-width:600px) {
-    #page-motion #motion-grid > .living-artworks-row {
-        grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px!important;
-    }
-    #page-motion #motion-grid > .living-artworks-row > .living-landscape {grid-column:1 / -1!important;}
-    #page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {grid-column:span 1!important;}
-}
 
-/* Responsive collage and browser zoom fixes — November 2026 */
-/* The old CSS grid made the entire row as tall as the longest portrait,
-   leaving enormous empty spaces beneath adjacent square artworks. Columns
-   independently stack items, so nothing reserves another item's row height. */
-#page-motion #motion-grid > .living-artworks-row {
-    display: block !important;
-    column-count: 2 !important;
-    column-gap: clamp(12px, 1.4vw, 24px) !important;
+/* Unified Digital collage / true zoom reflow — replaces previous broken columns. */
+#page-motion .overlay-content {
     width: 100% !important;
-    flex: 0 0 100% !important;
-    grid-template-columns: none !important;
-    margin: 0 !important;
-}
-#page-motion #motion-grid > .living-artworks-row > :is(.living-artwork,.motion-featured) {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 0 clamp(12px,1.4vw,24px) 0 !important;
-    break-inside: avoid !important;
-    -webkit-column-break-inside: avoid;
+    padding-inline: clamp(8px, 1.7vw, 42px) !important;
     box-sizing: border-box !important;
-    grid-column: auto !important;
-    flex: none !important;
 }
-/* Wide works interrupt the columns and take the entire available width. */
-#page-motion #motion-grid > .living-artworks-row > .living-landscape {
-    column-span: all !important;
-    -webkit-column-span: all;
+#page-motion .works-container {
+    max-width: none !important;
     width: 100% !important;
+    padding-inline: 0 !important;
 }
-#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {
+#page-motion #motion-grid {
+    width: 100% !important;
+    max-width: none !important;
+    gap: clamp(10px, 1vw, 22px) !important;
+}
+#page-motion #motion-grid > .living-artworks-row {
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+    flex: 0 0 100% !important;
+    grid-template-columns: repeat(var(--collage-columns, 3),minmax(0,1fr)) !important;
+    grid-auto-flow: row dense !important;
+    grid-auto-rows: 8px !important;
+    gap: var(--collage-gap,16px) !important;
+    align-items: start !important;
+    margin: 0 !important;
+    column-count: auto !important;
+}
+#page-motion #motion-grid > .living-artworks-row > :is(.living-artwork,.motion-item) {
+    display: block !important;
+    grid-column: span var(--collage-colspan,1) !important;
+    grid-row: span var(--collage-rowspan,30) !important;
+    align-self: start !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    break-inside: auto !important;
+    flex: none !important;
+    box-sizing: border-box !important;
     --motion-item-width: 100%;
     --motion-row-height: auto;
 }
-#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .work-image {
-    display: block !important;
+#page-motion #motion-grid > .living-artworks-row > .motion-item .work-image {
     width: 100% !important;
     height: auto !important;
-    aspect-ratio: 9 / 16 !important;
+    aspect-ratio: var(--collage-aspect, .5625) !important;
     overflow: hidden;
 }
-#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .motion-poster,
-#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .motion-video-stack {
-    width:100% !important;
-    height:100% !important;
-}
-/* Phone: one or two items across depending on viewport width. */
-@media (max-width: 380px) {
-    #page-motion #motion-grid > .living-artworks-row { column-count: 1 !important; }
-}
-/* Wider canvases at lower browser zoom levels, with deliberate upper bounds.
-   Avoid max-width:none: oversized or ultra-wide screens should not inflate
-   the artwork itself indefinitely. Normal desktop retains breathing room. */
-.works-container,
-.still-grid-page .works-container,
-#page-motion .works-container {
+#page-motion #motion-grid > .living-artworks-row .motion-poster,
+#page-motion #motion-grid > .living-artworks-row .motion-video-stack {
+    inset: 0 !important;
     width: 100% !important;
-    max-width: clamp(1500px, 91vw, 2100px) !important;
-    min-width: 0 !important;
-    margin-inline: auto !important;
+    height: 100% !important;
+}
+/* Keep every other page fluid too. At low browser zoom, show more content
+   across the width rather than leaving enormous unused side borders. */
+#page-works .works-container,
+.still-grid-page .works-container {
+    width: 100% !important;
+    max-width: none !important;
+    padding-inline: clamp(8px,1.5vw,40px) !important;
+}
+#page-works .overlay-content,
+.still-grid-page .overlay-content {
+    width: 100% !important;
+    padding-inline: clamp(8px,1.5vw,40px) !important;
     box-sizing: border-box !important;
 }
 #store-content {
     width: 100% !important;
-    max-width: clamp(1450px, 90vw, 1900px) !important;
-    min-width: 0 !important;
-    margin-inline: auto !important;
+    max-width: none !important;
+    padding-inline: clamp(16px,2.5vw,64px) !important;
     box-sizing: border-box !important;
-    padding-inline: clamp(16px, 2.5vw, 60px) !important;
 }
-.overlay-content { width: 100%; min-width: 0; }
-.works-container { padding-inline: clamp(12px, 2vw, 48px); }
-/* Never exceed three masonry lanes. At zoom-out, additional usable width
-   makes the layout denser, but a single portrait stays a sensible size. */
-@media (min-width: 1450px) {
-    #page-motion #motion-grid > .living-artworks-row { column-count: 3 !important; }
-}
-@media (min-width: 2600px) {
-    #page-motion #motion-grid > .living-artworks-row { column-count: 3 !important; }
-}
-/* Let the existing Gallery / Studies / Store reflow without producing tiny
-   thumbnail farms on very large logical viewports. */
-.works-grid.mode-rows:not(#motion-grid) {
-    grid-template-columns: repeat(auto-fit, minmax(max(300px, 19%), 1fr));
-}
-@media (min-width: 1200px) {
-    .store-grid { grid-template-columns: repeat(auto-fit, minmax(max(260px, 23%), 1fr)); }
-}
-@media (max-width: 768px) {
-    .works-container,
-    .still-grid-page .works-container,
-    #page-motion .works-container,
-    #store-content { max-width: 100% !important; }
+/* Art remains individually bounded by an adaptive column width, even while
+   the overall canvas reaches the edge on large/zoomed-out viewports. */
+@media(max-width:650px){
+    #page-motion .overlay-content {padding-inline:6px !important;}
+    #page-motion #motion-grid > .living-artworks-row {gap:10px !important;}
 }
