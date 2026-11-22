@@ -3316,3 +3316,20 @@ body.time-mode #ios-brush-selector {
 #page-motion .living-artworks-row .living-scaffold .living-stage{aspect-ratio:16 / 10!important;background:#c8c8c8}
 .living-scaffold .living-stage iframe{pointer-events:auto}
 @media(max-width:600px){#page-motion .living-artworks-row .living-scaffold .living-stage{aspect-ratio:1 / 1!important}}
+
+/* New portrait-video collage, keeping original living-artwork rendering intact. */
+#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {
+    width:100%!important; flex:none!important; min-width:0!important;
+    max-width:100%!important; grid-column:span 1!important;
+    --motion-item-width:100%; --motion-row-height:auto;
+}
+#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .work-image {
+    width:100%!important; height:auto!important; aspect-ratio:9 / 16!important;
+}
+@media(max-width:600px) {
+    #page-motion #motion-grid > .living-artworks-row {
+        grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px!important;
+    }
+    #page-motion #motion-grid > .living-artworks-row > .living-landscape {grid-column:1 / -1!important;}
+    #page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {grid-column:span 1!important;}
+}

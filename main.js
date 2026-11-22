@@ -4986,6 +4986,11 @@ window.addEventListener('resize', () => {
        uploading the original to motion/ and its mobile encode to motion/phone/.
        The list is only used when the Digital page is opened. */
     const MOTION_FILES = Object.freeze([
+        'citydreamer-web.mp4',
+        'highercar-web.mp4',
+        'highstreet-web.mp4',
+        'underground-web.mp4',
+        'sidetrack-web.mp4',
   'facecollage_01.mp4',
 'moneyman.mp4',
  'facecollage_03.mp4',
@@ -5262,8 +5267,8 @@ window.addEventListener('resize', () => {
 
     function layoutMotionRows() {
         motionRowLayoutFrame = 0;
-        unwrapMediaTallClusters(grid, '.motion-item');
-        const items = Array.from(grid.querySelectorAll('.motion-item'));
+        unwrapMediaTallClusters(grid, '.motion-item:not(.motion-featured)');
+        const items = Array.from(grid.querySelectorAll('.motion-item:not(.motion-featured)'));
         if (!items.length) return;
         const containerWidth = Math.floor(grid.getBoundingClientRect().width);
         if (!containerWidth) return;
@@ -5520,14 +5525,18 @@ window.addEventListener('resize', () => {
     }
 
     function motionPhoneFileURL(filename) {
-        return MOTION_PHONE_FOLDER + String(filename)
+        const mobileName = /^(citydreamer|highercar|highstreet|underground|sidetrack)-web\.mp4$/.test(filename)
+            ? filename.replace(/-web\.mp4$/, '-mobile.mp4') : filename;
+        return MOTION_PHONE_FOLDER + String(mobileName)
             .split('/')
             .map((part) => encodeURIComponent(part))
             .join('/');
     }
 
     function motionPosterURL(filename) {
-        const posterName = String(filename).replace(/\.[^/.]+$/, '.webp');
+        const posterName = /^(citydreamer|highercar|highstreet|underground|sidetrack)-web\.mp4$/.test(filename)
+            ? filename.replace(/-web\.mp4$/, '-poster.webp')
+            : String(filename).replace(/\.[^/.]+$/, '.webp');
         return MOTION_POSTER_FOLDER + posterName
             .split('/')
             .map((part) => encodeURIComponent(part))
@@ -5954,10 +5963,12 @@ window.addEventListener('resize', () => {
 
     async function loadInitialMotionRows() {
         // Additional poster rows load as the visitor approaches the video gallery.
-        await appendNextMotionBatch(true, {
-            observeTail: false,
-            scheduleWarm: false
-        });
+        do {
+            await appendNextMotionBatch(true, {
+                observeTail: false,
+                scheduleWarm: false
+            });
+        } while (renderedMotionCount <= 5 && renderedMotionCount < motionVideoList.length);
 
         scheduleNextMotionPosterWarmup();
         observeMotionBatchTail();
@@ -8336,6 +8347,31 @@ window.addEventListener('resize', () => {
         if (lastItem) motionBatchObserver.observe(lastItem);
     }
 
+    // Place real video cards between living artworks; keep Snake at the top.
+    function positionFeaturedMotionCards(items) {
+        const livingRow = grid.querySelector(':scope > .living-artworks-row');
+        if (!livingRow) return;
+        const placements = [
+            { name: 'citydreamer-web.mp4', after: 20 },
+            { name: 'highercar-web.mp4', after: 'citydreamer-web.mp4' },
+            { name: 'highstreet-web.mp4', after: 13 },
+            { name: 'underground-web.mp4', after: 'highstreet-web.mp4' },
+            { name: 'sidetrack-web.mp4', after: 12 }
+        ];
+        const findAnchor = kind => livingWorks.find(work => work.kind === kind)?.card;
+        const getFeatured = name => Array.from(livingRow.querySelectorAll('.motion-featured'))
+            .find(item => MOTION_FILES[Number(item.dataset.motionIndex)] === name);
+        placements.forEach(({name,after}) => {
+            const card = items.find(item => MOTION_FILES[Number(item.dataset.motionIndex)] === name);
+            if (!card) return;
+            const anchor = typeof after === 'number' ? findAnchor(after) : getFeatured(after);
+            if (!anchor) return;
+            card.classList.add('motion-featured');
+            card.dataset.motionCollage = 'true';
+            anchor.after(card);
+        });
+    }
+
     function appendNextMotionBatch(
         isInitial = false,
         options = {}
@@ -8365,9 +8401,13 @@ window.addEventListener('resize', () => {
 
             const newItems = Array.from(
                 grid.querySelectorAll('.motion-item[data-motion-index]')
-            ).slice(start, end);
+            ).filter(item => {
+                const index = Number(item.dataset.motionIndex);
+                return index >= start && index < end;
+            });
 
             initMotionItems(newItems);
+            positionFeaturedMotionCards(newItems);
             scheduleMotionRowLayout();
             requestAnimationFrame(refreshMotionViewport);
 
