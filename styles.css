@@ -3333,3 +3333,99 @@ body.time-mode #ios-brush-selector {
     #page-motion #motion-grid > .living-artworks-row > .living-landscape {grid-column:1 / -1!important;}
     #page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {grid-column:span 1!important;}
 }
+
+/* Responsive collage and browser zoom fixes — November 2026 */
+/* The old CSS grid made the entire row as tall as the longest portrait,
+   leaving enormous empty spaces beneath adjacent square artworks. Columns
+   independently stack items, so nothing reserves another item's row height. */
+#page-motion #motion-grid > .living-artworks-row {
+    display: block !important;
+    column-count: 2 !important;
+    column-gap: clamp(12px, 1.4vw, 24px) !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    grid-template-columns: none !important;
+    margin: 0 !important;
+}
+#page-motion #motion-grid > .living-artworks-row > :is(.living-artwork,.motion-featured) {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 0 clamp(12px,1.4vw,24px) 0 !important;
+    break-inside: avoid !important;
+    -webkit-column-break-inside: avoid;
+    box-sizing: border-box !important;
+    grid-column: auto !important;
+    flex: none !important;
+}
+/* Wide works interrupt the columns and take the entire available width. */
+#page-motion #motion-grid > .living-artworks-row > .living-landscape {
+    column-span: all !important;
+    -webkit-column-span: all;
+    width: 100% !important;
+}
+#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured {
+    --motion-item-width: 100%;
+    --motion-row-height: auto;
+}
+#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .work-image {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 9 / 16 !important;
+    overflow: hidden;
+}
+#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .motion-poster,
+#page-motion #motion-grid > .living-artworks-row > .motion-item.motion-featured .motion-video-stack {
+    width:100% !important;
+    height:100% !important;
+}
+/* Phone: one or two items across depending on viewport width. */
+@media (max-width: 380px) {
+    #page-motion #motion-grid > .living-artworks-row { column-count: 1 !important; }
+}
+/* Wider canvases at lower browser zoom levels, with deliberate upper bounds.
+   Avoid max-width:none: oversized or ultra-wide screens should not inflate
+   the artwork itself indefinitely. Normal desktop retains breathing room. */
+.works-container,
+.still-grid-page .works-container,
+#page-motion .works-container {
+    width: 100% !important;
+    max-width: clamp(1500px, 91vw, 2100px) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+}
+#store-content {
+    width: 100% !important;
+    max-width: clamp(1450px, 90vw, 1900px) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+    padding-inline: clamp(16px, 2.5vw, 60px) !important;
+}
+.overlay-content { width: 100%; min-width: 0; }
+.works-container { padding-inline: clamp(12px, 2vw, 48px); }
+/* Never exceed three masonry lanes. At zoom-out, additional usable width
+   makes the layout denser, but a single portrait stays a sensible size. */
+@media (min-width: 1450px) {
+    #page-motion #motion-grid > .living-artworks-row { column-count: 3 !important; }
+}
+@media (min-width: 2600px) {
+    #page-motion #motion-grid > .living-artworks-row { column-count: 3 !important; }
+}
+/* Let the existing Gallery / Studies / Store reflow without producing tiny
+   thumbnail farms on very large logical viewports. */
+.works-grid.mode-rows:not(#motion-grid) {
+    grid-template-columns: repeat(auto-fit, minmax(max(300px, 19%), 1fr));
+}
+@media (min-width: 1200px) {
+    .store-grid { grid-template-columns: repeat(auto-fit, minmax(max(260px, 23%), 1fr)); }
+}
+@media (max-width: 768px) {
+    .works-container,
+    .still-grid-page .works-container,
+    #page-motion .works-container,
+    #store-content { max-width: 100% !important; }
+}

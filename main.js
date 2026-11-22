@@ -8348,6 +8348,8 @@ window.addEventListener('resize', () => {
     }
 
     // Place real video cards between living artworks; keep Snake at the top.
+    // Position the five portrait cards among the generative pieces.
+    // CSS multi-columns pack them vertically without grid-row holes.
     function positionFeaturedMotionCards(items) {
         const livingRow = grid.querySelector(':scope > .living-artworks-row');
         if (!livingRow) return;
@@ -8359,18 +8361,20 @@ window.addEventListener('resize', () => {
             { name: 'sidetrack-web.mp4', after: 12 }
         ];
         const findAnchor = kind => livingWorks.find(work => work.kind === kind)?.card;
-        const getFeatured = name => Array.from(livingRow.querySelectorAll('.motion-featured'))
+        const findFeatured = name => Array.from(livingRow.querySelectorAll('.motion-featured'))
             .find(item => MOTION_FILES[Number(item.dataset.motionIndex)] === name);
         placements.forEach(({name,after}) => {
             const card = items.find(item => MOTION_FILES[Number(item.dataset.motionIndex)] === name);
             if (!card) return;
-            const anchor = typeof after === 'number' ? findAnchor(after) : getFeatured(after);
+            const anchor = typeof after === 'number' ? findAnchor(after) : findFeatured(after);
             if (!anchor) return;
             card.classList.add('motion-featured');
             card.dataset.motionCollage = 'true';
             anchor.after(card);
         });
     }
+
+
 
     function appendNextMotionBatch(
         isInitial = false,
