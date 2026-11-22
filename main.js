@@ -5268,6 +5268,10 @@ window.addEventListener('resize', () => {
 
     function layoutMotionRows() {
         motionRowLayoutFrame = 0;
+        if (grid.querySelector(':scope > .living-artworks-row')) {
+            scheduleUnifiedCollage();
+            return;
+        }
         unwrapMediaTallClusters(grid, '.motion-item:not(.motion-featured)');
         const items = Array.from(grid.querySelectorAll('.motion-item:not(.motion-featured)'));
         if (!items.length) return;
@@ -8349,9 +8353,8 @@ window.addEventListener('resize', () => {
         if (lastItem) motionBatchObserver.observe(lastItem);
     }
 
-    // Unified responsive masonry for every generative piece and MP4.
-    // Unlike CSS columns, the grid never balances content into a narrow strip;
-    // unlike ordinary CSS grid, tall portraits do not reserve empty rows.
+    // Real, responsive masonry. Every card is placed independently rather
+    // than occupying shared CSS grid tracks, so zoom does not produce holes.
     let collageLayoutFrame = 0;
     let collageObserver = null;
     let lastCollageWidth = -1;
@@ -8365,107 +8368,92 @@ window.addEventListener('resize', () => {
         if (!row || !row.isConnected) return;
         const width = row.getBoundingClientRect().width;
         if (width < 20) return;
-        const gap = window.innerWidth <= 650 ? 10 : 12;
-        const minWidth = window.innerWidth <= 650 ? 165 : 295;
-        const unit = 4;
-        const columns = Math.max(1,Math.min(9,Math.floor((width + gap)/(minWidth + gap))));
-        row.style.setProperty('--collage-columns',String(columns));
-        row.style.setProperty('--collage-gap',gap+'px');
+        const viewport = window.innerWidth;
+        const gap = viewport <= 650 ? 10 : 12;
+        const minimum = viewport <= 600 ? 165 : viewport <= 1024 ? 235 : 285;
+        const maxColumns = viewport <= 600 ? 2 : viewport <= 1024 ? 4 : 12;
+        const columns = Math.max(1, Math.min(maxColumns, Math.floor((width + gap) / (minimum + gap))));
+        const colWidth = (width - gap * (columns - 1)) / columns;
         const cards = Array.from(row.children).filter(card =>
             card.classList.contains('living-artwork') || card.classList.contains('motion-item'));
+        if (!cards.length) { row.style.height = '0px'; return; }
 
-        // Remove previous gap fills before the browser recalculates responsive sizes.
-        cards.forEach(card => {
+        // First give every artwork its final width. Then measure its actual
+        // aspect-ratio-driven height once. Never resize a rendered iframe by
+        // distorting its video/canvas, and never crop to hide a bad layout.
+        const dimensions = cards.map(card => {
             card.classList.remove('collage-gap-filled');
             card.style.removeProperty('--collage-fill-height');
             const kind = livingWorks.find(work => work.card === card)?.kind;
-            const wide = kind === snakeKind || kind === scaffoldKind || kind === 18 ||
-                kind === 13 || kind === 12;
-            // A modest two-column landscape feature, without changing other pieces.
-            const featureLandscape = card.classList.contains('motion-item') &&
-                MOTION_FILES[Number(card.dataset.motionIndex)] === 'upresunderground-web.mp4';
-            const span = featureLandscape ? Math.min(columns, 2) :
-                wide ? Math.min(columns, columns >= 6 ? 3 : 2) : 1;
-            card.style.setProperty('--collage-colspan',String(span));
+            const filename = card.classList.contains('motion-item')
+                ? MOTION_FILES[Number(card.dataset.motionIndex)] : '';
+            const isWide = kind === snakeKind || kind === scaffoldKind ||
+                kind === 18 || kind === 13 || kind === 12;
+            const isLandscapeFeature = filename === 'upresunderground-web.mp4';
+            const span = Math.min(columns, isLandscapeFeature ? 2 :
+                isWide ? (columns >= 7 ? 3 : 2) : 1);
+            const cardWidth = colWidth * span + gap * (span - 1);
+            card.style.setProperty('--masonry-width', cardWidth + 'px');
+            if (filename) {
+                card.style.setProperty('--collage-aspect', String(Math.max(0.1, readMotionRatio(card))));
+            }
+            return {card, span, width:cardWidth};
         });
 
-        requestAnimationFrame(() => {
-            if (!row.isConnected) return;
-            cards.forEach(card => {
-                const stage = card.querySelector('.work-image');
-                if (!stage) return;
-                const bounds = stage.getBoundingClientRect();
-                const isMotion = card.classList.contains('motion-item');
-                let height = bounds.height;
-                if (isMotion) {
-                    const ratio = Math.max(0.1,readMotionRatio(card));
-                    card.style.setProperty('--collage-aspect',String(ratio));
-                    height = bounds.width / ratio;
+        const placements = [];
+        let bottom = 0;
+        // Every next artwork searches for the highest free position among all
+        // possible column starts, including holes below a shorter neighbour.
+        // This is independent of grid-auto-rows and exact at any browser zoom.
+        for (const item of dimensions) {
+            const measured = item.card.getBoundingClientRect().height;
+            const height = Math.max(1, measured);
+            let selected = null;
+            for (let col = 0; col <= columns - item.span; col++) {
+                const x = col * (colWidth + gap);
+                let y = 0;
+                const blockers = placements.filter(p =>
+                    x < p.x + p.width + gap - 0.01 &&
+                    p.x < x + item.width + gap - 0.01
+                ).sort((a,b) => a.y - b.y);
+                for (const p of blockers) {
+                    if (y + height + gap > p.y - 0.01 && y < p.y + p.height + gap - 0.01) {
+                        y = p.y + p.height + gap;
+                    }
                 }
-                card.style.setProperty('--collage-rowspan',String(Math.max(1,Math.ceil((height+gap)/unit))));
-            });
-            // The grid must place cards first. Then small empty seams beside a
-            // taller work can be filled by cropping the adjacent video, never
-            // stretching its pixels or changing a generative canvas shape.
-            requestAnimationFrame(() => fillCollageSeams(cards,gap,unit));
-        });
-    }
-
-    function fillCollageSeams(cards,gap,unit) {
-        // The same crop may not be desirable in a narrow phone layout.
-        if (window.innerWidth <= 650) return;
-        const boxes = cards.map(card => ({
-            card,
-            rect: card.getBoundingClientRect(),
-            motion: card.classList.contains('motion-item')
-        })).filter(box => box.rect.width > 0 && box.rect.height > 0);
-        const tolerance = Math.max(5,unit*2);
-        const overlapsX = (a,b) => Math.min(a.right,b.right)-Math.max(a.left,b.left) > 4;
-        for (const box of boxes) {
-            if (!box.motion) continue;
-            const r = box.rect;
-            const neighbours = boxes.filter(peer => {
-                if (peer===box || Math.abs(peer.rect.top-r.top)>tolerance) return false;
-                const q=peer.rect;
-                return Math.abs(q.right+gap-r.left)<=tolerance ||
-                    Math.abs(r.right+gap-q.left)<=tolerance;
-            });
-            if (!neighbours.length) continue;
-            const taller = neighbours.reduce((best,peer) =>
-                peer.rect.bottom>best.rect.bottom?peer:best,neighbours[0]);
-            const extra = taller.rect.bottom-r.bottom;
-            // Don't alter clips needing heavy cropping or already aligned rows.
-            if (extra <= gap+unit*2 || extra > Math.min(140,r.height*0.25)) continue;
-            // There must genuinely be a hole. Never cover another card that
-            // the existing dense-grid layout has already placed beneath it.
-            const blocked = boxes.some(other => other!==box &&
-                overlapsX(other.rect,r) &&
-                other.rect.top >= r.bottom-2 &&
-                other.rect.top < taller.rect.bottom-2);
-            if (blocked) continue;
-            const height = Math.ceil(taller.rect.bottom-r.top);
-            box.card.classList.add('collage-gap-filled');
-            box.card.style.setProperty('--collage-fill-height',height+'px');
-            box.card.style.setProperty('--collage-rowspan',String(Math.ceil((height+gap)/unit)));
+                if (!selected || y < selected.y - 0.25 ||
+                    (Math.abs(y-selected.y) <= 0.25 && col < selected.col)) {
+                    selected = {col,x,y};
+                }
+            }
+            const x = selected.x;
+            const y = selected.y;
+            item.card.style.setProperty('--masonry-x', x + 'px');
+            item.card.style.setProperty('--masonry-y', y + 'px');
+            placements.push({x,y,width:item.width,height});
+            bottom = Math.max(bottom,y+height);
         }
+        row.style.height = Math.ceil(bottom) + 'px';
     }
     function setupUnifiedCollage() {
-        const row=grid.querySelector(':scope > .living-artworks-row');
+        const row = grid.querySelector(':scope > .living-artworks-row');
         if (!row) return;
         if (!collageObserver && typeof ResizeObserver !== 'undefined') {
-            collageObserver=new ResizeObserver(() => {
-                const width=Math.round(row.getBoundingClientRect().width);
+            collageObserver = new ResizeObserver(() => {
+                const width = Math.round(row.getBoundingClientRect().width);
                 if (width !== lastCollageWidth) {
-                    lastCollageWidth=width;
+                    lastCollageWidth = width;
                     scheduleUnifiedCollage();
                 }
             });
             collageObserver.observe(row);
         }
         if (!row.dataset.collageEvents) {
-            row.dataset.collageEvents='true';
-            row.addEventListener('load',event => {
-                if(event.target?.matches?.('.motion-poster, .living-render')) scheduleUnifiedCollage();
+            row.dataset.collageEvents = 'true';
+            row.addEventListener('load', event => {
+                if (event.target?.matches?.('.motion-poster, .living-render')) {
+                    scheduleUnifiedCollage();
+                }
             },true);
         }
         scheduleUnifiedCollage();

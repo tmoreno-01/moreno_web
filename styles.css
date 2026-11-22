@@ -3417,3 +3417,46 @@ body.time-mode #ios-brush-selector {
   height: var(--collage-fill-height) !important;
   aspect-ratio: auto !important;
 }
+
+/* REAL MASONRY — replaces the 4px CSS grid that left huge holes at 50–75% zoom.
+   Keep all artworks' original aspect ratios, and a true 12px/10px gap.
+   JavaScript positions items using their real heights and recalculates on resize. */
+#page-motion #motion-grid > .living-artworks-row {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    flex: 0 0 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    grid-template-columns: none !important;
+    grid-auto-rows: auto !important;
+    column-count: auto !important;
+    gap: 0 !important;
+}
+#page-motion #motion-grid > .living-artworks-row > :is(.living-artwork,.motion-item) {
+    position: absolute !important;
+    inset: auto !important;
+    left: var(--masonry-x,0px) !important;
+    top: var(--masonry-y,0px) !important;
+    display: block !important;
+    width: var(--masonry-width,100%) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    flex: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    box-sizing: border-box !important;
+    --motion-item-width: 100%;
+    --motion-row-height: auto;
+}
+#page-motion #motion-grid > .living-artworks-row > .motion-item .work-image,
+#page-motion #motion-grid > .living-artworks-row > .motion-item.collage-gap-filled .work-image {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: var(--collage-aspect,.5625) !important;
+}
+
