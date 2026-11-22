@@ -3410,3 +3410,10 @@ body.time-mode #ios-brush-selector {
   row-gap: 0 !important;
   column-gap: var(--collage-gap,12px) !important;
 }
+
+/* Fill small seams beside taller artworks without stretching portrait videos.
+   Other artworks keep their original aspect ratios and the existing 10/12px spacing. */
+#page-motion #motion-grid > .living-artworks-row > .motion-item.collage-gap-filled .work-image {
+  height: var(--collage-fill-height) !important;
+  aspect-ratio: auto !important;
+}
