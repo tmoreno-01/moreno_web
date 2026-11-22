@@ -4986,6 +4986,7 @@ window.addEventListener('resize', () => {
        uploading the original to motion/ and its mobile encode to motion/phone/.
        The list is only used when the Digital page is opened. */
     const MOTION_FILES = Object.freeze([
+        'upresunderground-web.mp4',
         'citydreamer-web.mp4',
         'highercar-web.mp4',
         'highstreet-web.mp4',
@@ -5525,7 +5526,7 @@ window.addEventListener('resize', () => {
     }
 
     function motionPhoneFileURL(filename) {
-        const mobileName = /^(citydreamer|highercar|highstreet|underground|sidetrack)-web\.mp4$/.test(filename)
+        const mobileName = /^(citydreamer|highercar|highstreet|underground|sidetrack|upresunderground)-web\.mp4$/.test(filename)
             ? filename.replace(/-web\.mp4$/, '-mobile.mp4') : filename;
         return MOTION_PHONE_FOLDER + String(mobileName)
             .split('/')
@@ -5534,7 +5535,7 @@ window.addEventListener('resize', () => {
     }
 
     function motionPosterURL(filename) {
-        const posterName = /^(citydreamer|highercar|highstreet|underground|sidetrack)-web\.mp4$/.test(filename)
+        const posterName = /^(citydreamer|highercar|highstreet|underground|sidetrack|upresunderground)-web\.mp4$/.test(filename)
             ? filename.replace(/-web\.mp4$/, '-poster.webp')
             : String(filename).replace(/\.[^/.]+$/, '.webp');
         return MOTION_POSTER_FOLDER + posterName
@@ -8380,7 +8381,11 @@ window.addEventListener('resize', () => {
             const kind = livingWorks.find(work => work.card === card)?.kind;
             const wide = kind === snakeKind || kind === scaffoldKind || kind === 18 ||
                 kind === 13 || kind === 12;
-            const span = wide ? Math.min(columns, columns >= 6 ? 3 : 2) : 1;
+            // A modest two-column landscape feature, without changing other pieces.
+            const featureLandscape = card.classList.contains('motion-item') &&
+                MOTION_FILES[Number(card.dataset.motionIndex)] === 'upresunderground-web.mp4';
+            const span = featureLandscape ? Math.min(columns, 2) :
+                wide ? Math.min(columns, columns >= 6 ? 3 : 2) : 1;
             card.style.setProperty('--collage-colspan',String(span));
         });
 
@@ -8473,6 +8478,7 @@ window.addEventListener('resize', () => {
         // The five portraits are interspersed just below snake, around books
         // and squares. Every old MP4 joins the same grid, filling leftover holes.
         const places = [
+            ['upresunderground-web.mp4', snakeKind],
             ['citydreamer-web.mp4', 20],
             ['highercar-web.mp4', 'citydreamer-web.mp4'],
             ['highstreet-web.mp4', 13],
