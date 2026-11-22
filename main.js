@@ -359,7 +359,7 @@ let lastThemeClickTime = 0;
 let isPaintingActive = true; // Add this line here
         
         let isCollageMode = true; 
-        let collageZoomLevel = 0; // State variable for our 4 zoom levels (0, 1, 2, 3)
+        let collageZoomLevel = 2; // Start Gallery at three pieces per row on desktop
        let currentGridDampener = 1;
  let resizeTimer;
         let collageDataInitialized = false;
@@ -410,7 +410,7 @@ let isPaintingActive = true; // Add this line here
             const savedTheme = safeStorageGet('theme');
             const savedLayoutMode = safeStorageGet('layoutMode');
 // Add this block to load the zoom level
-    const savedZoom = safeStorageGet('collageZoomLevel');
+    const savedZoom = safeStorageGet('collageZoomLevelV3');
     if (savedZoom !== null) {
         collageZoomLevel = parseInt(savedZoom, 10);
     }
@@ -3496,7 +3496,7 @@ function cycleCollageZoom() {
     collageZoomLevel = (collageZoomLevel + 1) % maxZoom;
     
     // Add this line to save the level to the browser
-    safeStorageSet('collageZoomLevel', collageZoomLevel);
+    safeStorageSet('collageZoomLevelV3', collageZoomLevel);
     
     updateGalleryLayout();
 }
@@ -8364,7 +8364,7 @@ window.addEventListener('resize', () => {
         if (!row || !row.isConnected) return;
         const width = row.getBoundingClientRect().width;
         if (width < 20) return;
-        const gap = window.innerWidth <= 650 ? 10 : 16;
+        const gap = window.innerWidth <= 650 ? 10 : 12;
         const minWidth = window.innerWidth <= 650 ? 165 : 295;
         const columns = Math.max(1,Math.min(9,Math.floor((width + gap)/(minWidth + gap))));
         row.style.setProperty('--collage-columns',String(columns));
@@ -8382,7 +8382,7 @@ window.addEventListener('resize', () => {
         });
         // Let CSS resolve column widths before measuring real stage heights.
         requestAnimationFrame(() => {
-            const unit = 8;
+            const unit = 4;
             cards.forEach(card => {
                 const stage = card.querySelector('.work-image');
                 if (!stage) return;
@@ -8397,7 +8397,7 @@ window.addEventListener('resize', () => {
                 const height=card.classList.contains('motion-item')
                     ? bounds.width / Math.max(0.1,ratio)
                     : bounds.height;
-                const span=Math.max(1,Math.ceil((height+gap)/(unit+gap)));
+                const span=Math.max(1,Math.ceil((height+gap)/unit));
                 card.style.setProperty('--collage-rowspan',String(span));
             });
         });
@@ -8418,7 +8418,7 @@ window.addEventListener('resize', () => {
         if (!row.dataset.collageEvents) {
             row.dataset.collageEvents='true';
             row.addEventListener('load',event => {
-                if(event.target?.matches?.('.motion-poster')) scheduleUnifiedCollage();
+                if(event.target?.matches?.('.motion-poster, .living-render')) scheduleUnifiedCollage();
             },true);
         }
         scheduleUnifiedCollage();

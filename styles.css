@@ -3401,3 +3401,12 @@ body.time-mode #ios-brush-selector {
     #page-motion .overlay-content {padding-inline:6px !important;}
     #page-motion #motion-grid > .living-artworks-row {gap:10px !important;}
 }
+
+/* November 2026: consistent, tightly packed Digital collage spacing.
+   4px vertical measurement + reserved 10/12px margins removes the variable
+   empty space caused by 8px rows combined with 16px row gaps. */
+#page-motion #motion-grid > .living-artworks-row {
+  grid-auto-rows: 4px !important;
+  row-gap: 0 !important;
+  column-gap: var(--collage-gap,12px) !important;
+}
