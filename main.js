@@ -8353,94 +8353,143 @@ window.addEventListener('resize', () => {
         if (lastItem) motionBatchObserver.observe(lastItem);
     }
 
-    // Real, responsive masonry. Every card is placed independently rather
-    // than occupying shared CSS grid tracks, so zoom does not produce holes.
+    // Digital page: fully justified, aspect-ratio-aware collage.
+    // Unlike independent masonry columns, each completed row occupies the
+    // exact width available: no unfillable holes beside 16:9 or tall works.
     let collageLayoutFrame = 0;
     let collageObserver = null;
     let lastCollageWidth = -1;
+
     function scheduleUnifiedCollage() {
         if (collageLayoutFrame) return;
         collageLayoutFrame = requestAnimationFrame(layoutUnifiedCollage);
     }
+
+    function livingStageRatio(card) {
+        const stage = card.querySelector('.living-stage');
+        if (!stage) return 1;
+        const text = getComputedStyle(stage).aspectRatio;
+        const parts = text.split('/').map(value => Number(value.trim()));
+        if (parts.length === 2 && parts.every(Number.isFinite) && parts[0] > 0 && parts[1] > 0) {
+            return parts[0] / parts[1];
+        }
+        const single = Number(text);
+        if (Number.isFinite(single) && single > 0) return single;
+        const kind = livingWorks.find(work => work.card === card)?.kind;
+        if (kind === snakeKind) return window.innerWidth <= 600 ? 0.8 : 2;
+        if (kind === scaffoldKind) return window.innerWidth <= 600 ? 1 : 1.6;
+        if (kind === 18) return window.innerWidth <= 600 ? 6 / 7 : 75 / 32;
+        if (kind === 13) return 2;
+        if (kind === 12) return 1.5;
+        return 1;
+    }
+
+    function planJustifiedCollage(entries, width, gap, target, phone) {
+        const count = entries.length;
+        const dp = Array(count + 1).fill(Infinity);
+        const next = Array(count).fill(count);
+        dp[count] = 0;
+        const maxItems = phone ? 2 : 13;
+        const minHeight = phone ? target * 0.55 : target * 0.65;
+        const maxHeight = phone ? target * 1.7 : target * 1.55;
+
+        for (let start = count - 1; start >= 0; start--) {
+            let ratioTotal = 0;
+            for (let end = start + 1; end <= Math.min(count, start + maxItems); end++) {
+                ratioTotal += entries[end - 1].ratio;
+                const size = end - start;
+                // On phones, landscape films and wide generative works get
+                // a full-width row rather than becoming tiny beside a portrait.
+                if (phone && size > 1 && entries.slice(start, end).some(item => item.ratio >= 1.2)) continue;
+                const height = (width - gap * (size - 1)) / ratioTotal;
+                if (height <= 0) break;
+                // Different ratios share one visual row without changing the
+                // native aspect of any embedded art or MP4.
+                const deviation = Math.log(height / target);
+                let cost = deviation * deviation * 2 + 0.04;
+                if (height < minHeight) cost += 6 * ((minHeight - height) / minHeight) ** 2;
+                if (height > maxHeight) cost += 8 * ((height - maxHeight) / maxHeight) ** 2;
+                // Avoid a single narrow portrait being stretched across an
+                // entire row when it can sit beside another portrait.
+                if (size === 1 && entries[start].ratio < 0.9 && count > 1) cost += 0.65;
+                if (end === count && size === 1 && start > 0) cost += 0.55;
+                // Keep the final row sensible if a batch hasn't fully loaded.
+                if (end === count && height > maxHeight) cost += 0.75;
+                cost += dp[end];
+                if (cost < dp[start]) {
+                    dp[start] = cost;
+                    next[start] = end;
+                }
+            }
+        }
+        const rows = [];
+        for (let start = 0; start < count;) {
+            const end = Math.max(start + 1, next[start]);
+            rows.push(entries.slice(start, end));
+            start = end;
+        }
+        return rows;
+    }
+
     function layoutUnifiedCollage() {
         collageLayoutFrame = 0;
         const row = grid.querySelector(':scope > .living-artworks-row');
         if (!row || !row.isConnected) return;
-        const width = row.getBoundingClientRect().width;
+        const width = Math.floor(row.getBoundingClientRect().width);
         if (width < 20) return;
-        const viewport = window.innerWidth;
-        const gap = viewport <= 650 ? 10 : 12;
-        const minimum = viewport <= 600 ? 165 : viewport <= 1024 ? 235 : 285;
-        const maxColumns = viewport <= 600 ? 2 : viewport <= 1024 ? 4 : 12;
-        const columns = Math.max(1, Math.min(maxColumns, Math.floor((width + gap) / (minimum + gap))));
-        const colWidth = (width - gap * (columns - 1)) / columns;
+
+        const phone = window.innerWidth <= 650;
+        const gap = phone ? 10 : 12;
+        const target = phone
+            ? Math.min(410, Math.max(220, width * 0.84))
+            : window.innerWidth <= 1024
+                ? Math.min(490, Math.max(310, width * 0.38))
+                : Math.min(560, Math.max(320, width * 0.285));
         const cards = Array.from(row.children).filter(card =>
             card.classList.contains('living-artwork') || card.classList.contains('motion-item'));
         if (!cards.length) { row.style.height = '0px'; return; }
 
-        // First give every artwork its final width. Then measure its actual
-        // aspect-ratio-driven height once. Never resize a rendered iframe by
-        // distorting its video/canvas, and never crop to hide a bad layout.
-        const dimensions = cards.map(card => {
+        const entries = cards.map(card => {
             card.classList.remove('collage-gap-filled');
             card.style.removeProperty('--collage-fill-height');
-            const kind = livingWorks.find(work => work.card === card)?.kind;
-            const filename = card.classList.contains('motion-item')
-                ? MOTION_FILES[Number(card.dataset.motionIndex)] : '';
-            const isWide = kind === snakeKind || kind === scaffoldKind ||
-                kind === 18 || kind === 13 || kind === 12;
-            const isLandscapeFeature = filename === 'upresunderground-web.mp4';
-            const span = Math.min(columns, isLandscapeFeature ? 2 :
-                isWide ? (columns >= 7 ? 3 : 2) : 1);
-            const cardWidth = colWidth * span + gap * (span - 1);
-            card.style.setProperty('--masonry-width', cardWidth + 'px');
-            if (filename) {
-                card.style.setProperty('--collage-aspect', String(Math.max(0.1, readMotionRatio(card))));
-            }
-            return {card, span, width:cardWidth};
+            const motion = card.classList.contains('motion-item');
+            const ratio = Math.max(0.12, Math.min(5, motion ? readMotionRatio(card) : livingStageRatio(card)));
+            if (motion) card.style.setProperty('--collage-aspect', String(ratio));
+            return {card, ratio};
         });
-
-        const placements = [];
-        let bottom = 0;
-        // Every next artwork searches for the highest free position among all
-        // possible column starts, including holes below a shorter neighbour.
-        // This is independent of grid-auto-rows and exact at any browser zoom.
-        for (const item of dimensions) {
-            const measured = item.card.getBoundingClientRect().height;
-            const height = Math.max(1, measured);
-            let selected = null;
-            for (let col = 0; col <= columns - item.span; col++) {
-                const x = col * (colWidth + gap);
-                let y = 0;
-                const blockers = placements.filter(p =>
-                    x < p.x + p.width + gap - 0.01 &&
-                    p.x < x + item.width + gap - 0.01
-                ).sort((a,b) => a.y - b.y);
-                for (const p of blockers) {
-                    if (y + height + gap > p.y - 0.01 && y < p.y + p.height + gap - 0.01) {
-                        y = p.y + p.height + gap;
-                    }
-                }
-                if (!selected || y < selected.y - 0.25 ||
-                    (Math.abs(y-selected.y) <= 0.25 && col < selected.col)) {
-                    selected = {col,x,y};
-                }
+        const planned = planJustifiedCollage(entries, width, gap, target, phone);
+        let y = 0;
+        planned.forEach((members, rowIndex) => {
+            const ratioTotal = members.reduce((sum, entry) => sum + entry.ratio, 0);
+            const available = width - gap * (members.length - 1);
+            let height = available / ratioTotal;
+            // A final unfinished batch may contain only one portrait. Keep it
+            // at a sensible size rather than making it several screens tall.
+            if (rowIndex === planned.length - 1 && members.length === 1 && entries.length > 1) {
+                height = Math.min(height, target * 1.38);
             }
-            const x = selected.x;
-            const y = selected.y;
-            item.card.style.setProperty('--masonry-x', x + 'px');
-            item.card.style.setProperty('--masonry-y', y + 'px');
-            placements.push({x,y,width:item.width,height});
-            bottom = Math.max(bottom,y+height);
-        }
-        row.style.height = Math.ceil(bottom) + 'px';
+            let x = 0;
+            members.forEach((entry, i) => {
+                const itemWidth = i === members.length - 1 &&
+                    (rowIndex !== planned.length - 1 || height * ratioTotal >= available - 1)
+                    ? Math.max(1, width - x)
+                    : Math.max(1, height * entry.ratio);
+                entry.card.style.setProperty('--packed-x', x.toFixed(3) + 'px');
+                entry.card.style.setProperty('--packed-y', y.toFixed(3) + 'px');
+                entry.card.style.setProperty('--packed-width', itemWidth.toFixed(3) + 'px');
+                x += itemWidth + gap;
+            });
+            y += height + gap;
+        });
+        row.style.height = Math.ceil(y - gap) + 'px';
     }
+
     function setupUnifiedCollage() {
         const row = grid.querySelector(':scope > .living-artworks-row');
         if (!row) return;
         if (!collageObserver && typeof ResizeObserver !== 'undefined') {
             collageObserver = new ResizeObserver(() => {
-                const width = Math.round(row.getBoundingClientRect().width);
+                const width = Math.floor(row.getBoundingClientRect().width);
                 if (width !== lastCollageWidth) {
                     lastCollageWidth = width;
                     scheduleUnifiedCollage();
@@ -8451,14 +8500,12 @@ window.addEventListener('resize', () => {
         if (!row.dataset.collageEvents) {
             row.dataset.collageEvents = 'true';
             row.addEventListener('load', event => {
-                if (event.target?.matches?.('.motion-poster, .living-render')) {
-                    scheduleUnifiedCollage();
-                }
-            },true);
+                if (event.target?.matches?.('.motion-poster, .living-render')) scheduleUnifiedCollage();
+            }, true);
         }
         scheduleUnifiedCollage();
     }
-    window.addEventListener('resize',scheduleUnifiedCollage,{passive:true});
+    window.addEventListener('resize', scheduleUnifiedCollage, {passive:true});
 
     function positionFeaturedMotionCards(items) {
         const row=grid.querySelector(':scope > .living-artworks-row');

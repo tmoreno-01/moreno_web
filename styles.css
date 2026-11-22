@@ -3418,9 +3418,9 @@ body.time-mode #ios-brush-selector {
   aspect-ratio: auto !important;
 }
 
-/* REAL MASONRY — replaces the 4px CSS grid that left huge holes at 50–75% zoom.
-   Keep all artworks' original aspect ratios, and a true 12px/10px gap.
-   JavaScript positions items using their real heights and recalculates on resize. */
+/* Digital: justified mixed-media rows, not masonry bins.
+   Completed rows occupy the entire width with precisely 12px desktop / 10px
+   phone gutters. Native aspect ratios (including living iframes) are intact. */
 #page-motion #motion-grid > .living-artworks-row {
     position: relative !important;
     display: block !important;
@@ -3429,18 +3429,18 @@ body.time-mode #ios-brush-selector {
     flex: 0 0 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    gap: 0 !important;
     grid-template-columns: none !important;
     grid-auto-rows: auto !important;
     column-count: auto !important;
-    gap: 0 !important;
 }
 #page-motion #motion-grid > .living-artworks-row > :is(.living-artwork,.motion-item) {
     position: absolute !important;
     inset: auto !important;
-    left: var(--masonry-x,0px) !important;
-    top: var(--masonry-y,0px) !important;
+    left: var(--packed-x,0px) !important;
+    top: var(--packed-y,0px) !important;
     display: block !important;
-    width: var(--masonry-width,100%) !important;
+    width: var(--packed-width,100%) !important;
     min-width: 0 !important;
     max-width: none !important;
     height: auto !important;
