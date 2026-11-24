@@ -5496,9 +5496,7 @@ window.addEventListener('resize', () => {
               ' / ' + posterMeta.height + ';"'
             : '';
 
-        const cardActionLabel = touchCapable
-            ? 'Play or pause motion video'
-            : 'Open motion video fullscreen';
+        const cardActionLabel = 'Open motion video fullscreen';
 
         return (
             '<div class="' + cardClass + '" data-motion-index="' + index + '"' +
@@ -8310,7 +8308,15 @@ window.addEventListener('resize', () => {
         }
 
         if (touchCapable) {
-            bindReliableTap(workImage, toggle, '.motion-fullscreen-btn');
+            // Tap any motion artwork to open the shared fullscreen viewer.
+            // Use click rather than pointerup so scrolling does not open it.
+            workImage.addEventListener('click', (event) => {
+                window.openMotionViewer(event, index);
+            });
+            workImage.addEventListener('keydown', (event) => {
+                if (event.target !== workImage || (event.key !== 'Enter' && event.key !== ' ')) return;
+                window.openMotionViewer(event, index);
+            });
         } else {
             item.addEventListener('mouseenter', () => {
                 /* Desktop interaction is deliberately immediate. The visible
