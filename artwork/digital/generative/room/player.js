@@ -163,7 +163,7 @@ const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.c
 const fill=new T.DirectionalLight(0xffffff,.2);fill.position.set(-5,3,5);scene.add(fill);
 const ray=new T.Raycaster(),pointer=new T.Vector2(),target=new T.Vector2(),hit=new T.Vector3(),plane=new T.Plane(new T.Vector3(0,1,0),-.6);let inside=false,drag=null,dragPlane=null,dragPoint=new T.Vector3(),dragOffset=new C.Vec3(),idle=0,time=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let activePointer=null,tapCandidate=null,tapTimer=0,touchTiltOrigin=null;
+let activePointer=null,tapCandidate=null,tapTimer=0,touchTiltOrigin=null,mouseClickStart=null;
 // Both mouse hover and touch drag feed the existing tilt/gravity target.
 function setRoomTilt(x,y){target.set(T.MathUtils.clamp(x,-1,1),T.MathUtils.clamp(y,-1,1));inside=true;idle=0;}
 function startTouchTilt(x,y){release();touchTiltOrigin={x,y};setRoomTilt(0,0);}
@@ -177,11 +177,11 @@ function clearTap(){clearTimeout(tapTimer);tapTimer=0;tapCandidate=null;}
 function position(e){const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;const cursor=new T.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);if(!drag)setRoomTilt(cursor.x,cursor.y);inside=true;idle=0;camera.updateMatrixWorld();room.updateMatrixWorld(true);ray.setFromCamera(cursor,camera);ray.ray.intersectPlane(plane,hit);if(drag)ray.ray.intersectPlane(dragPlane,dragPoint);}
 function startInteraction(e){position(e);const pick=ray.intersectObjects(meshes,false)[0];if(pick){drag=pick.object.userData.body;const localPick=room.worldToLocal(pick.point.clone());drag.pointToLocalFrame(new C.Vec3(localPick.x,localPick.y,localPick.z),dragOffset);const viewNormal=new T.Vector3();camera.getWorldDirection(viewNormal);dragPlane=new T.Plane().setFromNormalAndCoplanarPoint(viewNormal,pick.point);canvas.style.cursor='grabbing';dragPoint.copy(pick.point);}}
 function activateHold(){if(!tapCandidate)return;const start=tapCandidate;clearTap();startTouchAt(start);}
-function beginPointer(e){if(e.button>0)return;if(activePointer!==null){activateHold();return;}activePointer=e.pointerId;try{canvas.setPointerCapture?.(e.pointerId);}catch{}if(e.pointerType!=='mouse'&&e.cancelable)e.preventDefault();
+function beginPointer(e){if(e.button>0)return;if(activePointer!==null){activateHold();return;}activePointer=e.pointerId;if(e.pointerType==='mouse'&&isThumbnail())mouseClickStart={x:e.clientX,y:e.clientY};try{canvas.setPointerCapture?.(e.pointerId);}catch{}if(e.pointerType!=='mouse'&&e.cancelable)e.preventDefault();
 if(e.pointerType!=='mouse'&&isThumbnail()){tapCandidate={clientX:e.clientX,clientY:e.clientY,time:performance.now()};tapTimer=setTimeout(activateHold,TAP_TIME);}else if(e.pointerType!=='mouse')startTouchAt(e);else startInteraction(e);}
-function movePointer(e){if(activePointer!==null&&activePointer!==e.pointerId)return;if(e.pointerType!=='mouse'&&activePointer===null)return;if(tapCandidate){if(Math.hypot(e.clientX-tapCandidate.clientX,e.clientY-tapCandidate.clientY)<=TAP_DISTANCE)return;activateHold();}if(e.pointerType!=='mouse'){const p=normalizedTouch(e);moveTouchTilt(p.x,p.y);}else position(e);}
+function movePointer(e){if(activePointer!==null&&activePointer!==e.pointerId)return;if(mouseClickStart&&Math.hypot(e.clientX-mouseClickStart.x,e.clientY-mouseClickStart.y)>TAP_DISTANCE)mouseClickStart=null;if(e.pointerType!=='mouse'&&activePointer===null)return;if(tapCandidate){if(Math.hypot(e.clientX-tapCandidate.clientX,e.clientY-tapCandidate.clientY)<=TAP_DISTANCE)return;activateHold();}if(e.pointerType!=='mouse'){const p=normalizedTouch(e);moveTouchTilt(p.x,p.y);}else position(e);}
 function release(){if(drag){drag.velocity.scale(.9,drag.velocity);drag.angularVelocity.scale(.85,drag.angularVelocity);}drag=null;canvas.style.cursor='grab';}
-function endPointer(e){if(activePointer!==e.pointerId)return;const completed=e.type==='pointerup'||e.type==='touchend';const tap=!!tapCandidate&&completed&&performance.now()-tapCandidate.time<TAP_TIME&&Math.hypot(e.clientX-tapCandidate.clientX,e.clientY-tapCandidate.clientY)<=TAP_DISTANCE;clearTap();activePointer=null;touchTiltOrigin=null;release();if(e.pointerType!=='mouse'||e.type!=='pointerup'||!canvas.matches(':hover')){inside=false;target.set(0,0);}if(tap)openRoomFullscreen();}
+function endPointer(e){if(activePointer!==e.pointerId)return;const completed=e.type==='pointerup'||e.type==='touchend';const mouseClick=!!mouseClickStart&&e.pointerType==='mouse'&&completed&&Math.hypot(e.clientX-mouseClickStart.x,e.clientY-mouseClickStart.y)<=TAP_DISTANCE;mouseClickStart=null;const tap=!!tapCandidate&&completed&&performance.now()-tapCandidate.time<TAP_TIME&&Math.hypot(e.clientX-tapCandidate.clientX,e.clientY-tapCandidate.clientY)<=TAP_DISTANCE;clearTap();activePointer=null;touchTiltOrigin=null;release();if(e.pointerType!=='mouse'||e.type!=='pointerup'||!canvas.matches(':hover')){inside=false;target.set(0,0);}if(tap||mouseClick)openRoomFullscreen();}
 if(window.PointerEvent){
 canvas.addEventListener('pointerdown',beginPointer,{passive:false});canvas.addEventListener('pointermove',movePointer);
 canvas.addEventListener('pointerleave',()=>{if(activePointer===null){inside=false;target.set(0,0);}});
@@ -193,10 +193,10 @@ canvas.addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.ide
 for(const type of ['touchend','touchcancel'])canvas.addEventListener(type,e=>{for(const t of e.changedTouches)endPointer(fromTouch(t,e));});
 canvas.addEventListener('mousedown',e=>beginPointer({clientX:e.clientX,clientY:e.clientY,button:e.button,pointerId:-1,pointerType:'mouse'}));
 canvas.addEventListener('mousemove',e=>movePointer({clientX:e.clientX,clientY:e.clientY,pointerId:-1,pointerType:'mouse'}));
-window.addEventListener('mouseup',()=>endPointer({pointerId:-1,pointerType:'mouse',type:'pointerup'}));
+window.addEventListener('mouseup',e=>endPointer({clientX:e.clientX,clientY:e.clientY,pointerId:-1,pointerType:'mouse',type:'pointerup'}));
 canvas.addEventListener('mouseleave',()=>{if(activePointer===null){inside=false;target.set(0,0);}});
 }
-function cancelInteraction(){clearTap();activePointer=null;touchTiltOrigin=null;release();inside=false;target.set(0,0);}
+function cancelInteraction(){clearTap();mouseClickStart=null;activePointer=null;touchTiltOrigin=null;release();inside=false;target.set(0,0);}
 addEventListener('blur',cancelInteraction);addEventListener('pagehide',cancelInteraction);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelInteraction();});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
