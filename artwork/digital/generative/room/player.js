@@ -6,7 +6,8 @@ const canvas=document.querySelector('canvas');
 try {
 const mobile=/iP(?:hone|ad|od)|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(pointer:coarse)').matches;
 const renderer=new T.WebGLRenderer({canvas,antialias:!mobile,alpha:true,powerPreference:'high-performance'});
-let renderScale=mobile?1:1.7,frameRate=60,frameCost=0,qualityFrames=0,lastQualityChange=0;
+const mobileMaxScale=Math.min(devicePixelRatio||1,2.25),mobileMinScale=Math.min(mobileMaxScale,1.75);
+let renderScale=mobile?mobileMaxScale:1.7,frameRate=60,frameCost=0,qualityFrames=0,lastQualityChange=0;
 renderer.setPixelRatio(Math.min(devicePixelRatio,renderScale));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
 const scene=new T.Scene();scene.background=null;renderer.setClearColor(0xffffff,0);scene.fog=new T.Fog(0xffffff,18,48);
 const camera=new T.PerspectiveCamera(35,1,.1,80);
@@ -346,7 +347,7 @@ const initial=objects.map(o=>({p:o.b.position.clone(),q:o.b.quaternion.clone()})
 function reset(){world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;if(!mobile){for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();});}
 canvas.addEventListener('keydown',e=>{if(e.key==='Enter'&&isThumbnail()){e.preventDefault();openRoomFullscreen();return;}if(e.key==='Escape'&&parent!==window){parent.postMessage({type:'living-close'},location.origin);return;}if(e.key.toLowerCase()==='r'){cancelInteraction();reset();}const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(dir){e.preventDefault();target.set(...dir);inside=true;idle=0;}});
 // HDR highlight bloom: light spreads from bright surfaces, rather than a white overlay.
-const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:mobile?0:2});
+const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:2});
 const bloomA=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:false});
 const bloomB=bloomA.clone();
 const postScene=new T.Scene(),postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
@@ -361,12 +362,17 @@ const quad=new T.Mesh(new T.PlaneGeometry(2,2),blur);postScene.add(quad);
 let renderCount=0;
 function renderArtwork(){if(mobile)renderer.shadowMap.needsUpdate=(renderCount++%2===0);renderer.setRenderTarget(hdr);renderer.render(scene,camera);quad.material=blur;blur.uniforms.source.value=hdr.texture;blur.uniforms.extract.value=1;blur.uniforms.stepUV.value.set(2.5/bloomA.width,0);renderer.setRenderTarget(bloomA);renderer.render(postScene,postCamera);blur.uniforms.source.value=bloomA.texture;blur.uniforms.extract.value=0;blur.uniforms.stepUV.value.set(0,2.5/bloomA.height);renderer.setRenderTarget(bloomB);renderer.render(postScene,postCamera);quad.material=finish;renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
 let lastSize='';
-function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),d=Math.min(devicePixelRatio,renderScale,mobile?Math.sqrt(420000/(w*h)):Infinity),size=w+':'+h+':'+d;if(size===lastSize)return;lastSize=size;renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();const divisor=mobile?4:3;hdr.setSize(Math.round(w*d),Math.round(h*d));bloomA.setSize(Math.max(1,Math.round(w*d/divisor)),Math.max(1,Math.round(h*d/divisor)));bloomB.setSize(bloomA.width,bloomA.height);renderer.shadowMap.needsUpdate=true;}addEventListener('resize',resize);resize();
+function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),d=mobile?Math.min(mobileMaxScale,renderScale,Math.max(mobileMinScale,Math.sqrt(1800000/(w*h)))):Math.min(devicePixelRatio,renderScale),size=w+':'+h+':'+d;if(size===lastSize)return;lastSize=size;renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();const divisor=mobile?4:3;hdr.setSize(Math.round(w*d),Math.round(h*d));bloomA.setSize(Math.max(1,Math.round(w*d/divisor)),Math.max(1,Math.round(h*d/divisor)));bloomB.setSize(bloomA.width,bloomA.height);renderer.shadowMap.needsUpdate=true;}addEventListener('resize',resize);resize();
 if(mobile)renderer.shadowMap.autoUpdate=false;
-function adaptQuality(elapsed,cost){if(!mobile||elapsed<=0||elapsed>.15)return;const ms=elapsed*1000;frameCost=qualityFrames?frameCost*.92+Math.max(ms,cost)*.08:Math.max(ms,cost);qualityFrames++;const now=performance.now();if(qualityFrames<45||now-lastQualityChange<1800)return;
-if(frameCost>24&&frameRate===60){if(renderScale>.65)renderScale=Math.max(.65,renderScale-.12);else frameRate=30;lastQualityChange=now;resize();}
-else if(frameRate===30&&cost<12&&frameCost<36&&qualityFrames>150){frameRate=60;qualityFrames=0;lastQualityChange=now;}
-else if(frameRate===60&&frameCost<18&&qualityFrames>120&&renderScale<1){renderScale=Math.min(1,renderScale+.05);lastQualityChange=now;resize();}
+// Prioritize clean Retina-scale edges: lower frame cadence before resolution,
+ // and never allow adaptive quality to fall below 1.75 device pixels per CSS pixel.
+function adaptQuality(elapsed,cost){
+if(!mobile||elapsed<=0||elapsed>.15)return;
+const ms=elapsed*1000;frameCost=qualityFrames?frameCost*.92+Math.max(ms,cost)*.08:Math.max(ms,cost);qualityFrames++;
+const now=performance.now();if(qualityFrames<45||now-lastQualityChange<2500)return;
+if(frameRate===60&&frameCost>24){frameRate=30;qualityFrames=0;lastQualityChange=now;}
+else if(frameRate===30&&frameCost>43&&renderScale>mobileMinScale){renderScale=Math.max(mobileMinScale,renderScale-.15);qualityFrames=0;lastQualityChange=now;resize();}
+else if(frameRate===30&&frameCost<35&&qualityFrames>150&&renderScale<mobileMaxScale){renderScale=Math.min(mobileMaxScale,renderScale+.1);qualityFrames=0;lastQualityChange=now;resize();}
 }
 function update(dt){time+=dt;idle+=dt;pointer.lerp(target,1-Math.exp(-dt*16));const active=inside;
 const response=v=>Math.sign(v)*Math.pow(Math.abs(v),.8),rx=response(pointer.x),ry=response(pointer.y);
