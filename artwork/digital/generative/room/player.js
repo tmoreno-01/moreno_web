@@ -97,10 +97,13 @@ body('chest carcass',[-3.9,.7,1.5],28,chestParts.slice(0,5),g=>{for(const [size,
 for(let row=0;row<3;row++){
 const cy=.28+row*.42, drawerParts=[[[.94,.035,1.18],[0,-.14,0]],[[.045,.25,1.18],[-.4475,.0175,0]],...[-.5725,.5725].map(z=>[[.94,.25,.035],[0,.0175,z]]),[[.055,.33,1.38],[.59,0,0]]];
 body('loose drawer',[-3.87,cy,1.5],1.6,drawerParts,g=>{for(const [size,pos] of drawerParts){if(size[0]===.94)box(g,[1.045,size[1]===.25?.275:size[1],size[2]],[.0525,size[1]===.25?.005:pos[1],pos[2]],wood);else if(size[1]===.25)box(g,[size[0],.275,size[2]],[pos[0],.005,pos[2]],wood);else box(g,size,pos,pos[0]>.48?white:wood);}box(g,[.05,.026,.3],[.64,.07,0],metal);for(const z of [-.135,.135])box(g,[.055,.026,.026],[.62,.07,z],metal);});
+// Tiny drawer contents add many colliding bodies for very little mobile detail.
+if(!mobile){
 for(let i=0;i<4;i++)body('pen',[-4.1+i*.14,cy-.1,1.18],.035,[[[.023,.023,.29],[0,0,0]]],g=>{const pen=cylinder(g,.0115,.0115,.26,[0,0,0],i%2?dark:metal);pen.rotation.x=Math.PI/2;const tip=new T.Mesh(new T.ConeGeometry(.011,.035,12),metal);tip.rotation.x=Math.PI/2;tip.position.z=.145;g.add(tip);box(g,[.008,.008,.07],[.012,.01,-.075],white);});
 body('pocket notebook',[-3.92,cy-.09,1.66],.12,[[[.32,.045,.4],[0,0,0]]],g=>{box(g,[.32,.045,.4],[0,0,0],row%2?dark:paper);box(g,[.29,.032,.38],[.012,0,0],paper);});
 body('small eraser',[-3.6,cy-.09,1.83],.04,[[[.09,.04,.15],[0,0,0]]],g=>box(g,[.09,.04,.15],[0,0,0],white));
 body('tape roll',[-4.13,cy-.08,1.99],.07,[[[.13,.06,.13],[0,0,0]]],g=>{const tape=new T.Mesh(new T.TorusGeometry(.045,.018,10,20),paper);tape.rotation.x=Math.PI/2;g.add(tape);});
+}
 }
 
 const chestRotation=new C.Quaternion();chestRotation.setFromEuler(0,0,0);
@@ -109,7 +112,7 @@ for(const o of objects.slice(chestStart)){const rel=new C.Vec3(o.b.position.x+3.
 for(let i=0;i<4;i++)body('book',[-.65+i*.04,.61+i*.075,.55],.35,[[[.52,.07,.36],[0,0,0]]],g=>{box(g,[.52,.07,.36],[0,0,0],i%2?dark:paper);box(g,[.49,.04,.34],[.015,0,.01],paper);});
 const fruitBowl=body('fruit bowl',[.45,.61,.55],.75,[[[.4,.045,.4],[0,0,0]]],g=>{const profile=[[0,0],[.15,0],[.24,.055],[.31,.16],[.32,.18],[.30,.18],[.285,.15],[.22,.07],[.14,.025],[0,.025]].map(p=>new T.Vector2(...p));const bowlMesh=new T.Mesh(new T.LatheGeometry(profile,40),white);bowlMesh.castShadow=bowlMesh.receiveShadow=true;g.add(bowlMesh);});
 for(let i=0;i<16;i++){const angle=i*Math.PI/8,q=new C.Quaternion();q.setFromEuler(0,-angle,0);fruitBowl.addShape(new C.Box(new C.Vec3(.065,.085,.025)),new C.Vec3(Math.sin(angle)*.265,.095,Math.cos(angle)*.265),q);}
-for(let i=0;i<5;i++){const radius=.075+(i%2)*.009,b=new C.Body({mass:.18,shape:new C.Sphere(radius),allowSleep:true,sleepSpeedLimit:.15,sleepTimeLimit:1,linearDamping:.12,angularDamping:.2});b.position.set(.45+Math.sin(i*2.4)*.115,.84+Math.floor(i/3)*.2,.55+Math.cos(i*2.4)*.115);world.addBody(b);const g=new T.Group();room.add(g);const fruit=new T.Mesh(new T.SphereGeometry(radius,24,18),mat(i%2?0xaaaaa5:0xbab8ae,.75));fruit.castShadow=fruit.receiveShadow=true;g.add(fruit);const stem=cylinder(g,.008,.006,.045,[0,radius+.012,0],wood);g.traverse(m=>{if(m.isMesh){m.userData.body=b;meshes.push(m);}});objects.push({name:i%2?'pear':'apple',b,group:g,home:b.position.clone()});}
+for(let i=0;i<(mobile?3:5);i++){const radius=.075+(i%2)*.009,b=new C.Body({mass:.18,shape:new C.Sphere(radius),allowSleep:true,sleepSpeedLimit:.15,sleepTimeLimit:1,linearDamping:.12,angularDamping:.2});b.position.set(.45+Math.sin(i*2.4)*.115,.84+Math.floor(i/3)*.2,.55+Math.cos(i*2.4)*.115);world.addBody(b);const g=new T.Group();room.add(g);const fruit=new T.Mesh(new T.SphereGeometry(radius,24,18),mat(i%2?0xaaaaa5:0xbab8ae,.75));fruit.castShadow=fruit.receiveShadow=true;g.add(fruit);const stem=cylinder(g,.008,.006,.045,[0,radius+.012,0],wood);g.traverse(m=>{if(m.isMesh){m.userData.body=b;meshes.push(m);}});objects.push({name:i%2?'pear':'apple',b,group:g,home:b.position.clone()});}
 
 body('ottoman',[-.8,.3,2.65],4,[[[.85,.6,.85],[0,0,0]]],g=>box(g,[.85,.6,.85],[0,0,0],fabric));
 function addLampLight(group,y,power){
@@ -123,14 +126,14 @@ cylinder(g,.045,.045,.18,[0,1.82,0],metal);const bulb=new T.Mesh(new T.SphereGeo
 const shelfParts=[[[1.7,.1,.55],[0,-1.3,0]],[[.08,2.7,.55],[-.81,0,0]],[[.08,2.7,.55],[.81,0,0]],[[1.7,.1,.55],[0,1.3,0]]];
 for(const y of [-.65,0,.65])shelfParts.push([[1.6,.065,.55],[0,y,0]]);
 body('bookcase',[-4,1.4,-2.75],35,shelfParts,g=>{for(const [size,pos] of shelfParts)box(g,size,pos,wood);box(g,[1.65,2.65,.035],[0,0,-.26],mat(0x666666));});
-for(let row=0;row<4;row++)for(let j=0;j<(row==1?3:6);j++){const h=.25+((j*7+row*3)%7)*.045,w=.07+(j%4)*.03;const x=-4.62+j*.19,y=.15+row*.65+h/2;
+for(let row=0;row<4;row++)for(let j=0;j<(row==1?3:6);j+=mobile?2:1){const h=.25+((j*7+row*3)%7)*.045,w=.07+(j%4)*.03;const x=-4.62+j*.19,y=.15+row*.65+h/2;
 body('shelf book',[x,y,-2.72],.18,[[[w,h,.32],[0,0,0]]],g=>{box(g,[w,h,.32],[0,0,0],j%3===0?dark:j%3===1?paper:wood);box(g,[w*.8,h*.91,.31],[0,0,.012],paper);box(g,[w,.018,.008],[0,-h*.25,.166],white);});}
 // Ordinary domestic clutter, each a small independent rigid body.
 body('side table',[2.9,.82,-2.8],4,[[[.85,.09,.65],[0,0,0]],[[.14,.78,.14],[0,-.4,0]]],g=>{box(g,[.85,.09,.65],[0,0,0],wood);box(g,[.14,.78,.14],[0,-.4,0],wood);box(g,[.55,.06,.45],[0,-.78,0],wood);});
 function mug(x,y,z){body('mug',[x,y,z],.22,[[[.18,.21,.18],[0,0,0]]],g=>{const m=new T.Mesh(new T.CylinderGeometry(.095,.08,.21,24,1,true),new T.MeshStandardMaterial({color:0xc9c9c9,roughness:.3,side:T.DoubleSide}));m.castShadow=true;g.add(m);cylinder(g,.08,.08,.012,[0,-.1,0],white);const handle=new T.Mesh(new T.TorusGeometry(.065,.018,8,18),white);handle.position.x=.105;g.add(handle);});}
 mug(2.9,.98,-2.8);
-for(let i=0;i<3;i++)body('magazine',[-3.9+i*.04,1.44+i*.025,1.5],.15,[[[.4,.025,.52],[0,0,0]]],g=>{box(g,[.4,.025,.52],[0,0,0],paper);box(g,[.25,.004,.12],[0,.015,.08],dark);});
-body('remote',[-.1,.59,.98],.1,[[[.09,.035,.26],[0,0,0]]],g=>{box(g,[.09,.035,.26],[0,0,0],dark);for(let i=0;i<5;i++)box(g,[.04,.006,.018],[0,.02,-.08+i*.033],white);});
+for(let i=0;i<(mobile?1:3);i++)body('magazine',[-3.9+i*.04,1.44+i*.025,1.5],.15,[[[.4,.025,.52],[0,0,0]]],g=>{box(g,[.4,.025,.52],[0,0,0],paper);box(g,[.25,.004,.12],[0,.015,.08],dark);});
+if(!mobile)body('remote',[-.1,.59,.98],.1,[[[.09,.035,.26],[0,0,0]]],g=>{box(g,[.09,.035,.26],[0,0,0],dark);for(let i=0;i<5;i++)box(g,[.04,.006,.018],[0,.02,-.08+i*.033],white);});
 
 body('tissue box',[2.65,.97,-2.7],.2,[[[.3,.2,.22],[0,0,0]]],g=>{box(g,[.3,.2,.22],[0,0,0],paper);const tissue=box(g,[.14,.16,.012],[0,.16,0],white);tissue.rotation.z=.3;});
 // Two cushions can slip off the sofa instead of being fused into its frame.
@@ -157,12 +160,12 @@ for(const x of [-1.13,1.13]){
 body('monitor riser',[x,1.15,-.56],1,[[[.4,.12,.3],[0,0,0]]],g=>box(g,[.4,.12,.3],[0,0,0],dark));
 body('monitor speaker',[x,1.49,-.56],2.2,[[[.36,.55,.3],[0,0,0]]],g=>{box(g,[.36,.55,.3],[0,0,0],dark);for(const [y,r] of [[-.1,.115],[.16,.043]]){const driver=cylinder(g,r,r,.02,[0,y,.16],wood);driver.rotation.x=Math.PI/2;const rim=new T.Mesh(new T.TorusGeometry(r,.009,8,32),metal);rim.position.set(0,y,.172);g.add(rim);}});
 }
-for(const bay of [-.68,.68])for(let i=0;i<9;i++)body('record sleeve',[bay-.29+i*.072,.57,0],.14,[[[.035,.57,.57],[0,0,0]]],g=>{box(g,[.035,.57,.57],[0,0,0],i%3===0?dark:i%3===1?paper:wood);box(g,[.036,.018,.12],[0,.18,.22],i%3?dark:white);});
+for(const bay of [-.68,.68])for(let i=0;i<9;i+=mobile?2:1)body('record sleeve',[bay-.29+i*.072,.57,0],.14,[[[.035,.57,.57],[0,0,0]]],g=>{box(g,[.035,.57,.57],[0,0,0],i%3===0?dark:i%3===1?paper:wood);box(g,[.036,.018,.12],[0,.18,.22],i%3?dark:white);});
 // Every deck, mixer, speaker, record and sleeve is a separate rigid body.
 const musicRotation=new C.Quaternion();musicRotation.setFromEuler(0,-Math.PI/2,0);
 for(const o of objects.slice(musicStart)){const pos=musicRotation.vmult(o.b.position);pos.x+=4.05;pos.z-=.85;o.b.position.copy(pos);o.home.copy(pos);o.b.quaternion.copy(musicRotation);o.group.position.copy(pos);o.group.quaternion.copy(musicRotation);}
 // Mixed horizontal stacks and oversized volumes give the bookcase a less uniform rhythm.
-for(let i=0;i<4;i++)body('wide book',[-3.55,.84+i*.065,-2.71],.2,[[[.45,.055,.36],[0,0,0]]],g=>box(g,[.45,.055,.36],[0,0,0],i%2?wood:paper));
+for(let i=0;i<(mobile?2:4);i++)body('wide book',[-3.55,.84+i*.065,-2.71],.2,[[[.45,.055,.36],[0,0,0]]],g=>box(g,[.45,.055,.36],[0,0,0],i%2?wood:paper));
 const hemi=new T.HemisphereLight(0xffffff,0x888888,1.15);scene.add(hemi);
 const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.castShadow=true;key.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);Object.assign(key.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:30});key.shadow.bias=-.0002;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);key.target.position.set(-1,0,2);scene.add(key.target);
 const fill=new T.DirectionalLight(0xffffff,.2);fill.position.set(-5,3,5);scene.add(fill);
@@ -207,7 +210,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelInter
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 body('small radio',[-3.9,1.56,1.93],.7,[[[.38,.22,.2],[0,0,0]]],g=>{box(g,[.38,.22,.2],[0,0,0],wood);for(let i=0;i<8;i++)box(g,[.012,.14,.008],[-.14+i*.025,0,.105],dark);const dial=cylinder(g,.027,.027,.025,[.125,0,.12],metal);dial.rotation.x=Math.PI/2;});
 body('plant pot',[3.12,.98,-2.95],.5,[[[.2,.25,.2],[0,0,0]]],g=>{cylinder(g,.12,.085,.25,[0,0,0],paper);for(let i=0;i<7;i++){const leaf=new T.Mesh(new T.SphereGeometry(1,12,8),wood);leaf.scale.set(.055,.22,.014);leaf.position.set(Math.sin(i*2.4)*.09,.25,Math.cos(i*2.4)*.08);leaf.rotation.z=Math.sin(i*2.4)*.7;leaf.rotation.y=i*2.4;g.add(leaf);}});
-body('candle',[-.2,.65,.81],.18,[[[.12,.19,.12],[0,0,0]]],g=>{cylinder(g,.06,.06,.19,[0,0,0],paper);box(g,[.008,.016,.008],[0,.1,0],dark);});
+if(!mobile)body('candle',[-.2,.65,.81],.18,[[[.12,.19,.12],[0,0,0]]],g=>{cylinder(g,.06,.06,.19,[0,0,0],paper);box(g,[.008,.016,.008],[0,.1,0],dark);});
 // A freely swinging pendant on a fixed-length cord.
 const lampAnchor=new C.Body({mass:0,position:new C.Vec3(-1.4,3.62,.8)});world.addBody(lampAnchor);
 const pendant=body('pendant lamp',[-1.4,2.5,.8],1.5,[[[.65,.35,.65],[0,0,0]]],g=>{const shade=new T.Mesh(new T.CylinderGeometry(.12,.35,.32,36,1,true),new T.MeshStandardMaterial({color:0xcacaca,side:T.DoubleSide,roughness:.6}));shade.castShadow=shade.receiveShadow=true;g.add(shade);const bulb=new T.Mesh(new T.SphereGeometry(.065,16,12),new T.MeshBasicMaterial({color:0xffffff}));bulb.position.y=-.08;g.add(bulb);addLampLight(g,-.19,24);});
