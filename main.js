@@ -6049,7 +6049,7 @@ window.addEventListener('resize', () => {
     }
 
     async function restoreLivingState(work,api){
-        if(api&&work.restoreState&&!work.restoringState){
+        if(typeof api?.restore==='function'&&work.restoreState&&!work.restoringState){
             const state=work.restoreState;work.restoreState=null;
             work.restoringState=Promise.resolve(api.restore(state)).finally(()=>{work.restoringState=null;});
         }
@@ -6085,7 +6085,7 @@ window.addEventListener('resize', () => {
             } catch { /* Older/unsupported DOM moves use the saved-state path below. */ }
         }
         const api = work.frame.contentWindow?.livingArtwork;
-        if (api?.snapshotAsync) {
+        if (typeof api?.snapshotAsync === 'function' && typeof api?.restore === 'function') {
             api.snapshotAsync().catch(() => api.snapshot()).then(state => {
                 if (move !== work.pendingMove) return;
                 work.restoreState = state;
@@ -6094,7 +6094,7 @@ window.addEventListener('resize', () => {
             }).catch(error => console.error('Artwork state transfer failed', error));
             return;
         }
-        if (api) work.restoreState = api.snapshot();
+        work.restoreState = typeof api?.snapshot === 'function' && typeof api?.restore === 'function' ? api.snapshot() : null;
         work.frame.style.opacity = '0';
         target.appendChild(work.frame);
     }
@@ -6104,7 +6104,7 @@ window.addEventListener('resize', () => {
         const work = livingFullscreen;
         livingFullscreen = null;
         moveLivingFrame(work,work.stage);
-        viewerStage.classList.remove('living-mode','living-landscape-mode','living-panorama-mode','living-story-mode','living-receipt-mode');
+        viewerStage.classList.remove('living-mode','living-landscape-mode','living-panorama-mode','living-story-mode','living-receipt-mode','living-room-mode');
         viewerStage.setAttribute('role','button');
         viewerStage.setAttribute('aria-label','Play or pause video');
         syncLivingArtwork();
@@ -6126,7 +6126,8 @@ window.addEventListener('resize', () => {
         viewerStage.classList.toggle('living-panorama-mode',work.kind === 13 || work.kind === snakeKind);
         viewerStage.classList.toggle('living-story-mode',work.kind===15 || work.kind===16 || work.kind===17 || work.kind===18);
         viewerStage.classList.toggle('living-receipt-mode',work.kind===18);
-        viewerStage.setAttribute('role','img');
+        viewerStage.classList.toggle('living-room-mode',work.kind===scaffoldKind);
+        viewerStage.setAttribute('role',work.kind===scaffoldKind ? 'group' : 'img');
         viewerStage.setAttribute('aria-label',work.title + ' — evolving generative artwork');
         moveLivingFrame(work,viewerStage);
         viewer.classList.add('active');
@@ -6166,10 +6167,10 @@ window.addEventListener('resize', () => {
             if (isSnake) card.classList.add('living-snake');
             if (isScaffold) card.classList.add('living-scaffold');
             card.innerHTML = '<div class="work-image living-stage">' +
-                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 || isScaffold ? '0' : '-1') + '"></iframe>' +
-                ((isSnake || isScaffold) ? '' : '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button>') + '</div>';
+                '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : isScaffold ? ' living-room-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 || isScaffold ? '0' : '-1') + '"></iframe>' +
+                '<button type="button" class="living-open' + (isScaffold ? ' living-open-corner' : '') + '" aria-label="Open ' + title + ' fullscreen">' + (isScaffold ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"/></svg>' : '') + '</button></div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=1' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=2' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
@@ -6178,8 +6179,9 @@ window.addEventListener('resize', () => {
                 work.frame.style.opacity = '';
                 syncLivingArtwork();
             });
-            card.querySelector('.living-open')?.addEventListener('click',event => {
-                if (kind === 12 && event.detail > 0) event.currentTarget.blur();
+            const openButton = card.querySelector('.living-open');
+            openButton.addEventListener('click', event => {
+                if (event.detail > 0) openButton.blur();
                 window.openMotionViewer(event,position-livingTitles.length);
             });
             livingObserver.observe(card);
