@@ -6169,7 +6169,7 @@ window.addEventListener('resize', () => {
                 '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 || isScaffold ? '0' : '-1') + '"></iframe>' +
                 ((isSnake || isScaffold) ? '' : '<button type="button" class="living-open" aria-label="Open ' + title + ' fullscreen"></button>') + '</div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=1' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=2' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;

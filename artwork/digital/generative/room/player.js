@@ -5,18 +5,27 @@ import {createActivityLoop} from '../activity.js';
 const canvas=document.querySelector('canvas');
 try {
 const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
+const lowPower=matchMedia('(pointer: coarse)').matches;let qualityScale=1,frameAverage=16.7,qualityFrames=0;renderer.setPixelRatio(1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
 const scene=new T.Scene();scene.background=null;renderer.setClearColor(0xffffff,0);scene.fog=new T.Fog(0xffffff,18,48);
 const camera=new T.PerspectiveCamera(35,1,.1,80);
 const room=new T.Group();scene.add(room);
-const world=new C.World({gravity:new C.Vec3(0,-9.8,0)});world.allowSleep=true;world.solver.iterations=25;world.defaultContactMaterial.friction=.13;world.defaultContactMaterial.restitution=.08;
+const world=new C.World({gravity:new C.Vec3(0,-9.8,0)});world.allowSleep=true;world.solver.iterations=25;world.defaultContactMaterial.friction=.13;world.defaultContactMaterial.restitution=.045;
+// Sweep actual AABBs, not bounding spheres sorted by a different coordinate.
+// This avoids dropping valid pairs for long, thin or offset compound bodies.
+class RoomBroadphase extends C.SAPBroadphase {
+ collisionPairs(world,p1,p2){if(this.dirty){this.sortList();this.dirty=false;}const list=this.axisList;for(let i=0;i<list.length;i++){const a=list[i];if(!a.shapes.length)continue;const upper=a.aabb.upperBound.x;for(let j=i+1;j<list.length;j++){const b=list[j];if(b.aabb.lowerBound.x>upper)break;if(b.shapes.length&&this.needBroadphaseCollision(a,b)&&a.aabb.overlaps(b.aabb)){p1.push(a);p2.push(b);}}}}
+}
+world.broadphase=new RoomBroadphase(world);world.broadphase.axisIndex=0;world.broadphase.useBoundingBoxes=true;
+world.defaultContactMaterial.contactEquationStiffness=1e8;world.defaultContactMaterial.contactEquationRelaxation=3;
 const mat=(color,roughness=.85,metalness=0)=>new T.MeshStandardMaterial({color,roughness,metalness});
 const plaster=mat(0xbcbcbc),floorMat=mat(0xaaaaaa),white=mat(0xd1d1d1),fabric=mat(0xaaaaaa),dark=mat(0x505050),wood=mat(0x909090),metal=mat(0x999999,.32,.65),paper=mat(0xd9d9d9);
 // Fine monochrome weave adds scale without coloured texture or visual noise.
 const texCanvas=document.createElement('canvas');texCanvas.width=texCanvas.height=128;const ctx=texCanvas.getContext('2d');ctx.fillStyle='#999';ctx.fillRect(0,0,128,128);for(let i=0;i<128;i+=2){ctx.strokeStyle=i%4?'#aaa':'#888';ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,128);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(128,i);ctx.stroke();}const weave=new T.CanvasTexture(texCanvas);weave.wrapS=weave.wrapT=T.RepeatWrapping;weave.repeat.set(4,4);fabric.bumpMap=weave;fabric.bumpScale=.025;
-const objects=[],meshes=[];
-function box(group,size,pos,material){const m=new T.Mesh((Math.min(...size)>.1?new RoundedBoxGeometry(...size,2,material===fabric?.07:.018):new T.BoxGeometry(...size)),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
-function cylinder(group,top,bottom,height,pos,material){const m=new T.Mesh(new T.CylinderGeometry(top,bottom,height,32),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
+const objects=[],meshes=[],boxGeometries=new Map(),cylinderGeometries=new Map();
+function boxGeometry(size,material){const rounded=Math.min(...size)>.1,radius=material===fabric?.07:.018,key=size.join(',')+':'+(rounded?radius:0);if(!boxGeometries.has(key))boxGeometries.set(key,rounded?new RoundedBoxGeometry(...size,2,radius):new T.BoxGeometry(...size));return boxGeometries.get(key);}
+function box(group,size,pos,material){const m=new T.Mesh(boxGeometry(size,material),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
+function repeatedBoxes(size,positions,material){const mesh=new T.InstancedMesh(boxGeometry(size,material),material,positions.length),matrix=new T.Matrix4();positions.forEach((p,i)=>mesh.setMatrixAt(i,matrix.makeTranslation(...p)));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;room.add(mesh);}
+function cylinder(group,top,bottom,height,pos,material){const key=[top,bottom,height].join(',');if(!cylinderGeometries.has(key))cylinderGeometries.set(key,new T.CylinderGeometry(top,bottom,height,32));const m=new T.Mesh(cylinderGeometries.get(key),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
 function body(name,pos,mass,parts,build){const group=new T.Group();room.add(group);const b=new C.Body({mass,material:world.defaultMaterial,allowSleep:true,sleepSpeedLimit:.22,sleepTimeLimit:1,linearDamping:.2,angularDamping:.36});b.position.set(...pos);for(const [s,p] of parts)b.addShape(new C.Box(new C.Vec3(s[0]/2,s[1]/2,s[2]/2)),new C.Vec3(...p));world.addBody(b);build(group);group.position.copy(b.position);group.userData.body=b;group.traverse(m=>{if(m.isMesh){m.userData.body=b;meshes.push(m);}});objects.push({name,group,b,home:b.position.clone()});return b;}
 function fixed(size,pos,material,visible=true){if(visible)box(room,size,pos,material);const b=new C.Body({mass:0,material:world.defaultMaterial,shape:new C.Box(new C.Vec3(...size.map(v=>v/2)))});b.position.set(...pos);world.addBody(b);}
 // A finite architectural fragment: the slab has a visible edge and no ground below it.
@@ -61,8 +70,7 @@ fixed([4.65,.1,.4],[1.8,1.02,-3.66],white);
 // A restrained optical halo around the luminous opening.
 const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=128;const gc=glowCanvas.getContext('2d'),gradient=gc.createRadialGradient(64,64,2,64,64,64);gradient.addColorStop(0,'rgba(255,255,255,.45)');gradient.addColorStop(.4,'rgba(255,255,255,.13)');gradient.addColorStop(1,'rgba(255,255,255,0)');gc.fillStyle=gradient;gc.fillRect(0,0,128,128);const glow=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(glowCanvas),transparent:true,opacity:.42,depthWrite:false,blending:T.AdditiveBlending}));glow.position.set(1.8,2.5,-3.55);glow.scale.set(6,4,1);room.add(glow);
 // Floorboard joints, narrow enough to remain quiet at phone scale.
-for(let x=-4.5;x<5;x+=.5)box(room,[.008,.003,7.6],[x,.003,0],mat(0x858585));
-for(let i=0;i<20;i++){const x=-4.75+i*.5;box(room,[.495,.003,.008],[x,.004,(i%3-1)*2.2],mat(0x858585));}
+const jointMat=mat(0x858585);repeatedBoxes([.008,.003,7.6],Array.from({length:19},(_,i)=>[-4.5+i*.5,.003,0]),jointMat);repeatedBoxes([.495,.003,.008],Array.from({length:20},(_,i)=>[-4.75+i*.5,.004,(i%3-1)*2.2]),jointMat);
 // Straight three-seat sofa; cushions and piping move as one solid object.
 body('sofa',[-2.4,.23,-1.7],20,[[[3.5,.55,1.35],[0,.45,0]],[[3.5,.9,.25],[0,1,-.58]],[[.25,.65,1.4],[-1.64,.75,0]],[[.25,.65,1.4],[1.64,.75,0]],...[-1.4,1.4].flatMap(x=>[-.45,.45].map(z=>[[.09,.27,.09],[x,.02,z]]))],g=>{
 box(g,[3.5,.42,1.35],[0,.4,0],fabric);box(g,[3.45,.85,.26],[0,.97,-.58],fabric);
@@ -73,13 +81,11 @@ for(const x of [-1.4,1.4])for(const z of [-.45,.45])box(g,[.09,.27,.09],[x,.02,z
 });
 // Woven rug remains an architectural anchor as the furniture slides over it.
 const rug=box(room,[4.7,.018,3.2],[-.5,.012,.55],mat(0xb0b0b0));rug.material.bumpMap=weave;rug.material.bumpScale=.012;
-for(let i=0;i<50;i++){box(room,[.015,.012,.13],[-2.8+i*.094,.017,2.2],white);box(room,[.015,.012,.13],[-2.8+i*.094,.017,-1.1],white);}
+repeatedBoxes([.015,.012,.13],Array.from({length:50},(_,i)=>[-2.8+i*.094,.017]).flatMap(([x,y])=>[[x,y,2.2],[x,y,-1.1]]),white);
 body('coffee table',[-.3,.49,.6],7,[[[2.35,.12,1.15],[0,0,0]],...[-.95,.95].flatMap(x=>[-.4,.4].map(z=>[[.075,.45,.075],[x,-.27,z]]))],g=>{box(g,[2.35,.12,1.15],[0,0,0],wood);for(const x of [-.95,.95])for(const z of [-.4,.4])box(g,[.075,.45,.075],[x,-.27,z],dark);});
 function chair(x,z,angle){
-const parts=[[[.85,.09,.88],[0,0,0]],...[-.33,.33].flatMap(x=>[-.34,.34].map(z=>[[.065,.49,.065],[x,-.27,z]])),...[-.35,.35].map(x=>[[.065,.78,.065],[x,.39,-.37]]),[[.78,.12,.07],[0,.74,-.37]],...[-.21,0,.21].map(x=>[[.055,.54,.045],[x,.39,-.37]])];
+const parts=[[[.85,.09,.88],[0,0,0]],...[-.33,.33].flatMap(x=>[-.34,.34].map(z=>[[.065,.49,.065],[x,-.27,z]])),...[-.35,.35].map(x=>[[.065,.78,.065],[x,.39,-.37]]),[[.78,.12,.07],[0,.74,-.37]],...[-.21,0,.21].map(x=>[[.055,.68,.045],[x,.365,-.37]]),...[-.34,.34].map(z=>[[.68,.035,.035],[0,-.28,z]]),...[-.33,.33].map(x=>[[.035,.035,.68],[x,-.28,0]])];
 const b=body('wooden chair',[x,.52,z],3.8,parts,g=>{for(const [size,pos] of parts)box(g,size,pos,wood);
-for(const z of [-.34,.34])box(g,[.68,.035,.035],[0,-.28,z],wood);
-for(const x of [-.33,.33])box(g,[.035,.035,.68],[x,-.28,0],wood);
 for(const x of [-.32,.32])for(const z of [-.3,.3]){const pin=cylinder(g,.012,.012,.005,[x,.047,z],metal);}
 });b.quaternion.setFromEuler(0,angle,0);
 }
@@ -88,9 +94,9 @@ chair(1.6,-.55,-.45);chair(.7,2.5,2.7);
 const chestStart=objects.length;
 const chestParts=[[[1.1,.07,1.5],[0,.665,0]],[[1.1,.07,1.5],[0,-.665,0]],[[.07,1.26,1.5],[-.515,0,0]],...[-.715,.715].map(z=>[[1.03,1.26,.07],[.035,0,z]])];
 for(const y of [-.61,-.19,.23])for(const z of [-.62,.62])chestParts.push([[.96,.035,.08],[.04,y,z]]);
-body('chest carcass',[-3.9,.7,1.5],28,chestParts.slice(0,5),g=>{for(const [size,pos] of chestParts)box(g,size,pos,wood);});
+body('chest carcass',[-3.9,.7,1.5],28,chestParts,g=>{for(const [size,pos] of chestParts)box(g,size,pos,wood);});
 for(let row=0;row<3;row++){
-const cy=.28+row*.42, drawerParts=[[[.94,.035,1.18],[0,-.14,0]],[[.045,.25,1.18],[-.4475,.0175,0]],...[-.5725,.5725].map(z=>[[.94,.25,.035],[0,.0175,z]]),[[.055,.33,1.38],[.59,0,0]]];
+const cy=.28+row*.42, drawerParts=[[[1.06,.035,1.18],[.06,-.14,0]],[[.045,.25,1.18],[-.4475,.0175,0]],...[-.5725,.5725].map(z=>[[1.06,.25,.035],[.06,.0175,z]]),[[.055,.33,1.38],[.59,0,0]]];
 body('loose drawer',[-3.87,cy,1.5],1.6,drawerParts,g=>{for(const [size,pos] of drawerParts)box(g,size,pos,pos[0]>.48?white:wood);box(g,[.05,.026,.3],[.64,.07,0],metal);for(const z of [-.135,.135])box(g,[.055,.026,.026],[.62,.07,z],metal);});
 for(let i=0;i<4;i++)body('pen',[-4.1+i*.14,cy-.1,1.18],.035,[[[.023,.023,.29],[0,0,0]]],g=>{const pen=cylinder(g,.0115,.0115,.26,[0,0,0],i%2?dark:metal);pen.rotation.x=Math.PI/2;const tip=new T.Mesh(new T.ConeGeometry(.011,.035,12),metal);tip.rotation.x=Math.PI/2;tip.position.z=.145;g.add(tip);box(g,[.008,.008,.07],[.012,.01,-.075],white);});
 body('pocket notebook',[-3.92,cy-.09,1.66],.12,[[[.32,.045,.4],[0,0,0]]],g=>{box(g,[.32,.045,.4],[0,0,0],row%2?dark:paper);box(g,[.29,.032,.38],[.012,0,0],paper);});
@@ -108,20 +114,20 @@ for(let i=0;i<5;i++){const radius=.075+(i%2)*.009,b=new C.Body({mass:.18,shape:n
 
 body('ottoman',[-.8,.3,2.65],4,[[[.85,.6,.85],[0,0,0]]],g=>box(g,[.85,.6,.85],[0,0,0],fabric));
 function addLampLight(group,y,power){
-const light=new T.SpotLight(0xffffff,power,9,Math.PI*.31,.08,2);light.position.set(0,y,0);const target=new T.Object3D();target.position.set(0,y-2,0);group.add(target);light.target=target;light.castShadow=true;light.shadow.mapSize.set(1024,1024);light.shadow.radius=.5;light.shadow.bias=-.0003;light.shadow.normalBias=.025;light.shadow.camera.near=.08;group.add(light);
+const light=new T.SpotLight(0xffffff,power,9,Math.PI*.31,.08,2);light.position.set(0,y,0);const target=new T.Object3D();target.position.set(0,y-2,0);group.add(target);light.target=target;light.castShadow=true;light.shadow.mapSize.set(lowPower?512:1024,lowPower?512:1024);light.shadow.radius=.5;light.shadow.bias=-.0003;light.shadow.normalBias=.025;light.shadow.camera.near=.08;group.add(light);
 const glow=new T.PointLight(0xffffff,1.6,1.2,2);glow.position.set(0,y+.12,0);group.add(glow);
 }
-body('floor lamp',[3.9,.12,-2.95],5,[[[.62,.18,.62],[0,0,0]],[[.07,1.9,.07],[0,1,0]],[[.72,.45,.72],[0,2,0]]],g=>{cylinder(g,.32,.32,.12,[0,0,0],metal);cylinder(g,.025,.025,1.9,[0,.98,0],metal);const shadeMat=white.clone();shadeMat.side=T.DoubleSide;shadeMat.bumpMap=weave;shadeMat.bumpScale=.008;const shade=new T.Mesh(new T.CylinderGeometry(.27,.43,.5,48,1,true),shadeMat);shade.position.y=1.95;shade.castShadow=shade.receiveShadow=true;g.add(shade);
+body('floor lamp',[3.9,.12,-2.95],5,[[[.64,.12,.64],[0,0,0]],[[.07,1.9,.07],[0,.98,0]],[[.86,.18,.86],[0,1.78,0]],[[.75,.17,.75],[0,1.955,0]],[[.64,.17,.64],[0,2.125,0]]],g=>{cylinder(g,.32,.32,.12,[0,0,0],metal);cylinder(g,.025,.025,1.9,[0,.98,0],metal);const shadeMat=white.clone();shadeMat.side=T.DoubleSide;shadeMat.bumpMap=weave;shadeMat.bumpScale=.008;const shade=new T.Mesh(new T.CylinderGeometry(.27,.43,.5,48,1,true),shadeMat);shade.position.y=1.95;shade.castShadow=shade.receiveShadow=true;g.add(shade);
 for(const [r,y] of [[.27,2.2],[.43,1.7]]){const rim=new T.Mesh(new T.TorusGeometry(r,.012,8,48),white);rim.rotation.x=Math.PI/2;rim.position.y=y;g.add(rim);}
 cylinder(g,.045,.045,.18,[0,1.82,0],metal);const bulb=new T.Mesh(new T.SphereGeometry(.065,16,12),paper);bulb.material=new T.MeshBasicMaterial({color:0xffffff});bulb.position.y=1.94;g.add(bulb);addLampLight(g,1.66,18);for(let i=0;i<3;i++){const strut=box(g,[.26,.012,.012],[Math.cos(i*2.094)*.13,1.76,Math.sin(i*2.094)*.13],metal);strut.rotation.y=-i*2.094;}});
 // Open bookcase with individual shelves and loose, differently sized books.
 const shelfParts=[[[1.7,.1,.55],[0,-1.3,0]],[[.08,2.7,.55],[-.81,0,0]],[[.08,2.7,.55],[.81,0,0]],[[1.7,.1,.55],[0,1.3,0]]];
-for(const y of [-.65,0,.65])shelfParts.push([[1.6,.065,.55],[0,y,0]]);
-body('bookcase',[-4,1.4,-2.75],35,shelfParts,g=>{for(const [size,pos] of shelfParts)box(g,size,pos,wood);box(g,[1.65,2.65,.035],[0,0,-.26],mat(0x666666));});
+for(const y of [-.65,0,.65])shelfParts.push([[1.6,.065,.55],[0,y,0]]);shelfParts.push([[1.65,2.65,.035],[0,0,-.26]]);
+body('bookcase',[-4,1.4,-2.75],35,shelfParts,g=>{const backMat=mat(0x666666);for(const [size,pos] of shelfParts)box(g,size,pos,pos[2]===-.26?backMat:wood);});
 for(let row=0;row<4;row++)for(let j=0;j<(row==1?3:6);j++){const h=.25+((j*7+row*3)%7)*.045,w=.07+(j%4)*.03;const x=-4.62+j*.19,y=.15+row*.65+h/2;
 body('shelf book',[x,y,-2.72],.18,[[[w,h,.32],[0,0,0]]],g=>{box(g,[w,h,.32],[0,0,0],j%3===0?dark:j%3===1?paper:wood);box(g,[w*.8,h*.91,.31],[0,0,.012],paper);box(g,[w,.018,.008],[0,-h*.25,.166],white);});}
 // Ordinary domestic clutter, each a small independent rigid body.
-body('side table',[2.9,.82,-2.8],4,[[[.85,.09,.65],[0,0,0]],[[.14,.78,.14],[0,-.4,0]]],g=>{box(g,[.85,.09,.65],[0,0,0],wood);box(g,[.14,.78,.14],[0,-.4,0],wood);box(g,[.55,.06,.45],[0,-.78,0],wood);});
+body('side table',[2.9,.82,-2.8],4,[[[.85,.09,.65],[0,0,0]],[[.14,.78,.14],[0,-.4,0]],[[.55,.06,.45],[0,-.78,0]]],g=>{box(g,[.85,.09,.65],[0,0,0],wood);box(g,[.14,.78,.14],[0,-.4,0],wood);box(g,[.55,.06,.45],[0,-.78,0],wood);});
 function mug(x,y,z){body('mug',[x,y,z],.22,[[[.18,.21,.18],[0,0,0]]],g=>{const m=new T.Mesh(new T.CylinderGeometry(.095,.08,.21,24,1,true),new T.MeshStandardMaterial({color:0xc9c9c9,roughness:.3,side:T.DoubleSide}));m.castShadow=true;g.add(m);cylinder(g,.08,.08,.012,[0,-.1,0],white);const handle=new T.Mesh(new T.TorusGeometry(.065,.018,8,18),white);handle.position.x=.105;g.add(handle);});}
 mug(2.9,.98,-2.8);
 for(let i=0;i<3;i++)body('magazine',[-3.9+i*.04,1.44+i*.025,1.5],.15,[[[.4,.025,.52],[0,0,0]]],g=>{box(g,[.4,.025,.52],[0,0,0],paper);box(g,[.25,.004,.12],[0,.015,.08],dark);});
@@ -145,7 +151,7 @@ const deskParts=[[[2.85,.09,1.4],[0,0,0]],[[2.7,.07,.9],[0,-.78,0]],...[-1.34,0,
 body('record console',[0,1.05,0],28,deskParts,g=>{for(const [size,pos] of deskParts.slice(0,5))box(g,size,pos,wood);for(const x of [-1.22,1.22])for(const z of [-.36,.36])cylinder(g,.025,.035,.25,[x,-.95,z],metal);box(g,[2.72,.07,.04],[0,-.7,.46],dark);});
 for(const x of [-.92,.92]){
 body('turntable',[x,1.17,.18],2.4,[[[.83,.13,.84],[0,0,0]]],g=>{box(g,[.83,.13,.84],[0,0,0],dark);box(g,[.8,.025,.81],[0,.075,0],metal);cylinder(g,.29,.29,.032,[-.035,.11,0],metal);cylinder(g,.26,.26,.008,[-.035,.131,0],dark);cylinder(g,.027,.027,.12,[.31,.13,-.27],metal);const arm=box(g,[.012,.012,.39],[.27,.19,-.1],metal);arm.rotation.y=.22;box(g,[.045,.035,.065],[.225,.17,.095],white);for(let j=0;j<3;j++)box(g,[.032,.013,.032],[-.32+j*.05,.1,.32],white);box(g,[.017,.009,.22],[.345,.1,.13],dark);box(g,[.045,.02,.018],[.345,.115,.16],white);});
-body('loose vinyl',[x-.035,1.315,.18],.12,[[[.53,.012,.53],[0,0,0]]],g=>{cylinder(g,.27,.27,.009,[0,0,0],dark);cylinder(g,.06,.06,.012,[0,.004,0],paper);for(let r=.1;r<.27;r+=.016){const groove=new T.Mesh(new T.TorusGeometry(r,.001,4,64),wood);groove.rotation.x=Math.PI/2;groove.position.y=.006;g.add(groove);}});
+body('loose vinyl',[x-.035,1.315,.18],.12,[[[.54,.024,.54],[0,0,0]]],g=>{cylinder(g,.27,.27,.009,[0,0,0],dark);cylinder(g,.06,.06,.012,[0,.004,0],paper);for(let r=.1;r<.27;r+=.016){const groove=new T.Mesh(new T.TorusGeometry(r,.001,4,64),wood);groove.rotation.x=Math.PI/2;groove.position.y=.006;g.add(groove);}});
 }
 body('mixing console',[0,1.17,.18],2,[[[.65,.13,.85],[0,0,0]]],g=>{box(g,[.65,.13,.85],[0,0,0],dark);box(g,[.61,.012,.8],[0,.072,0],metal);for(let col=0;col<4;col++){const x=-.22+col*.145;for(let row=0;row<4;row++){cylinder(g,.02,.02,.045,[x,.1,-.31+row*.09],dark);box(g,[.005,.004,.012],[x,.125,-.31+row*.09],white);}box(g,[.013,.008,.2],[x,.085,.2],dark);box(g,[.055,.025,.025],[x,.105,.14+col*.026],white);}box(g,[.3,.008,.013],[0,.085,.35],dark);box(g,[.025,.025,.055],[.04,.105,.35],white);});
 for(const x of [-1.13,1.13]){
@@ -159,7 +165,7 @@ for(const o of objects.slice(musicStart)){const pos=musicRotation.vmult(o.b.posi
 // Mixed horizontal stacks and oversized volumes give the bookcase a less uniform rhythm.
 for(let i=0;i<4;i++)body('wide book',[-3.55,.84+i*.065,-2.71],.2,[[[.45,.055,.36],[0,0,0]]],g=>box(g,[.45,.055,.36],[0,0,0],i%2?wood:paper));
 const hemi=new T.HemisphereLight(0xffffff,0x888888,1.15);scene.add(hemi);
-const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.castShadow=true;key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:30});key.shadow.bias=-.0002;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);key.target.position.set(-1,0,2);scene.add(key.target);
+const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.castShadow=true;key.shadow.mapSize.set(lowPower?1024:2048,lowPower?1024:2048);Object.assign(key.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:30});key.shadow.bias=-.0002;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);key.target.position.set(-1,0,2);scene.add(key.target);
 const fill=new T.DirectionalLight(0xffffff,.2);fill.position.set(-5,3,5);scene.add(fill);
 const ray=new T.Raycaster(),pointer=new T.Vector2(),target=new T.Vector2(),hit=new T.Vector3(),plane=new T.Plane(new T.Vector3(0,1,0),-.6);let inside=false,drag=null,dragPlane=null,dragPoint=new T.Vector3(),dragOffset=new C.Vec3(),idle=0,time=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -172,7 +178,7 @@ body('plant pot',[3.12,.98,-2.95],.5,[[[.2,.25,.2],[0,0,0]]],g=>{cylinder(g,.12,
 body('candle',[-.2,.65,.81],.18,[[[.12,.19,.12],[0,0,0]]],g=>{cylinder(g,.06,.06,.19,[0,0,0],paper);box(g,[.008,.016,.008],[0,.1,0],dark);});
 // A freely swinging pendant on a fixed-length cord.
 const lampAnchor=new C.Body({mass:0,position:new C.Vec3(-1.4,3.62,.8)});world.addBody(lampAnchor);
-const pendant=body('pendant lamp',[-1.4,2.5,.8],1.5,[[[.65,.35,.65],[0,0,0]]],g=>{const shade=new T.Mesh(new T.CylinderGeometry(.12,.35,.32,36,1,true),new T.MeshStandardMaterial({color:0xcacaca,side:T.DoubleSide,roughness:.6}));shade.castShadow=shade.receiveShadow=true;g.add(shade);const bulb=new T.Mesh(new T.SphereGeometry(.065,16,12),new T.MeshBasicMaterial({color:0xffffff}));bulb.position.y=-.08;g.add(bulb);addLampLight(g,-.19,24);});
+const pendant=body('pendant lamp',[-1.4,2.5,.8],1.5,[[[.70,.16,.70],[0,-.08,0]],[[.48,.16,.48],[0,.08,0]]],g=>{const shade=new T.Mesh(new T.CylinderGeometry(.12,.35,.32,36,1,true),new T.MeshStandardMaterial({color:0xcacaca,side:T.DoubleSide,roughness:.6}));shade.castShadow=shade.receiveShadow=true;g.add(shade);const bulb=new T.Mesh(new T.SphereGeometry(.065,16,12),new T.MeshBasicMaterial({color:0xffffff}));bulb.position.y=-.08;g.add(bulb);addLampLight(g,-.19,24);});
 pendant.collisionFilterGroup=4;pendant.angularDamping=.3;pendant.linearDamping=.08;
 // A tension-only tether cannot push the lamp down when the cable goes slack.
 const cableBodies=[],cableCount=18,cableLength=1.32;
@@ -197,7 +203,7 @@ for(let i=0;i<=cableCount;i++){const t=i/cableCount;cableCurve.points[i].lerpVec
 const attr=cord.geometry.attributes.position,normals=cord.geometry.attributes.normal;
 for(let i=0;i<=40;i++){const t=i/40,p=cableCurve.getPoint(t),tangent=cableCurve.getTangent(t),normal=new T.Vector3().crossVectors(tangent,new T.Vector3(0,0,1)).normalize(),binormal=new T.Vector3().crossVectors(tangent,normal).normalize();for(let j=0;j<=6;j++){const angle=j/6*Math.PI*2,n=normal.clone().multiplyScalar(Math.cos(angle)).addScaledVector(binormal,Math.sin(angle)),index=i*7+j;attr.setXYZ(index,p.x+n.x*.009,p.y+n.y*.009,p.z+n.z*.009);normals.setXYZ(index,n.x,n.y,n.z);}}attr.needsUpdate=normals.needsUpdate=true;cord.geometry.computeBoundingSphere();}
 // Two gathered curtains, open at the centre. Each panel has its own cloth constraints.
-const cols=24,rows=30,clothH=2.3,clothNodes=[],clothLinks=[],clothPanels=[];
+const cols=18,rows=24,clothH=2.3,clothNodes=[],clothLinks=[],clothPanels=[];
 const clothMat=new T.MeshPhysicalMaterial({color:0xb0b0b0,transparent:true,opacity:.88,roughness:.92,side:T.DoubleSide,depthWrite:false,bumpMap:weave,bumpScale:.018});
 // Fine porous shadow mask transmits part of the window light through the weave.
 const clothMaskCanvas=document.createElement('canvas');clothMaskCanvas.width=clothMaskCanvas.height=64;const maskCtx=clothMaskCanvas.getContext('2d'),maskPixels=maskCtx.createImageData(64,64);
@@ -211,7 +217,7 @@ const geometry=new T.PlaneGeometry(width,clothH,cols,rows),curtain=new T.Mesh(ge
 for(let i=0;i<=7;i++){const ring=new T.Mesh(new T.TorusGeometry(.025,.006,6,16),metal);ring.rotation.y=Math.PI/2;ring.position.set(startX+i/7*width,3.46,-3.32);room.add(ring);panel.rings.push(ring);}}
 const rail=cylinder(room,.015,.015,5.3,[1.9,3.49,-3.32],metal);rail.rotation.z=Math.PI/2;
 function collideCurtain(){
-const nearby=objects.filter(o=>{o.b.updateAABB();return o.b.aabb.lowerBound.z< -1.8&&o.b.aabb.upperBound.z> -3.65;});
+const nearby=objects.filter(o=>{if(o.b.aabbNeedsUpdate)o.b.updateAABB();return o.b.aabb.lowerBound.z< -1.8&&o.b.aabb.upperBound.z> -3.65;});
 for(const n of clothNodes){if(n.pinned)continue;for(const o of nearby){const b=o.b,a=b.aabb,p=n.p;if(p.x<a.lowerBound.x-.025||p.x>a.upperBound.x+.025||p.y<a.lowerBound.y-.025||p.y>a.upperBound.y+.025||p.z<a.lowerBound.z-.025||p.z>a.upperBound.z+.025)continue;
 const inv=b.quaternion.conjugate(),local=inv.vmult(new C.Vec3(p.x-b.position.x,p.y-b.position.y,p.z-b.position.z));
 for(let j=0;j<b.shapes.length;j++){const shape=b.shapes[j],orientation=b.shapeOrientations[j],qinv=orientation.conjugate(),v=qinv.vmult(local.vsub(b.shapeOffsets[j])),push=new C.Vec3();
@@ -222,7 +228,7 @@ if(delta.length()>.004&&b.sleepState!==C.Body.SLEEPING){const impulse=delta.scal
 }}}
 }
 let clothAccumulator=0;
-function updateCloth(dt){
+function updateCloth(dt){if(dt<=0)return;
 // Outer hems stay at the rail ends; the inner rings slide towards the low side.
 const slide=T.MathUtils.clamp(world.gravity.x/6,-1,1);
 for(let pi=0;pi<clothPanels.length;pi++){const panel=clothPanels[pi],desired=1.1+(pi===0?slide:-slide)*(slide*(pi===0?1:-1)>0?1.45:.65);panel.width+=(desired-panel.width)*(1-Math.exp(-dt*1.6));const left=pi===0?-.65:4.45-panel.width;
@@ -234,7 +240,7 @@ canvas.dataset.curtainWidths=clothPanels.map(p=>p.width.toFixed(2)).join(',');
 clothAccumulator=Math.min(clothAccumulator+dt,.08);const step=1/120;
 while(clothAccumulator>=step){clothAccumulator-=step;
 for(const n of clothNodes){if(n.pinned){n.p.copy(n.home);n.old.copy(n.home);continue;}const x=n.p.x,y=n.p.y,z=n.p.z;n.p.x+=(x-n.old.x)*.982+(world.gravity.x*.22+(n.home.x-x)*18)*step*step;n.p.y+=(y-n.old.y)*.982+world.gravity.y*step*step;n.p.z+=(z-n.old.z)*.982+(world.gravity.z*.3+(n.home.z-z)*3+Math.sin(time*.55+n.home.y*.65)*.035)*step*step;n.old.set(x,y,z);}
-for(let k=0;k<9;k++)for(const [a,b,rest,stiffness] of clothLinks){const n=clothNodes[a],m=clothNodes[b],dx=m.p.x-n.p.x,dy=m.p.y-n.p.y,dz=m.p.z-n.p.z,len=Math.hypot(dx,dy,dz);if(len<1e-8)continue;const f=(len-rest)/len*stiffness,na=m.pinned?1:.5,mb=n.pinned?1:.5;if(!n.pinned){n.p.x+=dx*f*na;n.p.y+=dy*f*na;n.p.z+=dz*f*na;}if(!m.pinned){m.p.x-=dx*f*mb;m.p.y-=dy*f*mb;m.p.z-=dz*f*mb;}}
+for(let k=0;k<7;k++)for(const [a,b,rest,stiffness] of clothLinks){const n=clothNodes[a],m=clothNodes[b],dx=m.p.x-n.p.x,dy=m.p.y-n.p.y,dz=m.p.z-n.p.z,len=Math.hypot(dx,dy,dz);if(len<1e-8)continue;const f=(len-rest)/len*stiffness,na=m.pinned?1:.5,mb=n.pinned?1:.5;if(!n.pinned){n.p.x+=dx*f*na;n.p.y+=dy*f*na;n.p.z+=dz*f*na;}if(!m.pinned){m.p.x-=dx*f*mb;m.p.y-=dy*f*mb;m.p.z-=dz*f*mb;}}
 collideCurtain();
 for(const n of clothNodes){if(n.p.z< -3.5){n.p.z=-3.5;n.old.z=n.p.z;}if(n.p.y<.03){n.p.y=.03;n.old.y=n.p.y;}}
 }
@@ -251,10 +257,12 @@ objects.find(o=>o.name==='chest carcass').b.angularDamping=.82;
 const drawerSlide=new C.Material('drawer runners');world.addContactMaterial(new C.ContactMaterial(drawerSlide,world.defaultMaterial,{friction:.018,restitution:.02}));world.addContactMaterial(new C.ContactMaterial(drawerSlide,glide,{friction:.018,restitution:.02}));
 for(const o of objects)if(o.name==='loose drawer'){o.b.material=drawerSlide;o.b.linearDamping=.06;}
 // Cache the visible geometry's support points. Thin detailing must never render below the floor.
-for(const o of objects){o.floorSupports=[];o.group.traverse(m=>{if(!m.isMesh)return;m.updateMatrix();m.geometry.computeBoundingBox();const bounds=m.geometry.boundingBox;
+for(const o of objects){o.floorSupports=[];o.group.traverse(m=>{if(!m.isMesh)return;m.updateMatrix();if(!m.geometry.boundingBox)m.geometry.computeBoundingBox();const bounds=m.geometry.boundingBox;
 if(m.geometry.type==='SphereGeometry'){const centre=new T.Vector3().applyMatrix4(m.matrix),radius=m.geometry.parameters.radius*Math.max(...m.scale.toArray());o.floorSupports.push({centre,radius});return;}
 for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])o.floorSupports.push({centre:new T.Vector3(x,y,z).applyMatrix4(m.matrix),radius:0});});}
-function protectVisibleFloor(o){const q=new T.Quaternion(o.b.quaternion.x,o.b.quaternion.y,o.b.quaternion.z,o.b.quaternion.w);let lowest=Infinity;for(const p of o.floorSupports)lowest=Math.min(lowest,p.centre.clone().applyQuaternion(q).y+o.b.position.y-p.radius);if(lowest<.004){o.b.position.y+=.004-lowest;if(o.b.velocity.y<0)o.b.velocity.y=0;o.b.aabbNeedsUpdate=true;}}
+for(const o of objects){o.supportRadius=0;for(const p of o.floorSupports)o.supportRadius=Math.max(o.supportRadius,p.centre.length()+p.radius);o.speedLimit=4.2;o.spinLimit=6;let thin=Infinity;for(const shape of o.b.shapes)if(shape.type===C.Shape.types.BOX)thin=Math.min(thin,2*Math.min(shape.halfExtents.x,shape.halfExtents.y,shape.halfExtents.z));if(o.b.mass<1&&thin<.08){o.speedLimit=Math.max(1.35,Math.min(3.2,thin*100));o.spinLimit=Math.min(6,2.2/Math.max(.08,o.supportRadius));}}
+function protectVisibleFloor(o){const b=o.b;if(b.position.y-o.supportRadius>.004)return;const {x,y,z,w}=b.quaternion,ax=2*(x*y+w*z),ay=1-2*(x*x+z*z),az=2*(y*z-w*x);let lowest=Infinity;for(const p of o.floorSupports){const c=p.centre;lowest=Math.min(lowest,ax*c.x+ay*c.y+az*c.z+b.position.y-p.radius);}if(lowest<.004){b.position.y+=.004-lowest;if(b.velocity.y<0)b.velocity.y=0;b.aabbNeedsUpdate=true;world.broadphase.dirty=true;}}
+function capMotion(o){const b=o.b,v=b.velocity.lengthSquared(),a=b.angularVelocity.lengthSquared();if(v>o.speedLimit**2)b.velocity.scale(o.speedLimit/Math.sqrt(v),b.velocity);if(a>o.spinLimit**2)b.angularVelocity.scale(o.spinLimit/Math.sqrt(a),b.angularVelocity);}
 // Settle loose contents against fixed furniture before enabling interaction.
 const anchoredForSetup=new Set(['sofa','coffee table','wooden chair','chest carcass','loose drawer','bookcase','side table','ottoman','floor lamp','record console','fruit bowl','hinged door','loose wall art','pendant lamp']);
 const setupBodies=[];
@@ -263,16 +271,19 @@ for(const o of objects)if(floorFurniture.has(o.name)){const q=new T.Quaternion(o
 fruitBowl.position.y=objects.find(o=>o.name==='coffee table').b.position.y+.083;
 
 for(const o of objects)if(anchoredForSetup.has(o.name)){setupBodies.push([o.b,o.b.mass]);o.b.mass=0;o.b.type=C.Body.STATIC;o.b.updateMassProperties();}
-for(let step=0;step<240;step++){world.step(1/120);for(const o of objects)if(o.b.type===C.Body.DYNAMIC)protectVisibleFloor(o);}
+// Yield during initial settling so the page and its loading indicator remain responsive.
+canvas.style.pointerEvents='none';world.broadphase.dirty=true;
+let setupSlice=performance.now();for(let step=0;step<240;step++){world.step(1/120);for(const o of objects)if(o.b.type===C.Body.DYNAMIC)protectVisibleFloor(o);if(performance.now()-setupSlice>8){await new Promise(resolve=>setTimeout(resolve,0));setupSlice=performance.now();}}
+canvas.style.pointerEvents='';
 for(const [b,mass] of setupBodies){b.mass=mass;b.type=C.Body.DYNAMIC;b.updateMassProperties();}
 for(const o of objects){o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();}
 for(const b of cableBodies){b.velocity.setZero();b.angularVelocity.setZero();b.force.setZero();b.torque.setZero();b.sleep();}
-const cableInitial=cableBodies.map(b=>b.position.clone());
+const cableInitial=cableBodies.map(b=>b.position.clone());let physicsAccumulator=0;const physicsStep=1/180;
 const initial=objects.map(o=>({p:o.b.position.clone(),q:o.b.quaternion.clone()}));
-function reset(){world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();});}
+function reset(){physicsAccumulator=0;world.broadphase.dirty=true;world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.aabbNeedsUpdate=true;o.b.sleep();});}
 canvas.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r')reset();const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(dir){e.preventDefault();target.set(...dir);inside=true;idle=0;}});
 // HDR highlight bloom: light spreads from bright surfaces, rather than a white overlay.
-const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:2});
+const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:lowPower?0:2});
 const bloomA=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:false});
 const bloomB=bloomA.clone();
 const postScene=new T.Scene(),postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
@@ -285,22 +296,24 @@ vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
 void main(){vec2 fringe=(uvP-.5)*.0012;vec3 c=texture2D(source,uvP).rgb;c.r=texture2D(source,uvP+fringe).r;c.b=texture2D(source,uvP-fringe).b;c+=texture2D(bloom,uvP).rgb*.54;c=aces(c*1.55);c=mix(c,vec3(1.),.065);float coverage=texture2D(source,uvP).a;gl_FragColor=vec4(mix(vec3(1.),pow(c,vec3(1./2.2)),coverage),1.);}`});
 const quad=new T.Mesh(new T.PlaneGeometry(2,2),blur);postScene.add(quad);
 function renderArtwork(){renderer.setRenderTarget(hdr);renderer.render(scene,camera);quad.material=blur;blur.uniforms.source.value=hdr.texture;blur.uniforms.extract.value=1;blur.uniforms.stepUV.value.set(2.5/bloomA.width,0);renderer.setRenderTarget(bloomA);renderer.render(postScene,postCamera);blur.uniforms.source.value=bloomA.texture;blur.uniforms.extract.value=0;blur.uniforms.stepUV.value.set(0,2.5/bloomA.height);renderer.setRenderTarget(bloomB);renderer.render(postScene,postCamera);quad.material=finish;renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
-function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();const d=renderer.getPixelRatio();hdr.setSize(Math.round(w*d),Math.round(h*d));bloomA.setSize(Math.max(1,Math.round(w*d/3)),Math.max(1,Math.round(h*d/3)));bloomB.setSize(bloomA.width,bloomA.height);}addEventListener('resize',resize);resize();
-function update(dt){time+=dt;idle+=dt;pointer.lerp(target,1-Math.exp(-dt*16));const active=inside;
+function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);const ratio=Math.min((lowPower?1.15:1.5)*qualityScale,devicePixelRatio,Math.sqrt(1600000/(w*h)));renderer.setPixelRatio(Math.max(.4,ratio));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();const d=renderer.getPixelRatio();hdr.setSize(Math.round(w*d),Math.round(h*d));bloomA.setSize(Math.max(1,Math.round(w*d/3)),Math.max(1,Math.round(h*d/3)));bloomB.setSize(bloomA.width,bloomA.height);}addEventListener('resize',resize);resize();
+function update(dt,elapsed=dt){if(elapsed>0&&elapsed<.25){frameAverage+=((elapsed*1000)-frameAverage)*.04;if(++qualityFrames>=90){qualityFrames=0;const next=frameAverage>23?Math.max(.65,qualityScale-.15):frameAverage<18?Math.min(1,qualityScale+.08):qualityScale;if(next!==qualityScale){qualityScale=next;resize();}}}dt=Math.min(dt,5*physicsStep);time+=dt;idle+=dt;pointer.lerp(target,1-Math.exp(-dt*16));const active=inside;
 const response=v=>Math.sign(v)*Math.pow(Math.abs(v),.8),rx=response(pointer.x),ry=response(pointer.y);
 const tiltQ=new T.Quaternion().setFromEuler(new T.Euler(ry*.34,rx*.42,-rx*.38,'YXZ'));
 const gravity=new T.Vector3(0,-9.8,0).applyQuaternion(tiltQ.clone().invert());
 const gx=active?gravity.x*2.85:0,gz=active?gravity.z*2.85:0;
 if(Math.abs(world.gravity.x-gx)+Math.abs(world.gravity.z-gz)>.08)for(const o of objects)o.b.wakeUp();world.gravity.set(gx,-9.8,gz);
+// Apply forces on each fixed physics step; Cannon clears them after every step.
+function applyStepForces(){
 // Larger pieces resist lateral acceleration; loose objects keep the lively response.
-for(const o of objects){const b=o.b;if(b.mass>=7){const weight=Math.max(.42,1-Math.log2(b.mass/5)*.2);b.applyForce(new C.Vec3(-gx*b.mass*(1-weight),0,-gz*b.mass*(1-weight)));}}
+for(const o of objects){const b=o.b;if(b.mass>=7&&Math.abs(gx)+Math.abs(gz)>.05){const weight=Math.max(.42,1-Math.log2(b.mass/5)*.2);b.applyForce(new C.Vec3(-gx*b.mass*(1-weight),0,-gz*b.mass*(1-weight)));}}
 // Unlatched runners let the trays travel freely in their opening direction.
 const carcass=objects.find(o=>o.name==='chest carcass').b,runnerAxis=carcass.quaternion.vmult(new C.Vec3(1,0,0));
 for(const o of objects)if(o.name==='loose drawer'){const offset=carcass.quaternion.conjugate().vmult(o.b.position.vsub(carcass.position));if(offset.x<1.15&&Math.abs(offset.y)<.85&&Math.abs(offset.z)<.3){const drive=Math.max(0,world.gravity.dot(runnerAxis));if(drive>.8){const f=runnerAxis.scale(o.b.mass*drive*3);o.b.applyForce(f);o.b.wakeUp();carcass.applyForce(f.scale(-1));}}}
 // The suspended lamp keeps more swing momentum than floor furniture. Lateral
 // acceleration lets it climb its arc; the longer, light cable can fold under slack.
 const swing=Math.min(1,Math.hypot(gx,gz)/10);
-pendant.applyForce(new C.Vec3(gx*pendant.mass*1.8,swing*swing*pendant.mass*8,gz*pendant.mass*1.8));
+if(swing>.001)pendant.applyForce(new C.Vec3(gx*pendant.mass*1.8,swing*swing*pendant.mass*8,gz*pendant.mass*1.8));
 if(swing>.05){pendant.wakeUp();for(const link of cableBodies)link.wakeUp();}
 if(drag){const b=drag,localDrag=room.worldToLocal(dragPoint.clone());localDrag.x=T.MathUtils.clamp(localDrag.x,-4.8,4.8);localDrag.y=T.MathUtils.clamp(localDrag.y,.12,3.4);localDrag.z=T.MathUtils.clamp(localDrag.z,-3.6,3.6);const offset=b.quaternion.vmult(dragOffset),grab=b.position.vadd(offset),velocity=new C.Vec3();b.getVelocityAtWorldPoint(grab,velocity);const strength=42/Math.max(1,Math.pow(b.mass/5,.16));const f=new C.Vec3((localDrag.x-grab.x)*b.mass*strength-velocity.x*b.mass*7,(localDrag.y-grab.y)*b.mass*strength-velocity.y*b.mass*7,(localDrag.z-grab.z)*b.mass*strength-velocity.z*b.mass*7);const maxForce=b.mass*48;if(f.length()>maxForce)f.scale(maxForce/f.length(),f);b.applyForce(f,offset);b.wakeUp();}
 const hingeAngle=2*Math.atan2(door.quaternion.y,door.quaternion.w);
@@ -308,24 +321,24 @@ if(hingeAngle<-.015)door.torque.y+=(-.015-hingeAngle)*180-door.angularVelocity.y
 if(hingeAngle>1.75)door.torque.y+=(1.75-hingeAngle)*180-door.angularVelocity.y*12;
 // Contact-aware settling prevents small stacked objects from chattering at rest.
 
-for(const o of objects){const b=o.b,speed=b.velocity.length(),spin=b.angularVelocity.length();if(speed>6)b.velocity.scale(6/speed,b.velocity);if(spin>8)b.angularVelocity.scale(8/spin,b.angularVelocity);}
+for(const o of objects)if(o.b.sleepState!==C.Body.SLEEPING)capMotion(o);
 if(!artReleased&&Math.hypot(gx,gz)>5){world.removeConstraint(artHook);artReleased=true;wallArt.wakeUp();}
 const shadeUp=pendant.quaternion.vmult(new C.Vec3(0,1,0));
 pendant.torque.x+=-shadeUp.z*1.2-pendant.angularVelocity.x*.38;
 pendant.torque.z+=shadeUp.x*1.2-pendant.angularVelocity.z*.38;
-world.step(1/120,dt,10);
-keepShadeUpright();
-updateCloth(dt);
-updateCable();
-if(!active&&!drag&&idle>5){const touching=new Set();for(const c of world.contacts){touching.add(c.bi);touching.add(c.bj);}for(const o of objects){const b=o.b;if(touching.has(b)&&b.velocity.length()<.6&&b.angularVelocity.length()<.8)b.sleep();}}
-for(const o of objects){protectVisibleFloor(o);o.group.position.copy(o.b.position);o.group.quaternion.copy(o.b.quaternion);}
+}
+physicsAccumulator=Math.min(physicsAccumulator+dt,5*physicsStep);let steps=0;const physicsStart=performance.now();
+while(physicsAccumulator+1e-9>=physicsStep&&steps<5){applyStepForces();world.step(physicsStep);keepShadeUpright();for(const o of objects)if(o.b.sleepState!==C.Body.SLEEPING){capMotion(o);protectVisibleFloor(o);}physicsAccumulator=Math.max(0,physicsAccumulator-physicsStep);steps++;if(steps>=2&&performance.now()-physicsStart>10){physicsAccumulator%=physicsStep;break;}}
+// Advance cloth by the actual simulated time, not by discarded catch-up time.
+updateCloth(steps*physicsStep);updateCable();
+for(const o of objects){o.group.position.copy(o.b.position);o.group.quaternion.copy(o.b.quaternion);}
 const aspect=innerWidth/innerHeight,dist=aspect<1.2?13.4:10.0;camera.position.set(-3.4,3.45,dist);camera.lookAt(.1,1.45,-.15);
 if(reduced)room.rotation.set(0,0,0);else room.quaternion.copy(tiltQ);
 room.position.x=reduced?0:rx*.3;room.position.y=reduced?0:ry*.18;
 
-canvas.dataset.shadeUp=pendant.quaternion.vmult(new C.Vec3(0,1,0)).y.toFixed(3);canvas.dataset.drawerSeparation=JSON.stringify(objects.filter(o=>o.name==='loose drawer').map(o=>o.b.position.distanceTo(objects.find(c=>c.name==='chest carcass').b.position).toFixed(2)));pendant.updateAABB();canvas.dataset.floorLampDisplacement=Math.hypot(objects.find(o=>o.name==='floor lamp').b.position.x-3.9,objects.find(o=>o.name==='floor lamp').b.position.z+2.95).toFixed(2);canvas.dataset.floorLampState=JSON.stringify((()=>{const b=objects.find(o=>o.name==='floor lamp').b;return {mass:b.mass,type:b.type,sleep:b.sleepState,pos:b.position,velocity:b.velocity,invMass:b.invMass,invSolve:b.invMassSolve};})());canvas.dataset.floorLampMotion=objects.find(o=>o.name==='floor lamp').b.velocity.length().toFixed(2);canvas.dataset.lampTop=pendant.aabb.upperBound.y.toFixed(3);canvas.dataset.lampHeight=pendant.position.y.toFixed(3);canvas.dataset.artReleased=String(artReleased);canvas.dataset.outside=String(objects.filter(o=>Math.abs(o.b.position.x)>5.3||Math.abs(o.b.position.z)>4.2||o.b.position.y<-.5).length);canvas.dataset.doorAngle=(2*Math.atan2(door.quaternion.y,door.quaternion.w)*180/Math.PI).toFixed(1);canvas.dataset.dragging=String(!!drag);canvas.dataset.sleeping=String(objects.filter(o=>o.b.sleepState===C.Body.SLEEPING).length);canvas.dataset.bodies=String(objects.length);canvas.dataset.motion=objects.reduce((sum,o)=>sum+o.b.velocity.length(),0).toFixed(2);canvas.dataset.active=String(activity?.running);
+if(!canvas.dataset.shadeUp||time-(Number(canvas.dataset.statsTime)||0)>.25){canvas.dataset.statsTime=String(time);canvas.dataset.shadeUp=pendant.quaternion.vmult(new C.Vec3(0,1,0)).y.toFixed(3);canvas.dataset.drawerSeparation=JSON.stringify(objects.filter(o=>o.name==='loose drawer').map(o=>o.b.position.distanceTo(objects.find(c=>c.name==='chest carcass').b.position).toFixed(2)));pendant.updateAABB();canvas.dataset.floorLampDisplacement=Math.hypot(objects.find(o=>o.name==='floor lamp').b.position.x-3.9,objects.find(o=>o.name==='floor lamp').b.position.z+2.95).toFixed(2);canvas.dataset.floorLampState=JSON.stringify((()=>{const b=objects.find(o=>o.name==='floor lamp').b;return {mass:b.mass,type:b.type,sleep:b.sleepState,pos:b.position,velocity:b.velocity,invMass:b.invMass,invSolve:b.invMassSolve};})());canvas.dataset.floorLampMotion=objects.find(o=>o.name==='floor lamp').b.velocity.length().toFixed(2);canvas.dataset.lampTop=pendant.aabb.upperBound.y.toFixed(3);canvas.dataset.lampHeight=pendant.position.y.toFixed(3);canvas.dataset.artReleased=String(artReleased);canvas.dataset.outside=String(objects.filter(o=>Math.abs(o.b.position.x)>5.3||Math.abs(o.b.position.z)>4.2||o.b.position.y<-.5).length);canvas.dataset.doorAngle=(2*Math.atan2(door.quaternion.y,door.quaternion.w)*180/Math.PI).toFixed(1);canvas.dataset.dragging=String(!!drag);canvas.dataset.sleeping=String(objects.filter(o=>o.b.sleepState===C.Body.SLEEPING).length);canvas.dataset.bodies=String(objects.length);canvas.dataset.motion=objects.reduce((sum,o)=>sum+o.b.velocity.length(),0).toFixed(2);canvas.dataset.active=String(activity?.running);}
 }
 let activity=createActivityLoop({update,draw:renderArtwork,fps:60});
-update(0);renderArtwork();document.querySelector('.loader').remove();window.livingArtwork={reset,getStats:()=>({bodies:objects.length})};
+update(0);renderArtwork();document.querySelector('.loader').remove();window.livingArtwork={reset,getStats:()=>({bodies:objects.length,qualityScale,physicsHz:180,renderPixelRatio:renderer.getPixelRatio()})};
 addEventListener('pagehide',()=>{activity.stop();});
 }catch(error){console.error(error);document.querySelector('.loader')?.remove();document.querySelector('#error').style.display='block';}
