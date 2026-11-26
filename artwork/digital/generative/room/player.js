@@ -362,7 +362,17 @@ if(s.artReleased!==artReleased){if(s.artReleased)world.removeConstraint(artHook)
 stateBodies.forEach((b,i)=>{const v=s.bodies[i];b.position.set(...v.p);b.previousPosition.copy(b.position);b.interpolatedPosition.copy(b.position);b.quaternion.set(...v.q);b.previousQuaternion.copy(b.quaternion);b.interpolatedQuaternion.copy(b.quaternion);b.force.setZero();b.torque.setZero();b.aabbNeedsUpdate=true;if(v.sleep)b.sleep();else{b.wakeUp();b.velocity.set(...v.v);b.angularVelocity.set(...v.w);}});
 clothNodes.forEach((n,i)=>{n.p.fromArray(s.cloth[i][0]);n.old.fromArray(s.cloth[i][1]);n.home.fromArray(s.cloth[i][2]);});clothPanels.forEach((panel,i)=>{panel.width=s.widths[i];});
 update(0);renderArtwork();}
-window.livingArtwork={reset,getStats:()=>({bodies:objects.length}),snapshot:snapshotRoom,restore:restoreRoom};
+// Same-origin bridge receives normalized coordinates from the top-level touch surface.
+let bridgedInteraction=false;
+function roomInput(action,point){
+if(action==='end'){if(bridgedInteraction){bridgedInteraction=false;cancelInteraction();}return;}
+if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
+const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;
+const e={clientX:r.left+point.x*r.width,clientY:r.top+point.y*r.height};
+if(action==='start'){cancelInteraction();bridgedInteraction=true;startInteraction(e);}
+else if(action==='move'&&bridgedInteraction)position(e);
+}
+window.livingArtwork={reset,getStats:()=>({bodies:objects.length}),snapshot:snapshotRoom,restore:restoreRoom,roomInput};
 if(parent!==window)parent.postMessage({type:'living-ready'},location.origin);
 addEventListener('pagehide',()=>{activity.stop();});
 }catch(error){console.error(error);document.querySelector('.loader')?.remove();document.querySelector('#error').style.display='block';}

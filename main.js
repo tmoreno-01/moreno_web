@@ -6075,6 +6075,7 @@ window.addEventListener('resize', () => {
         await restoreLivingState(work,api);
         work.frame.style.opacity = '';
         syncLivingArtwork();
+        work.resumeRoomTouch?.();
     });
 
     function moveLivingFrame(work,target) {
@@ -6109,7 +6110,9 @@ window.addEventListener('resize', () => {
         if (!livingFullscreen) return;
         const work = livingFullscreen;
         livingFullscreen = null;
+        work.cancelRoomTouch?.();
         moveLivingFrame(work,work.stage);
+        if(work.touchSurface)work.stage.appendChild(work.touchSurface);
         viewerStage.classList.remove('living-mode','living-landscape-mode','living-panorama-mode','living-story-mode','living-receipt-mode','living-room-mode');
         viewerStage.setAttribute('role','button');
         viewerStage.setAttribute('aria-label','Play or pause video');
@@ -6135,9 +6138,119 @@ window.addEventListener('resize', () => {
         viewerStage.classList.toggle('living-room-mode',work.kind===scaffoldKind);
         viewerStage.setAttribute('role',work.kind===scaffoldKind ? 'group' : 'img');
         viewerStage.setAttribute('aria-label',work.title + ' — evolving generative artwork');
+        work.cancelRoomTouch?.();
         moveLivingFrame(work,viewerStage);
+        if(work.touchSurface)viewerStage.appendChild(work.touchSurface);
         viewer.classList.add('active');
         syncLivingArtwork();
+    }
+
+    // The top document owns touch gestures; Safari need not deliver them through an iframe.
+    function mountRoomTouchSurface(work) {
+        const surface = document.createElement('div');
+        surface.className = 'room-touch-surface';
+        surface.tabIndex = 0;
+        surface.setAttribute('role','button');
+        surface.setAttribute('aria-label','Out of Place. Tap to open fullscreen; hold or drag to interact.');
+        work.stage.classList.add('room-touch-enabled');
+        work.frame.classList.add('room-touch-bridged');
+        work.stage.appendChild(surface);
+        work.touchSurface = surface;
+        let gesture = null, holdTimer = 0, inputAPI = null;
+        const threshold = 7, holdDelay = 220;
+        const expanded = () => livingFullscreen === work && viewer.classList.contains('active');
+        const point = (e) => ({x:e.clientX,y:e.clientY});
+        function send(action,p) {
+            const api = work.frame.contentWindow?.livingArtwork;
+            if (action === 'end') {
+                inputAPI?.roomInput('end');
+                inputAPI = null;
+                return;
+            }
+            if (typeof api?.roomInput !== 'function' || !gesture) return;
+            const r = work.frame.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            const normalized = q => ({x:(q.x-r.left)/r.width,y:(q.y-r.top)/r.height});
+            if (inputAPI !== api) {
+                inputAPI?.roomInput('end');
+                inputAPI = api;
+                api.roomInput('start',normalized(gesture.start));
+            }
+            if (action === 'move') api.roomInput('move',normalized(p));
+        }
+        function startHold() {
+            if (!gesture || gesture.dragging) return;
+            clearTimeout(holdTimer);
+            gesture.dragging = true;
+            send('start',gesture.start);
+        }
+        function begin(id,p) {
+            if (gesture) { startHold(); return; }
+            gesture = {id,start:p,last:p,started:performance.now(),dragging:false};
+            // Activate a visible room immediately even if IntersectionObserver is late.
+            work.inViewport = true;
+            resetLivingMessages(work);
+            syncLivingArtwork();
+            if (expanded()) startHold();
+            else holdTimer = setTimeout(startHold,holdDelay);
+        }
+        function move(id,p) {
+            if (!gesture || gesture.id !== id) return;
+            gesture.last = p;
+            if (!gesture.dragging && Math.hypot(p.x-gesture.start.x,p.y-gesture.start.y) > threshold) startHold();
+            if (gesture.dragging) send('move',p);
+        }
+        function finish(id,p,cancelled=false) {
+            if (!gesture || gesture.id !== id) return;
+            const tap = !cancelled && !gesture.dragging && !expanded() &&
+                performance.now()-gesture.started < holdDelay &&
+                Math.hypot(p.x-gesture.start.x,p.y-gesture.start.y) <= threshold;
+            clearTimeout(holdTimer);
+            send('end');
+            gesture = null;
+            if (tap && work.frame.parentElement===work.stage && !viewer.classList.contains('active') && isMotionPageActive()) {
+                window.openMotionViewer(null,livingWorks.indexOf(work)-livingTitles.length);
+            }
+        }
+        work.cancelRoomTouch = () => {
+            clearTimeout(holdTimer);
+            send('end');
+            gesture = null;
+        };
+        work.resumeRoomTouch = () => { if (gesture?.dragging) send('move',gesture.last); };
+        const consume = e => { if(e.cancelable)e.preventDefault();e.stopPropagation(); };
+        // Use native non-passive TouchEvents on iOS, not its cancellable pointer emulation.
+        surface.addEventListener('touchstart',e=>{
+            consume(e);
+            if (gesture || e.touches.length!==1) { startHold(); return; }
+            const t=e.changedTouches[0];if(t)begin(t.identifier,point(t));
+        },{passive:false});
+        surface.addEventListener('touchmove',e=>{
+            consume(e);
+            for(const t of e.changedTouches)move(t.identifier,point(t));
+        },{passive:false});
+        for(const type of ['touchend','touchcancel'])surface.addEventListener(type,e=>{
+            consume(e);
+            for(const t of e.changedTouches)finish(t.identifier,point(t),type==='touchcancel');
+        },{passive:false});
+        // Also support a trackpad, mouse or stylus attached to a touch-capable device.
+        surface.addEventListener('pointerdown',e=>{
+            if(e.pointerType==='touch'||e.button!==0)return;
+            consume(e);try{surface.setPointerCapture(e.pointerId);}catch{}begin(e.pointerId,point(e));
+        });
+        surface.addEventListener('pointermove',e=>{if(e.pointerType!=='touch'&&gesture){consume(e);move(e.pointerId,point(e));}});
+        for(const type of ['pointerup','pointercancel','lostpointercapture'])surface.addEventListener(type,e=>{
+            if(e.pointerType==='touch')return;
+            consume(e);finish(e.pointerId,point(e),type!=='pointerup');
+        });
+        surface.addEventListener('contextmenu',consume);
+        surface.addEventListener('click',e=>{
+            consume(e);
+            if(e.detail===0&&!expanded()&&!viewer.classList.contains('active'))window.openMotionViewer(null,livingWorks.indexOf(work)-livingTitles.length);
+        });
+        surface.addEventListener('keydown',e=>{
+            if(e.key==='Enter'||e.key===' '){consume(e);if(!expanded())window.openMotionViewer(null,livingWorks.indexOf(work)-livingTitles.length);}
+        });
     }
 
     function mountLivingArtwork() {
@@ -6177,14 +6290,16 @@ window.addEventListener('resize', () => {
                 '<iframe class="living-render' + (kind === 12 ? ' living-squares-render' : (isSnake) ? ' living-snake-render' : isScaffold ? ' living-room-render' : '') + '" title="' + title + ' — evolving generative artwork" tabindex="' + (kind === 15 || isScaffold ? '0' : '-1') + '"></iframe>' +
                 (roomTapFullscreen ? '' : '<button type="button" class="living-open' + (isScaffold ? ' living-open-corner' : '') + '" aria-label="Open ' + title + ' fullscreen">' + (isScaffold ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"/></svg>' : '') + '</button>') + '</div>';
             row.appendChild(card);
-            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=3' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
+            const work = {kind,title,card,stage:card.querySelector('.living-stage'),frame:card.querySelector('iframe'),inViewport:false,phase:(position % 3) * (1000 / 90),restoreState:null,url:isScaffold ? '/artwork/digital/generative/room/index.html?edition=4' : isSnake ? '/artwork/digital/generative/snake/index.html?edition=18' : '/artwork/digital/generative/index.html?embed=1&edition='+(kind===18?29:kind===13?147:145)+'&kind='+kind};
             livingWorks.push(work);
+            if(roomTapFullscreen)mountRoomTouchSurface(work);
             work.frame.addEventListener('load', async () => {
                 const api = work.frame.contentWindow?.livingArtwork;
                 resetLivingMessages(work);
                 await restoreLivingState(work,api);
                 work.frame.style.opacity = '';
                 syncLivingArtwork();
+                work.resumeRoomTouch?.();
             });
             const openButton = card.querySelector('.living-open');
             openButton?.addEventListener('click', event => {
@@ -9152,6 +9267,7 @@ window.addEventListener('resize', () => {
         const session = ++viewerSession;
         const closingSource = viewerSource;
         clearTimeout(viewerCloseTimer);
+        livingFullscreen?.cancelRoomTouch?.();
         if (!livingFullscreen) captureViewerFrame();
         viewerLooper.pause();
         viewer.classList.remove('active');
