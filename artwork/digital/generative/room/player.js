@@ -234,9 +234,8 @@ for(let i=0;i<=cableCount;i++){const t=i/cableCount;cableCurve.points[i].lerpVec
 const attr=cord.geometry.attributes.position,normals=cord.geometry.attributes.normal;
 for(let i=0;i<=40;i++){const t=i/40,p=cableCurve.getPoint(t),tangent=cableCurve.getTangent(t),normal=new T.Vector3().crossVectors(tangent,new T.Vector3(0,0,1)).normalize(),binormal=new T.Vector3().crossVectors(tangent,normal).normalize();for(let j=0;j<=6;j++){const angle=j/6*Math.PI*2,n=normal.clone().multiplyScalar(Math.cos(angle)).addScaledVector(binormal,Math.sin(angle)),index=i*7+j;attr.setXYZ(index,p.x+n.x*.009,p.y+n.y*.009,p.z+n.z*.009);normals.setXYZ(index,n.x,n.y,n.z);}}attr.needsUpdate=normals.needsUpdate=true;cord.geometry.computeBoundingSphere();}
 // Two gathered curtains, open at the centre. Each panel has its own cloth constraints.
-const cols=mobile?16:24,rows=mobile?20:30,clothH=2.3,clothNodes=[],clothLinks=[],clothPanels=[];
-const clothIterations=mobile?5:9,clothStep=mobile?1/60:1/120,clothVisualInterval=mobile?1/30:0;
-let clothVisualElapsed=0;
+const cols=24,rows=mobile?1:30,clothH=2.3,clothNodes=[],clothLinks=[],clothPanels=[];
+const clothIterations=9,clothStep=1/120;
 const clothMat=new (mobile?T.MeshStandardMaterial:T.MeshPhysicalMaterial)({color:0xb0b0b0,transparent:true,opacity:.88,roughness:.92,side:T.DoubleSide,depthWrite:false,bumpMap:weave,bumpScale:.018});
 // Fine porous shadow mask transmits part of the window light through the weave.
 const clothMaskCanvas=document.createElement('canvas');clothMaskCanvas.width=clothMaskCanvas.height=64;const maskCtx=clothMaskCanvas.getContext('2d'),maskPixels=maskCtx.createImageData(64,64);
@@ -244,9 +243,14 @@ for(let i=0;i<4096;i++){const v=((i*73+(i>>6)*151)%101)<58?255:0;maskPixels.data
 const clothMask=new T.CanvasTexture(clothMaskCanvas);clothMask.wrapS=clothMask.wrapT=T.RepeatWrapping;clothMask.repeat.set(6,8);
 const clothShadow=new T.MeshDepthMaterial({depthPacking:T.RGBADepthPacking,alphaMap:clothMask,alphaTest:.5,side:T.DoubleSide});
 for(const startX of [-.65,3.35]){const offset=clothNodes.length,width=1.1;
+if(!mobile){
 for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const pos=new T.Vector3(startX+x/cols*width,3.45-y/rows*clothH,-3.32+Math.sin(x/cols*Math.PI*10)*.115);clothNodes.push({p:pos,old:pos.clone(),home:pos.clone(),pinned:y===0});}
 for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const i=offset+y*(cols+1)+x;for(const [dx,dy] of [[1,0],[0,1],[1,1],[-1,1],[2,0],[0,2]]){const xx=x+dx,yy=y+dy;if(xx>=0&&xx<=cols&&yy<=rows){const j=offset+yy*(cols+1)+xx;clothLinks.push([i,j,clothNodes[i].p.distanceTo(clothNodes[j].p),(dx===2||dy===2)?.075:(dx!==0&&dy!==0)?.48:1]);}}}
-const geometry=new T.PlaneGeometry(width,clothH,cols,rows),curtain=new T.Mesh(geometry,clothMat);curtain.customDepthMaterial=clothShadow;curtain.castShadow=curtain.receiveShadow=true;room.add(curtain);const panel={geometry,offset,startX,width,rings:[]};clothPanels.push(panel);
+}
+const geometry=new T.PlaneGeometry(width,clothH,cols,rows);
+// Mobile curtains are immutable folded meshes fixed to the room: no solver or collision nodes.
+if(mobile){const pos=geometry.attributes.position;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const u=x/cols;pos.setXYZ(y*(cols+1)+x,startX+u*width,3.45-y/rows*clothH,-3.32+Math.sin(u*Math.PI*10)*.115);}pos.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere();}
+const curtain=new T.Mesh(geometry,clothMat);curtain.customDepthMaterial=clothShadow;curtain.castShadow=curtain.receiveShadow=true;room.add(curtain);const panel={geometry,offset,startX,width,rings:[]};clothPanels.push(panel);
 for(let i=0;i<=7;i++){const ring=new T.Mesh(new T.TorusGeometry(.025,.006,6,16),metal);ring.rotation.y=Math.PI/2;ring.position.set(startX+i/7*width,3.46,-3.32);room.add(ring);panel.rings.push(ring);}}
 const rail=cylinder(room,.015,.015,5.3,[1.9,3.49,-3.32],metal);rail.rotation.z=Math.PI/2;
 function collideCurtain(){
@@ -262,6 +266,7 @@ if(delta.length()>.004&&b.sleepState!==C.Body.SLEEPING){const impulse=delta.scal
 }
 let clothAccumulator=0;
 function updateCloth(dt){
+if(mobile)return;
 // Outer hems stay at the rail ends; the inner rings slide towards the low side.
 const slide=T.MathUtils.clamp(world.gravity.x/6,-1,1);
 for(let pi=0;pi<clothPanels.length;pi++){const panel=clothPanels[pi],desired=1.1+(pi===0?slide:-slide)*(slide*(pi===0?1:-1)>0?1.45:.65);panel.width+=(desired-panel.width)*(1-Math.exp(-dt*1.6));const left=pi===0?-.65:4.45-panel.width;
@@ -269,15 +274,14 @@ for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset
 for(let i=0;i<panel.rings.length;i++)panel.rings[i].position.x=left+i/(panel.rings.length-1)*panel.width;
 }
 for(const link of clothLinks)link[2]=clothNodes[link[0]].home.distanceTo(clothNodes[link[1]].home);
-if(!mobile||dt===0||renderCount%15===0)canvas.dataset.curtainWidths=clothPanels.map(p=>p.width.toFixed(2)).join(',');
-clothAccumulator=Math.min(clothAccumulator+dt,mobile?.05:.08);const step=clothStep;
+canvas.dataset.curtainWidths=clothPanels.map(p=>p.width.toFixed(2)).join(',');
+clothAccumulator=Math.min(clothAccumulator+dt,.08);const step=clothStep;
 while(clothAccumulator>=step){clothAccumulator-=step;
 for(const n of clothNodes){if(n.pinned){n.p.copy(n.home);n.old.copy(n.home);continue;}const x=n.p.x,y=n.p.y,z=n.p.z;n.p.x+=(x-n.old.x)*.982+(world.gravity.x*.22+(n.home.x-x)*18)*step*step;n.p.y+=(y-n.old.y)*.982+world.gravity.y*step*step;n.p.z+=(z-n.old.z)*.982+(world.gravity.z*.3+(n.home.z-z)*3+Math.sin(time*.55+n.home.y*.65)*.035)*step*step;n.old.set(x,y,z);}
 for(let k=0;k<clothIterations;k++)for(const [a,b,rest,stiffness] of clothLinks){const n=clothNodes[a],m=clothNodes[b],dx=m.p.x-n.p.x,dy=m.p.y-n.p.y,dz=m.p.z-n.p.z,len=Math.hypot(dx,dy,dz);if(len<1e-8)continue;const f=(len-rest)/len*stiffness,na=m.pinned?1:.5,mb=n.pinned?1:.5;if(!n.pinned){n.p.x+=dx*f*na;n.p.y+=dy*f*na;n.p.z+=dz*f*na;}if(!m.pinned){m.p.x-=dx*f*mb;m.p.y-=dy*f*mb;m.p.z-=dz*f*mb;}}
 collideCurtain();
 for(const n of clothNodes){if(n.p.z< -3.5){n.p.z=-3.5;n.old.z=n.p.z;}if(n.p.y<.03){n.p.y=.03;n.old.y=n.p.y;}}
 }
-clothVisualElapsed+=dt;if(dt>0&&clothVisualElapsed+1e-5<clothVisualInterval)return;clothVisualElapsed=0;
 for(const panel of clothPanels){for(let i=0;i<(cols+1)*(rows+1);i++){const p=clothNodes[panel.offset+i].p;panel.geometry.attributes.position.setXYZ(i,p.x,p.y,p.z);}panel.geometry.attributes.position.needsUpdate=true;panel.geometry.computeVertexNormals();panel.geometry.computeBoundingSphere();}}
 // Lower friction only where requested; the rest of the room retains its current feel.
 for(const b of world.bodies)if(!b.material)b.material=world.defaultMaterial;
@@ -339,7 +343,7 @@ for(const o of objects){o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b
 for(const b of cableBodies){b.velocity.setZero();b.angularVelocity.setZero();b.force.setZero();b.torque.setZero();b.sleep();}
 const cableInitial=cableBodies.map(b=>b.position.clone());
 const initial=objects.map(o=>({p:o.b.position.clone(),q:o.b.quaternion.clone()}));
-function reset(){world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();});}
+function reset(){world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;if(!mobile){for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();});}
 canvas.addEventListener('keydown',e=>{if(e.key==='Enter'&&isThumbnail()){e.preventDefault();openRoomFullscreen();return;}if(e.key==='Escape'&&parent!==window){parent.postMessage({type:'living-close'},location.origin);return;}if(e.key.toLowerCase()==='r'){cancelInteraction();reset();}const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(dir){e.preventDefault();target.set(...dir);inside=true;idle=0;}});
 // HDR highlight bloom: light spreads from bright surfaces, rather than a white overlay.
 const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:mobile?0:2});
@@ -393,7 +397,7 @@ pendant.torque.x+=-shadeUp.z*1.2-pendant.angularVelocity.x*.38;
 pendant.torque.z+=shadeUp.x*1.2-pendant.angularVelocity.z*.38;
 world.step(1/120,dt,mobile?6:10);
 keepShadeUpright();
-updateCloth(dt);
+if(!mobile)updateCloth(dt);
 if(!mobile||dt===0||renderCount%2===0)updateCable();
 if(!active&&!drag&&idle>5){const touching=new Set();for(const c of world.contacts){touching.add(c.bi);touching.add(c.bj);}for(const o of objects){const b=o.b;if(touching.has(b)&&b.velocity.length()<.6&&b.angularVelocity.length()<.8)b.sleep();}}
 for(const o of objects){protectVisibleFloor(o);o.group.position.copy(o.b.position);o.group.quaternion.copy(o.b.quaternion);}
@@ -422,7 +426,7 @@ if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
 if(action==='start'){cancelInteraction();bridgedInteraction=true;startTouchTilt(point.x,point.y);}
 else if(action==='move'&&bridgedInteraction)moveTouchTilt(point.x,point.y);
 }
-window.livingArtwork={reset,getStats:()=>({bodies:objects.length,mobile,frameRate,renderScale:renderer.getPixelRatio(),frameCost,drawCalls:renderer.info.render.calls,clothNodes:clothNodes.length}),snapshot:snapshotRoom,restore:restoreRoom,roomInput};
+window.livingArtwork={reset,getStats:()=>({bodies:objects.length,mobile,frameRate,renderScale:renderer.getPixelRatio(),frameCost,drawCalls:renderer.info.render.calls,clothNodes:clothNodes.length,staticCurtains:mobile}),snapshot:snapshotRoom,restore:restoreRoom,roomInput};
 if(parent!==window)parent.postMessage({type:'living-ready'},location.origin);
 addEventListener('pagehide',()=>{activity.stop();});
 }catch(error){console.error(error);document.querySelector('.loader')?.remove();document.querySelector('#error').style.display='block';}
