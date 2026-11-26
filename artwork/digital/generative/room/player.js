@@ -4,8 +4,10 @@ import * as C from './vendor/cannon-es.js';
 import {createActivityLoop} from '../activity.js';
 const canvas=document.querySelector('canvas');
 try {
-const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
+const mobile=/iP(?:hone|ad|od)|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(pointer:coarse)').matches;
+const renderer=new T.WebGLRenderer({canvas,antialias:!mobile,alpha:true,powerPreference:'high-performance'});
+let renderScale=mobile?1:1.7,frameRate=60,frameCost=0,qualityFrames=0,lastQualityChange=0;
+renderer.setPixelRatio(Math.min(devicePixelRatio,renderScale));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
 const scene=new T.Scene();scene.background=null;renderer.setClearColor(0xffffff,0);scene.fog=new T.Fog(0xffffff,18,48);
 const camera=new T.PerspectiveCamera(35,1,.1,80);
 const room=new T.Group();scene.add(room);
@@ -14,9 +16,10 @@ const mat=(color,roughness=.85,metalness=0)=>new T.MeshStandardMaterial({color,r
 const plaster=mat(0xbcbcbc),floorMat=mat(0xaaaaaa),white=mat(0xd1d1d1),fabric=mat(0xaaaaaa),dark=mat(0x505050),wood=mat(0x909090),metal=mat(0x999999,.32,.65),paper=mat(0xd9d9d9);
 // Fine monochrome weave adds scale without coloured texture or visual noise.
 const texCanvas=document.createElement('canvas');texCanvas.width=texCanvas.height=128;const ctx=texCanvas.getContext('2d');ctx.fillStyle='#999';ctx.fillRect(0,0,128,128);for(let i=0;i<128;i+=2){ctx.strokeStyle=i%4?'#aaa':'#888';ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,128);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(128,i);ctx.stroke();}const weave=new T.CanvasTexture(texCanvas);weave.wrapS=weave.wrapT=T.RepeatWrapping;weave.repeat.set(4,4);fabric.bumpMap=weave;fabric.bumpScale=.025;
-const objects=[],meshes=[];
-function box(group,size,pos,material){const m=new T.Mesh((Math.min(...size)>.1?new RoundedBoxGeometry(...size,2,material===fabric?.07:.018):new T.BoxGeometry(...size)),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
-function cylinder(group,top,bottom,height,pos,material){const m=new T.Mesh(new T.CylinderGeometry(top,bottom,height,32),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
+const objects=[],meshes=[],geometryCache=new Map();
+function cachedGeometry(key,create){if(!mobile)return create();if(!geometryCache.has(key))geometryCache.set(key,create());return geometryCache.get(key);}
+function box(group,size,pos,material){const m=new T.Mesh(cachedGeometry('box:'+size.join(',')+':'+(material===fabric),()=>Math.min(...size)>.1?new RoundedBoxGeometry(...size,2,material===fabric?.07:.018):new T.BoxGeometry(...size)),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
+function cylinder(group,top,bottom,height,pos,material){const m=new T.Mesh(cachedGeometry('cyl:'+top+','+bottom+','+height,()=>new T.CylinderGeometry(top,bottom,height,32)),material);m.position.set(...pos);m.castShadow=m.receiveShadow=true;group.add(m);return m;}
 function body(name,pos,mass,parts,build){const group=new T.Group();room.add(group);const b=new C.Body({mass,material:world.defaultMaterial,allowSleep:true,sleepSpeedLimit:.22,sleepTimeLimit:1,linearDamping:.2,angularDamping:.36});b.position.set(...pos);for(const [s,p] of parts)b.addShape(new C.Box(new C.Vec3(s[0]/2,s[1]/2,s[2]/2)),new C.Vec3(...p));world.addBody(b);build(group);group.position.copy(b.position);group.userData.body=b;group.traverse(m=>{if(m.isMesh){m.userData.body=b;meshes.push(m);}});objects.push({name,group,b,home:b.position.clone()});return b;}
 function fixed(size,pos,material,visible=true){if(visible)box(room,size,pos,material);const b=new C.Body({mass:0,material:world.defaultMaterial,shape:new C.Box(new C.Vec3(...size.map(v=>v/2)))});b.position.set(...pos);world.addBody(b);}
 // A finite architectural fragment: the slab has a visible edge and no ground below it.
@@ -60,9 +63,10 @@ for(const y of [1.05,1.05+2.35/3,1.05+2.35*2/3,3.4])fixed([4.45,.055,.14],[1.8,y
 fixed([4.65,.1,.4],[1.8,1.02,-3.66],white);
 // A restrained optical halo around the luminous opening.
 const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=128;const gc=glowCanvas.getContext('2d'),gradient=gc.createRadialGradient(64,64,2,64,64,64);gradient.addColorStop(0,'rgba(255,255,255,.45)');gradient.addColorStop(.4,'rgba(255,255,255,.13)');gradient.addColorStop(1,'rgba(255,255,255,0)');gc.fillStyle=gradient;gc.fillRect(0,0,128,128);const glow=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(glowCanvas),transparent:true,opacity:.42,depthWrite:false,blending:T.AdditiveBlending}));glow.position.set(1.8,2.5,-3.55);glow.scale.set(6,4,1);room.add(glow);
-// Floorboard joints, narrow enough to remain quiet at phone scale.
-for(let x=-4.5;x<5;x+=.5)box(room,[.008,.003,7.6],[x,.003,0],mat(0x858585));
-for(let i=0;i<20;i++){const x=-4.75+i*.5;box(room,[.495,.003,.008],[x,.004,(i%3-1)*2.2],mat(0x858585));}
+// Floorboard joints share one material, allowing the mobile renderer to batch them.
+const jointMaterial=mat(0x858585);
+for(let x=-4.5;x<5;x+=.5)box(room,[.008,.003,7.6],[x,.003,0],jointMaterial);
+for(let i=0;i<20;i++){const x=-4.75+i*.5;box(room,[.495,.003,.008],[x,.004,(i%3-1)*2.2],jointMaterial);}
 // Straight three-seat sofa; cushions and piping move as one solid object.
 body('sofa',[-2.4,.23,-1.7],20,[[[3.5,.55,1.35],[0,.45,0]],[[3.5,.9,.25],[0,1,-.58]],[[.25,.65,1.4],[-1.64,.75,0]],[[.25,.65,1.4],[1.64,.75,0]],...[-1.4,1.4].flatMap(x=>[-.45,.45].map(z=>[[.09,.27,.09],[x,.02,z]]))],g=>{
 box(g,[3.5,.42,1.35],[0,.4,0],fabric);box(g,[3.45,.85,.26],[0,.97,-.58],fabric);
@@ -108,7 +112,7 @@ for(let i=0;i<5;i++){const radius=.075+(i%2)*.009,b=new C.Body({mass:.18,shape:n
 
 body('ottoman',[-.8,.3,2.65],4,[[[.85,.6,.85],[0,0,0]]],g=>box(g,[.85,.6,.85],[0,0,0],fabric));
 function addLampLight(group,y,power){
-const light=new T.SpotLight(0xffffff,power,9,Math.PI*.31,.08,2);light.position.set(0,y,0);const target=new T.Object3D();target.position.set(0,y-2,0);group.add(target);light.target=target;light.castShadow=true;light.shadow.mapSize.set(1024,1024);light.shadow.radius=.5;light.shadow.bias=-.0003;light.shadow.normalBias=.025;light.shadow.camera.near=.08;group.add(light);
+const light=new T.SpotLight(0xffffff,power,9,Math.PI*.31,.08,2);light.position.set(0,y,0);const target=new T.Object3D();target.position.set(0,y-2,0);group.add(target);light.target=target;light.castShadow=!mobile;light.shadow.mapSize.set(1024,1024);light.shadow.radius=.5;light.shadow.bias=-.0003;light.shadow.normalBias=.025;light.shadow.camera.near=.08;group.add(light);
 const glow=new T.PointLight(0xffffff,1.6,1.2,2);glow.position.set(0,y+.12,0);group.add(glow);
 }
 body('floor lamp',[3.9,.12,-2.95],5,[[[.62,.18,.62],[0,0,0]],[[.07,1.9,.07],[0,1,0]],[[.72,.45,.72],[0,2,0]]],g=>{cylinder(g,.32,.32,.12,[0,0,0],metal);cylinder(g,.025,.025,1.9,[0,.98,0],metal);const shadeMat=white.clone();shadeMat.side=T.DoubleSide;shadeMat.bumpMap=weave;shadeMat.bumpScale=.008;const shade=new T.Mesh(new T.CylinderGeometry(.27,.43,.5,48,1,true),shadeMat);shade.position.y=1.95;shade.castShadow=shade.receiveShadow=true;g.add(shade);
@@ -159,7 +163,7 @@ for(const o of objects.slice(musicStart)){const pos=musicRotation.vmult(o.b.posi
 // Mixed horizontal stacks and oversized volumes give the bookcase a less uniform rhythm.
 for(let i=0;i<4;i++)body('wide book',[-3.55,.84+i*.065,-2.71],.2,[[[.45,.055,.36],[0,0,0]]],g=>box(g,[.45,.055,.36],[0,0,0],i%2?wood:paper));
 const hemi=new T.HemisphereLight(0xffffff,0x888888,1.15);scene.add(hemi);
-const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.castShadow=true;key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:30});key.shadow.bias=-.0002;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);key.target.position.set(-1,0,2);scene.add(key.target);
+const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.castShadow=true;key.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);Object.assign(key.shadow.camera,{left:-9,right:9,top:9,bottom:-9,near:1,far:30});key.shadow.bias=-.0002;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);key.target.position.set(-1,0,2);scene.add(key.target);
 const fill=new T.DirectionalLight(0xffffff,.2);fill.position.set(-5,3,5);scene.add(fill);
 const ray=new T.Raycaster(),pointer=new T.Vector2(),target=new T.Vector2(),hit=new T.Vector3(),plane=new T.Plane(new T.Vector3(0,1,0),-.6);let inside=false,drag=null,dragPlane=null,dragPoint=new T.Vector3(),dragOffset=new C.Vec3(),idle=0,time=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -230,8 +234,10 @@ for(let i=0;i<=cableCount;i++){const t=i/cableCount;cableCurve.points[i].lerpVec
 const attr=cord.geometry.attributes.position,normals=cord.geometry.attributes.normal;
 for(let i=0;i<=40;i++){const t=i/40,p=cableCurve.getPoint(t),tangent=cableCurve.getTangent(t),normal=new T.Vector3().crossVectors(tangent,new T.Vector3(0,0,1)).normalize(),binormal=new T.Vector3().crossVectors(tangent,normal).normalize();for(let j=0;j<=6;j++){const angle=j/6*Math.PI*2,n=normal.clone().multiplyScalar(Math.cos(angle)).addScaledVector(binormal,Math.sin(angle)),index=i*7+j;attr.setXYZ(index,p.x+n.x*.009,p.y+n.y*.009,p.z+n.z*.009);normals.setXYZ(index,n.x,n.y,n.z);}}attr.needsUpdate=normals.needsUpdate=true;cord.geometry.computeBoundingSphere();}
 // Two gathered curtains, open at the centre. Each panel has its own cloth constraints.
-const cols=24,rows=30,clothH=2.3,clothNodes=[],clothLinks=[],clothPanels=[];
-const clothMat=new T.MeshPhysicalMaterial({color:0xb0b0b0,transparent:true,opacity:.88,roughness:.92,side:T.DoubleSide,depthWrite:false,bumpMap:weave,bumpScale:.018});
+const cols=mobile?16:24,rows=mobile?20:30,clothH=2.3,clothNodes=[],clothLinks=[],clothPanels=[];
+const clothIterations=mobile?5:9,clothStep=mobile?1/60:1/120,clothVisualInterval=mobile?1/30:0;
+let clothVisualElapsed=0;
+const clothMat=new (mobile?T.MeshStandardMaterial:T.MeshPhysicalMaterial)({color:0xb0b0b0,transparent:true,opacity:.88,roughness:.92,side:T.DoubleSide,depthWrite:false,bumpMap:weave,bumpScale:.018});
 // Fine porous shadow mask transmits part of the window light through the weave.
 const clothMaskCanvas=document.createElement('canvas');clothMaskCanvas.width=clothMaskCanvas.height=64;const maskCtx=clothMaskCanvas.getContext('2d'),maskPixels=maskCtx.createImageData(64,64);
 for(let i=0;i<4096;i++){const v=((i*73+(i>>6)*151)%101)<58?255:0;maskPixels.data.set([v,v,v,255],i*4);}maskCtx.putImageData(maskPixels,0,0);
@@ -244,7 +250,7 @@ const geometry=new T.PlaneGeometry(width,clothH,cols,rows),curtain=new T.Mesh(ge
 for(let i=0;i<=7;i++){const ring=new T.Mesh(new T.TorusGeometry(.025,.006,6,16),metal);ring.rotation.y=Math.PI/2;ring.position.set(startX+i/7*width,3.46,-3.32);room.add(ring);panel.rings.push(ring);}}
 const rail=cylinder(room,.015,.015,5.3,[1.9,3.49,-3.32],metal);rail.rotation.z=Math.PI/2;
 function collideCurtain(){
-const nearby=objects.filter(o=>{o.b.updateAABB();return o.b.aabb.lowerBound.z< -1.8&&o.b.aabb.upperBound.z> -3.65;});
+const nearby=objects.filter(o=>{if(o.b.aabbNeedsUpdate)o.b.updateAABB();return o.b.aabb.lowerBound.z< -1.8&&o.b.aabb.upperBound.z> -3.65;});
 for(const n of clothNodes){if(n.pinned)continue;for(const o of nearby){const b=o.b,a=b.aabb,p=n.p;if(p.x<a.lowerBound.x-.025||p.x>a.upperBound.x+.025||p.y<a.lowerBound.y-.025||p.y>a.upperBound.y+.025||p.z<a.lowerBound.z-.025||p.z>a.upperBound.z+.025)continue;
 const inv=b.quaternion.conjugate(),local=inv.vmult(new C.Vec3(p.x-b.position.x,p.y-b.position.y,p.z-b.position.z));
 for(let j=0;j<b.shapes.length;j++){const shape=b.shapes[j],orientation=b.shapeOrientations[j],qinv=orientation.conjugate(),v=qinv.vmult(local.vsub(b.shapeOffsets[j])),push=new C.Vec3();
@@ -263,14 +269,15 @@ for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset
 for(let i=0;i<panel.rings.length;i++)panel.rings[i].position.x=left+i/(panel.rings.length-1)*panel.width;
 }
 for(const link of clothLinks)link[2]=clothNodes[link[0]].home.distanceTo(clothNodes[link[1]].home);
-canvas.dataset.curtainWidths=clothPanels.map(p=>p.width.toFixed(2)).join(',');
-clothAccumulator=Math.min(clothAccumulator+dt,.08);const step=1/120;
+if(!mobile||dt===0||renderCount%15===0)canvas.dataset.curtainWidths=clothPanels.map(p=>p.width.toFixed(2)).join(',');
+clothAccumulator=Math.min(clothAccumulator+dt,mobile?.05:.08);const step=clothStep;
 while(clothAccumulator>=step){clothAccumulator-=step;
 for(const n of clothNodes){if(n.pinned){n.p.copy(n.home);n.old.copy(n.home);continue;}const x=n.p.x,y=n.p.y,z=n.p.z;n.p.x+=(x-n.old.x)*.982+(world.gravity.x*.22+(n.home.x-x)*18)*step*step;n.p.y+=(y-n.old.y)*.982+world.gravity.y*step*step;n.p.z+=(z-n.old.z)*.982+(world.gravity.z*.3+(n.home.z-z)*3+Math.sin(time*.55+n.home.y*.65)*.035)*step*step;n.old.set(x,y,z);}
-for(let k=0;k<9;k++)for(const [a,b,rest,stiffness] of clothLinks){const n=clothNodes[a],m=clothNodes[b],dx=m.p.x-n.p.x,dy=m.p.y-n.p.y,dz=m.p.z-n.p.z,len=Math.hypot(dx,dy,dz);if(len<1e-8)continue;const f=(len-rest)/len*stiffness,na=m.pinned?1:.5,mb=n.pinned?1:.5;if(!n.pinned){n.p.x+=dx*f*na;n.p.y+=dy*f*na;n.p.z+=dz*f*na;}if(!m.pinned){m.p.x-=dx*f*mb;m.p.y-=dy*f*mb;m.p.z-=dz*f*mb;}}
+for(let k=0;k<clothIterations;k++)for(const [a,b,rest,stiffness] of clothLinks){const n=clothNodes[a],m=clothNodes[b],dx=m.p.x-n.p.x,dy=m.p.y-n.p.y,dz=m.p.z-n.p.z,len=Math.hypot(dx,dy,dz);if(len<1e-8)continue;const f=(len-rest)/len*stiffness,na=m.pinned?1:.5,mb=n.pinned?1:.5;if(!n.pinned){n.p.x+=dx*f*na;n.p.y+=dy*f*na;n.p.z+=dz*f*na;}if(!m.pinned){m.p.x-=dx*f*mb;m.p.y-=dy*f*mb;m.p.z-=dz*f*mb;}}
 collideCurtain();
 for(const n of clothNodes){if(n.p.z< -3.5){n.p.z=-3.5;n.old.z=n.p.z;}if(n.p.y<.03){n.p.y=.03;n.old.y=n.p.y;}}
 }
+clothVisualElapsed+=dt;if(dt>0&&clothVisualElapsed+1e-5<clothVisualInterval)return;clothVisualElapsed=0;
 for(const panel of clothPanels){for(let i=0;i<(cols+1)*(rows+1);i++){const p=clothNodes[panel.offset+i].p;panel.geometry.attributes.position.setXYZ(i,p.x,p.y,p.z);}panel.geometry.attributes.position.needsUpdate=true;panel.geometry.computeVertexNormals();panel.geometry.computeBoundingSphere();}}
 // Lower friction only where requested; the rest of the room retains its current feel.
 for(const b of world.bodies)if(!b.material)b.material=world.defaultMaterial;
@@ -284,15 +291,45 @@ objects.find(o=>o.name==='chest carcass').b.angularDamping=.82;
 const drawerSlide=new C.Material('drawer runners');world.addContactMaterial(new C.ContactMaterial(drawerSlide,world.defaultMaterial,{friction:.018,restitution:.02}));world.addContactMaterial(new C.ContactMaterial(drawerSlide,glide,{friction:.018,restitution:.02}));
 for(const o of objects)if(o.name==='loose drawer'){o.b.material=drawerSlide;o.b.linearDamping=.06;}
 // Cache the visible geometry's support points. Thin detailing must never render below the floor.
-for(const o of objects){o.floorSupports=[];o.group.traverse(m=>{if(!m.isMesh)return;m.updateMatrix();m.geometry.computeBoundingBox();const bounds=m.geometry.boundingBox;
+for(const o of objects){o.floorSupports=[];o.group.traverse(m=>{if(!m.isMesh)return;m.updateMatrix();if(!m.geometry.boundingBox)m.geometry.computeBoundingBox();const bounds=m.geometry.boundingBox;
 if(m.geometry.type==='SphereGeometry'){const centre=new T.Vector3().applyMatrix4(m.matrix),radius=m.geometry.parameters.radius*Math.max(...m.scale.toArray());o.floorSupports.push({centre,radius});return;}
 for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])o.floorSupports.push({centre:new T.Vector3(x,y,z).applyMatrix4(m.matrix),radius:0});});}
-function protectVisibleFloor(o){const q=new T.Quaternion(o.b.quaternion.x,o.b.quaternion.y,o.b.quaternion.z,o.b.quaternion.w);let lowest=Infinity;for(const p of o.floorSupports)lowest=Math.min(lowest,p.centre.clone().applyQuaternion(q).y+o.b.position.y-p.radius);if(lowest<.004){o.b.position.y+=.004-lowest;if(o.b.velocity.y<0)o.b.velocity.y=0;o.b.aabbNeedsUpdate=true;}}
+// Exact vertical support projection without allocating a Vector3 for every mesh corner.
+function supportBottom(o){const q=o.b.quaternion,x=q.x,y=q.y,z=q.z,w=q.w,py=o.b.position.y;
+const a=2*(x*y+w*z),b=1-2*(x*x+z*z),c=2*(y*z-w*x);
+const last=o.floorCache;if(last&&last.x===x&&last.y===y&&last.z===z&&last.w===w)return last.bottom+py;
+let bottom=Infinity;for(const p of o.floorSupports){const v=p.centre;bottom=Math.min(bottom,a*v.x+b*v.y+c*v.z-p.radius);}
+o.floorCache={x,y,z,w,bottom};return bottom+py;}
+function protectVisibleFloor(o){const lowest=supportBottom(o);if(lowest<.004){o.b.position.y+=.004-lowest;if(o.b.velocity.y<0)o.b.velocity.y=0;o.b.aabbNeedsUpdate=true;}}
+// Batch opaque meshes with identical materials inside each rigid body, preserving
+// every vertex, normal, UV, transform, shadow flag and independent physics body.
+function batchRigidMeshes(group,body=null){
+const buckets=new Map();
+for(const m of group.children.slice()){
+if(!m.isMesh||m===cord||m.customDepthMaterial||m.material.transparent||Array.isArray(m.material)||!m.geometry.attributes.normal||!m.geometry.attributes.uv)continue;
+const key=m.material.uuid+':'+m.castShadow+':'+m.receiveShadow;
+if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(m);}
+for(const batch of buckets.values()){
+if(batch.length<2)continue;
+let vertexCount=0,indexCount=0;
+for(const m of batch){vertexCount+=m.geometry.attributes.position.count;indexCount+=m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count;}
+const positions=new Float32Array(vertexCount*3),normals=new Float32Array(vertexCount*3),uvs=new Float32Array(vertexCount*2),indices=new (vertexCount>65535?Uint32Array:Uint16Array)(indexCount);
+const pos=new T.Vector3(),normal=new T.Vector3(),normalMatrix=new T.Matrix3();let vo=0,io=0;
+for(const m of batch){m.updateMatrix();normalMatrix.getNormalMatrix(m.matrix);const g=m.geometry,pa=g.attributes.position,na=g.attributes.normal,uv=g.attributes.uv;
+for(let i=0;i<pa.count;i++){pos.fromBufferAttribute(pa,i).applyMatrix4(m.matrix);normal.fromBufferAttribute(na,i).applyMatrix3(normalMatrix).normalize();pos.toArray(positions,(vo+i)*3);normal.toArray(normals,(vo+i)*3);uvs[(vo+i)*2]=uv.getX(i);uvs[(vo+i)*2+1]=uv.getY(i);}
+for(let i=0,n=g.index?g.index.count:pa.count;i<n;i++)indices[io++]=vo+(g.index?g.index.getX(i):i);vo+=pa.count;
+}
+const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(positions,3));g.setAttribute('normal',new T.BufferAttribute(normals,3));g.setAttribute('uv',new T.BufferAttribute(uvs,2));g.setIndex(new T.BufferAttribute(indices,1));g.computeBoundingSphere();
+const merged=new T.Mesh(g,batch[0].material);merged.castShadow=batch[0].castShadow;merged.receiveShadow=batch[0].receiveShadow;
+for(const m of batch){group.remove(m);const i=meshes.indexOf(m);if(i!==-1)meshes.splice(i,1);}
+group.add(merged);if(body){merged.userData.body=body;meshes.push(merged);}
+}}
+if(mobile){batchRigidMeshes(room);for(const o of objects)batchRigidMeshes(o.group,o.b);}
 // Settle loose contents against fixed furniture before enabling interaction.
 const anchoredForSetup=new Set(['sofa','coffee table','wooden chair','chest carcass','loose drawer','bookcase','side table','ottoman','floor lamp','record console','fruit bowl','hinged door','loose wall art','pendant lamp']);
 const setupBodies=[];
 const floorFurniture=new Set(['sofa','coffee table','wooden chair','chest carcass','bookcase','side table','ottoman','floor lamp','record console']);
-for(const o of objects)if(floorFurniture.has(o.name)){const q=new T.Quaternion(o.b.quaternion.x,o.b.quaternion.y,o.b.quaternion.z,o.b.quaternion.w);let bottom=Infinity;for(const p of o.floorSupports)bottom=Math.min(bottom,p.centre.clone().applyQuaternion(q).y+o.b.position.y-p.radius);o.b.position.y+=.004-bottom;o.b.aabbNeedsUpdate=true;}
+for(const o of objects)if(floorFurniture.has(o.name)){o.b.position.y+=.004-supportBottom(o);o.b.aabbNeedsUpdate=true;}
 fruitBowl.position.y=objects.find(o=>o.name==='coffee table').b.position.y+.083;
 
 for(const o of objects)if(anchoredForSetup.has(o.name)){setupBodies.push([o.b,o.b.mass]);o.b.mass=0;o.b.type=C.Body.STATIC;o.b.updateMassProperties();}
@@ -305,20 +342,28 @@ const initial=objects.map(o=>({p:o.b.position.clone(),q:o.b.quaternion.clone()})
 function reset(){world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();});}
 canvas.addEventListener('keydown',e=>{if(e.key==='Enter'&&isThumbnail()){e.preventDefault();openRoomFullscreen();return;}if(e.key==='Escape'&&parent!==window){parent.postMessage({type:'living-close'},location.origin);return;}if(e.key.toLowerCase()==='r'){cancelInteraction();reset();}const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(dir){e.preventDefault();target.set(...dir);inside=true;idle=0;}});
 // HDR highlight bloom: light spreads from bright surfaces, rather than a white overlay.
-const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:2});
+const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:mobile?0:2});
 const bloomA=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:false});
 const bloomB=bloomA.clone();
 const postScene=new T.Scene(),postCamera=new T.OrthographicCamera(-1,1,1,-1,0,1);
 const vertexShader=`varying vec2 uvP;void main(){uvP=uv;gl_Position=vec4(position.xy,0.,1.);}`;
-const blur=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{source:{value:null},stepUV:{value:new T.Vector2()},extract:{value:1}},vertexShader,fragmentShader:`varying vec2 uvP;uniform sampler2D source;uniform vec2 stepUV;uniform float extract;
+const blur=new T.ShaderMaterial({defines:{BLUR_RADIUS:mobile?4:6},depthTest:false,depthWrite:false,uniforms:{source:{value:null},stepUV:{value:new T.Vector2()},extract:{value:1}},vertexShader,fragmentShader:`varying vec2 uvP;uniform sampler2D source;uniform vec2 stepUV;uniform float extract;
 vec3 lightAt(vec2 p){vec3 c=texture2D(source,p).rgb;float l=max(c.r,max(c.g,c.b));return extract>.5?c*smoothstep(1.0,2.8,l):c;}
-void main(){vec3 c=vec3(0.);float total=0.;for(int i=-6;i<=6;i++){float x=float(i),w=exp(-x*x/12.);c+=lightAt(uvP+stepUV*x)*w;total+=w;}gl_FragColor=vec4(c/total,1.);}`});
+void main(){vec3 c=vec3(0.);float total=0.;for(int i=-BLUR_RADIUS;i<=BLUR_RADIUS;i++){float x=float(i),w=exp(-x*x/12.);c+=lightAt(uvP+stepUV*x)*w;total+=w;}gl_FragColor=vec4(c/total,1.);}`});
 const finish=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{source:{value:hdr.texture},bloom:{value:bloomB.texture}},vertexShader,fragmentShader:`varying vec2 uvP;uniform sampler2D source;uniform sampler2D bloom;
 vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
 void main(){vec2 fringe=(uvP-.5)*.0012;vec3 c=texture2D(source,uvP).rgb;c.r=texture2D(source,uvP+fringe).r;c.b=texture2D(source,uvP-fringe).b;c+=texture2D(bloom,uvP).rgb*.54;c=aces(c*1.55);c=mix(c,vec3(1.),.065);float coverage=texture2D(source,uvP).a;gl_FragColor=vec4(mix(vec3(1.),pow(c,vec3(1./2.2)),coverage),1.);}`});
 const quad=new T.Mesh(new T.PlaneGeometry(2,2),blur);postScene.add(quad);
-function renderArtwork(){renderer.setRenderTarget(hdr);renderer.render(scene,camera);quad.material=blur;blur.uniforms.source.value=hdr.texture;blur.uniforms.extract.value=1;blur.uniforms.stepUV.value.set(2.5/bloomA.width,0);renderer.setRenderTarget(bloomA);renderer.render(postScene,postCamera);blur.uniforms.source.value=bloomA.texture;blur.uniforms.extract.value=0;blur.uniforms.stepUV.value.set(0,2.5/bloomA.height);renderer.setRenderTarget(bloomB);renderer.render(postScene,postCamera);quad.material=finish;renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
-function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();const d=renderer.getPixelRatio();hdr.setSize(Math.round(w*d),Math.round(h*d));bloomA.setSize(Math.max(1,Math.round(w*d/3)),Math.max(1,Math.round(h*d/3)));bloomB.setSize(bloomA.width,bloomA.height);}addEventListener('resize',resize);resize();
+let renderCount=0;
+function renderArtwork(){if(mobile)renderer.shadowMap.needsUpdate=(renderCount++%2===0);renderer.setRenderTarget(hdr);renderer.render(scene,camera);quad.material=blur;blur.uniforms.source.value=hdr.texture;blur.uniforms.extract.value=1;blur.uniforms.stepUV.value.set(2.5/bloomA.width,0);renderer.setRenderTarget(bloomA);renderer.render(postScene,postCamera);blur.uniforms.source.value=bloomA.texture;blur.uniforms.extract.value=0;blur.uniforms.stepUV.value.set(0,2.5/bloomA.height);renderer.setRenderTarget(bloomB);renderer.render(postScene,postCamera);quad.material=finish;renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
+let lastSize='';
+function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),d=Math.min(devicePixelRatio,renderScale,mobile?Math.sqrt(420000/(w*h)):Infinity),size=w+':'+h+':'+d;if(size===lastSize)return;lastSize=size;renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();const divisor=mobile?4:3;hdr.setSize(Math.round(w*d),Math.round(h*d));bloomA.setSize(Math.max(1,Math.round(w*d/divisor)),Math.max(1,Math.round(h*d/divisor)));bloomB.setSize(bloomA.width,bloomA.height);renderer.shadowMap.needsUpdate=true;}addEventListener('resize',resize);resize();
+if(mobile)renderer.shadowMap.autoUpdate=false;
+function adaptQuality(elapsed,cost){if(!mobile||elapsed<=0||elapsed>.15)return;const ms=elapsed*1000;frameCost=qualityFrames?frameCost*.92+Math.max(ms,cost)*.08:Math.max(ms,cost);qualityFrames++;const now=performance.now();if(qualityFrames<45||now-lastQualityChange<1800)return;
+if(frameCost>24&&frameRate===60){if(renderScale>.65)renderScale=Math.max(.65,renderScale-.12);else frameRate=30;lastQualityChange=now;resize();}
+else if(frameRate===30&&cost<12&&frameCost<36&&qualityFrames>150){frameRate=60;qualityFrames=0;lastQualityChange=now;}
+else if(frameRate===60&&frameCost<18&&qualityFrames>120&&renderScale<1){renderScale=Math.min(1,renderScale+.05);lastQualityChange=now;resize();}
+}
 function update(dt){time+=dt;idle+=dt;pointer.lerp(target,1-Math.exp(-dt*16));const active=inside;
 const response=v=>Math.sign(v)*Math.pow(Math.abs(v),.8),rx=response(pointer.x),ry=response(pointer.y);
 const tiltQ=new T.Quaternion().setFromEuler(new T.Euler(ry*.34,rx*.42,-rx*.38,'YXZ'));
@@ -346,10 +391,10 @@ if(!artReleased&&Math.hypot(gx,gz)>5){world.removeConstraint(artHook);artRelease
 const shadeUp=pendant.quaternion.vmult(new C.Vec3(0,1,0));
 pendant.torque.x+=-shadeUp.z*1.2-pendant.angularVelocity.x*.38;
 pendant.torque.z+=shadeUp.x*1.2-pendant.angularVelocity.z*.38;
-world.step(1/120,dt,10);
+world.step(1/120,dt,mobile?6:10);
 keepShadeUpright();
 updateCloth(dt);
-updateCable();
+if(!mobile||dt===0||renderCount%2===0)updateCable();
 if(!active&&!drag&&idle>5){const touching=new Set();for(const c of world.contacts){touching.add(c.bi);touching.add(c.bj);}for(const o of objects){const b=o.b;if(touching.has(b)&&b.velocity.length()<.6&&b.angularVelocity.length()<.8)b.sleep();}}
 for(const o of objects){protectVisibleFloor(o);o.group.position.copy(o.b.position);o.group.quaternion.copy(o.b.quaternion);}
 const aspect=innerWidth/innerHeight,dist=aspect<1.2?13.4:10.0;camera.position.set(-3.4,3.45,dist);camera.lookAt(.1,1.45,-.15);
@@ -357,9 +402,9 @@ const suppressTilt=reduced&&!touchTiltOrigin;
 if(suppressTilt)room.rotation.set(0,0,0);else room.quaternion.copy(tiltQ);
 room.position.x=suppressTilt?0:rx*.3;room.position.y=suppressTilt?0:ry*.18;
 
-canvas.dataset.shadeUp=pendant.quaternion.vmult(new C.Vec3(0,1,0)).y.toFixed(3);canvas.dataset.drawerSeparation=JSON.stringify(objects.filter(o=>o.name==='loose drawer').map(o=>o.b.position.distanceTo(objects.find(c=>c.name==='chest carcass').b.position).toFixed(2)));pendant.updateAABB();canvas.dataset.floorLampDisplacement=Math.hypot(objects.find(o=>o.name==='floor lamp').b.position.x-3.9,objects.find(o=>o.name==='floor lamp').b.position.z+2.95).toFixed(2);canvas.dataset.floorLampState=JSON.stringify((()=>{const b=objects.find(o=>o.name==='floor lamp').b;return {mass:b.mass,type:b.type,sleep:b.sleepState,pos:b.position,velocity:b.velocity,invMass:b.invMass,invSolve:b.invMassSolve};})());canvas.dataset.floorLampMotion=objects.find(o=>o.name==='floor lamp').b.velocity.length().toFixed(2);canvas.dataset.lampTop=pendant.aabb.upperBound.y.toFixed(3);canvas.dataset.lampHeight=pendant.position.y.toFixed(3);canvas.dataset.artReleased=String(artReleased);canvas.dataset.outside=String(objects.filter(o=>Math.abs(o.b.position.x)>5.3||Math.abs(o.b.position.z)>4.2||o.b.position.y<-.5).length);canvas.dataset.doorAngle=(2*Math.atan2(door.quaternion.y,door.quaternion.w)*180/Math.PI).toFixed(1);canvas.dataset.dragging=String(!!drag);canvas.dataset.sleeping=String(objects.filter(o=>o.b.sleepState===C.Body.SLEEPING).length);canvas.dataset.bodies=String(objects.length);canvas.dataset.motion=objects.reduce((sum,o)=>sum+o.b.velocity.length(),0).toFixed(2);canvas.dataset.active=String(activity?.running);
+if(!mobile||dt===0||renderCount%15===0){canvas.dataset.shadeUp=pendant.quaternion.vmult(new C.Vec3(0,1,0)).y.toFixed(3);canvas.dataset.drawerSeparation=JSON.stringify(objects.filter(o=>o.name==='loose drawer').map(o=>o.b.position.distanceTo(objects.find(c=>c.name==='chest carcass').b.position).toFixed(2)));pendant.updateAABB();canvas.dataset.floorLampDisplacement=Math.hypot(objects.find(o=>o.name==='floor lamp').b.position.x-3.9,objects.find(o=>o.name==='floor lamp').b.position.z+2.95).toFixed(2);canvas.dataset.floorLampState=JSON.stringify((()=>{const b=objects.find(o=>o.name==='floor lamp').b;return {mass:b.mass,type:b.type,sleep:b.sleepState,pos:b.position,velocity:b.velocity,invMass:b.invMass,invSolve:b.invMassSolve};})());canvas.dataset.floorLampMotion=objects.find(o=>o.name==='floor lamp').b.velocity.length().toFixed(2);canvas.dataset.lampTop=pendant.aabb.upperBound.y.toFixed(3);canvas.dataset.lampHeight=pendant.position.y.toFixed(3);canvas.dataset.artReleased=String(artReleased);canvas.dataset.outside=String(objects.filter(o=>Math.abs(o.b.position.x)>5.3||Math.abs(o.b.position.z)>4.2||o.b.position.y<-.5).length);canvas.dataset.doorAngle=(2*Math.atan2(door.quaternion.y,door.quaternion.w)*180/Math.PI).toFixed(1);canvas.dataset.dragging=String(!!drag);canvas.dataset.sleeping=String(objects.filter(o=>o.b.sleepState===C.Body.SLEEPING).length);canvas.dataset.bodies=String(objects.length);canvas.dataset.motion=objects.reduce((sum,o)=>sum+o.b.velocity.length(),0).toFixed(2);canvas.dataset.active=String(activity?.running);}
 }
-let activity=createActivityLoop({update,draw:renderArtwork,fps:60});
+let activity=createActivityLoop({update:(dt,elapsed)=>{const start=performance.now();update(dt);if(mobile)adaptQuality(elapsed,performance.now()-start);},draw:renderArtwork,fps:()=>frameRate});
 update(0);renderArtwork();document.querySelector('.loader').remove();// Safari may reload an iframe when moving it into the site's fullscreen viewer.
 const stateBodies=[...objects.map(o=>o.b),...cableBodies];
 const bodySnapshot=b=>({p:[b.position.x,b.position.y,b.position.z],q:[b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w],v:[b.velocity.x,b.velocity.y,b.velocity.z],w:[b.angularVelocity.x,b.angularVelocity.y,b.angularVelocity.z],sleep:b.sleepState===C.Body.SLEEPING});
@@ -377,7 +422,7 @@ if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
 if(action==='start'){cancelInteraction();bridgedInteraction=true;startTouchTilt(point.x,point.y);}
 else if(action==='move'&&bridgedInteraction)moveTouchTilt(point.x,point.y);
 }
-window.livingArtwork={reset,getStats:()=>({bodies:objects.length}),snapshot:snapshotRoom,restore:restoreRoom,roomInput};
+window.livingArtwork={reset,getStats:()=>({bodies:objects.length,mobile,frameRate,renderScale:renderer.getPixelRatio(),frameCost,drawCalls:renderer.info.render.calls,clothNodes:clothNodes.length}),snapshot:snapshotRoom,restore:restoreRoom,roomInput};
 if(parent!==window)parent.postMessage({type:'living-ready'},location.origin);
 addEventListener('pagehide',()=>{activity.stop();});
 }catch(error){console.error(error);document.querySelector('.loader')?.remove();document.querySelector('#error').style.display='block';}
