@@ -77,7 +77,7 @@ for(let i=0;i<50;i++){box(room,[.015,.012,.13],[-2.8+i*.094,.017,2.2],white);box
 body('coffee table',[-.3,.49,.6],7,[[[2.35,.12,1.15],[0,0,0]],...[-.95,.95].flatMap(x=>[-.4,.4].map(z=>[[.075,.45,.075],[x,-.27,z]]))],g=>{box(g,[2.35,.12,1.15],[0,0,0],wood);for(const x of [-.95,.95])for(const z of [-.4,.4])box(g,[.075,.45,.075],[x,-.27,z],dark);});
 function chair(x,z,angle){
 const parts=[[[.85,.09,.88],[0,0,0]],...[-.33,.33].flatMap(x=>[-.34,.34].map(z=>[[.065,.49,.065],[x,-.27,z]])),...[-.35,.35].map(x=>[[.065,.78,.065],[x,.39,-.37]]),[[.78,.12,.07],[0,.74,-.37]],...[-.21,0,.21].map(x=>[[.055,.54,.045],[x,.39,-.37]])];
-const b=body('wooden chair',[x,.52,z],3.8,parts,g=>{for(const [size,pos] of parts)box(g,size,pos,wood);
+const b=body('wooden chair',[x,.52,z],3.8,parts,g=>{for(const [size,pos] of parts){if(size[0]===.055&&size[1]===.54&&size[2]===.045)box(g,[.055,.68,.045],[pos[0],.365,pos[2]],wood);else box(g,size,pos,wood);}
 for(const z of [-.34,.34])box(g,[.68,.035,.035],[0,-.28,z],wood);
 for(const x of [-.33,.33])box(g,[.035,.035,.68],[x,-.28,0],wood);
 for(const x of [-.32,.32])for(const z of [-.3,.3]){const pin=cylinder(g,.012,.012,.005,[x,.047,z],metal);}
