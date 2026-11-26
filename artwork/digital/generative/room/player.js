@@ -163,19 +163,26 @@ const key=new T.DirectionalLight(0xffffff,6.5);key.position.set(5,5.2,-11);key.c
 const fill=new T.DirectionalLight(0xffffff,.2);fill.position.set(-5,3,5);scene.add(fill);
 const ray=new T.Raycaster(),pointer=new T.Vector2(),target=new T.Vector2(),hit=new T.Vector3(),plane=new T.Plane(new T.Vector3(0,1,0),-.6);let inside=false,drag=null,dragPlane=null,dragPoint=new T.Vector3(),dragOffset=new C.Vec3(),idle=0,time=0;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let activePointer=null;
+let activePointer=null,tapCandidate=null,tapTimer=0;
+const TAP_TIME=250,TAP_DISTANCE=10;
+function isThumbnail(){return parent!==window&&!!window.frameElement?.parentElement?.classList.contains('living-stage');}
+function openRoomFullscreen(){if(isThumbnail())parent.postMessage({type:'living-open'},location.origin);}
+function clearTap(){clearTimeout(tapTimer);tapTimer=0;tapCandidate=null;}
 function position(e){const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;const cursor=new T.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);if(!drag)target.copy(cursor);inside=true;idle=0;camera.updateMatrixWorld();room.updateMatrixWorld(true);ray.setFromCamera(cursor,camera);ray.ray.intersectPlane(plane,hit);if(drag)ray.ray.intersectPlane(dragPlane,dragPoint);}
-function beginPointer(e){if(activePointer!==null||e.button>0)return;activePointer=e.pointerId;position(e);const pick=ray.intersectObjects(meshes,false)[0];if(pick){drag=pick.object.userData.body;const localPick=room.worldToLocal(pick.point.clone());drag.pointToLocalFrame(new C.Vec3(localPick.x,localPick.y,localPick.z),dragOffset);const viewNormal=new T.Vector3();camera.getWorldDirection(viewNormal);dragPlane=new T.Plane().setFromNormalAndCoplanarPoint(viewNormal,pick.point);canvas.style.cursor='grabbing';dragPoint.copy(pick.point);}try{canvas.setPointerCapture?.(e.pointerId);}catch{}if(e.pointerType!=='mouse'&&e.cancelable)e.preventDefault();}
-function movePointer(e){if(activePointer!==null&&activePointer!==e.pointerId)return;if(e.pointerType!=='mouse'&&activePointer===null)return;position(e);}
+function startInteraction(e){position(e);const pick=ray.intersectObjects(meshes,false)[0];if(pick){drag=pick.object.userData.body;const localPick=room.worldToLocal(pick.point.clone());drag.pointToLocalFrame(new C.Vec3(localPick.x,localPick.y,localPick.z),dragOffset);const viewNormal=new T.Vector3();camera.getWorldDirection(viewNormal);dragPlane=new T.Plane().setFromNormalAndCoplanarPoint(viewNormal,pick.point);canvas.style.cursor='grabbing';dragPoint.copy(pick.point);}}
+function activateHold(){if(!tapCandidate)return;const start=tapCandidate;clearTap();startInteraction(start);}
+function beginPointer(e){if(e.button>0)return;if(activePointer!==null){activateHold();return;}activePointer=e.pointerId;try{canvas.setPointerCapture?.(e.pointerId);}catch{}if(e.pointerType!=='mouse'&&e.cancelable)e.preventDefault();
+if(e.pointerType!=='mouse'&&isThumbnail()){tapCandidate={clientX:e.clientX,clientY:e.clientY,time:performance.now()};tapTimer=setTimeout(activateHold,TAP_TIME);}else startInteraction(e);}
+function movePointer(e){if(activePointer!==null&&activePointer!==e.pointerId)return;if(e.pointerType!=='mouse'&&activePointer===null)return;if(tapCandidate){if(Math.hypot(e.clientX-tapCandidate.clientX,e.clientY-tapCandidate.clientY)<=TAP_DISTANCE)return;activateHold();}position(e);}
 function release(){if(drag){drag.velocity.scale(.9,drag.velocity);drag.angularVelocity.scale(.85,drag.angularVelocity);}drag=null;canvas.style.cursor='grab';}
-function endPointer(e){if(activePointer!==e.pointerId)return;activePointer=null;release();if(e.pointerType!=='mouse'||e.type!=='pointerup'||!canvas.matches(':hover')){inside=false;target.set(0,0);}}
+function endPointer(e){if(activePointer!==e.pointerId)return;const completed=e.type==='pointerup'||e.type==='touchend';const tap=!!tapCandidate&&completed&&performance.now()-tapCandidate.time<TAP_TIME&&Math.hypot(e.clientX-tapCandidate.clientX,e.clientY-tapCandidate.clientY)<=TAP_DISTANCE;clearTap();activePointer=null;release();if(e.pointerType!=='mouse'||e.type!=='pointerup'||!canvas.matches(':hover')){inside=false;target.set(0,0);}if(tap)openRoomFullscreen();}
 if(window.PointerEvent){
 canvas.addEventListener('pointerdown',beginPointer,{passive:false});canvas.addEventListener('pointermove',movePointer);
 canvas.addEventListener('pointerleave',()=>{if(activePointer===null){inside=false;target.set(0,0);}});
 canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);canvas.addEventListener('lostpointercapture',endPointer);
 }else{
 const fromTouch=(t,e)=>({clientX:t.clientX,clientY:t.clientY,pointerId:t.identifier,pointerType:'touch',type:e.type,cancelable:e.cancelable,preventDefault:()=>e.preventDefault()});
-canvas.addEventListener('touchstart',e=>{if(activePointer===null&&e.changedTouches.length)beginPointer(fromTouch(e.changedTouches[0],e));},{passive:false});
+canvas.addEventListener('touchstart',e=>{if(e.changedTouches.length)beginPointer(fromTouch(e.changedTouches[0],e));if(e.touches.length>1)activateHold();},{passive:false});
 canvas.addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.identifier===activePointer){if(e.cancelable)e.preventDefault();movePointer(fromTouch(t,e));}},{passive:false});
 for(const type of ['touchend','touchcancel'])canvas.addEventListener(type,e=>{for(const t of e.changedTouches)endPointer(fromTouch(t,e));});
 canvas.addEventListener('mousedown',e=>beginPointer({clientX:e.clientX,clientY:e.clientY,button:e.button,pointerId:-1,pointerType:'mouse'}));
@@ -183,7 +190,7 @@ canvas.addEventListener('mousemove',e=>movePointer({clientX:e.clientX,clientY:e.
 window.addEventListener('mouseup',()=>endPointer({pointerId:-1,pointerType:'mouse',type:'pointerup'}));
 canvas.addEventListener('mouseleave',()=>{if(activePointer===null){inside=false;target.set(0,0);}});
 }
-function cancelInteraction(){activePointer=null;release();inside=false;target.set(0,0);}
+function cancelInteraction(){clearTap();activePointer=null;release();inside=false;target.set(0,0);}
 addEventListener('blur',cancelInteraction);addEventListener('pagehide',cancelInteraction);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelInteraction();});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -290,7 +297,7 @@ for(const b of cableBodies){b.velocity.setZero();b.angularVelocity.setZero();b.f
 const cableInitial=cableBodies.map(b=>b.position.clone());
 const initial=objects.map(o=>({p:o.b.position.clone(),q:o.b.quaternion.clone()}));
 function reset(){world.gravity.set(0,-9.8,0);cableBodies.forEach((b,i)=>{b.position.copy(cableInitial[i]);b.force.setZero();b.torque.setZero();b.velocity.setZero();b.angularVelocity.setZero();b.sleep();});if(artReleased){artHook=new C.PointToPointConstraint(wallArt,new C.Vec3(0,.85,0),artAnchor,new C.Vec3(),1e4);world.addConstraint(artHook);artReleased=false;}clothAccumulator=0;for(const panel of clothPanels){panel.width=1.1;for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++){const n=clothNodes[panel.offset+y*(cols+1)+x];n.home.x=panel.startX+x/cols*1.1;n.home.z=-3.32+Math.sin(x/cols*Math.PI*10)*.115;}}for(const n of clothNodes){n.p.copy(n.home);n.old.copy(n.home);}inside=false;target.set(0,0);pointer.set(0,0);drag=null;idle=0;objects.forEach((o,i)=>{o.b.position.copy(initial[i].p);o.b.quaternion.copy(initial[i].q);o.b.velocity.setZero();o.b.angularVelocity.setZero();o.b.force.setZero();o.b.torque.setZero();o.b.sleep();});}
-canvas.addEventListener('keydown',e=>{if(e.key==='Escape'&&parent!==window){parent.postMessage({type:'living-close'},location.origin);return;}if(e.key.toLowerCase()==='r'){cancelInteraction();reset();}const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(dir){e.preventDefault();target.set(...dir);inside=true;idle=0;}});
+canvas.addEventListener('keydown',e=>{if(e.key==='Enter'&&isThumbnail()){e.preventDefault();openRoomFullscreen();return;}if(e.key==='Escape'&&parent!==window){parent.postMessage({type:'living-close'},location.origin);return;}if(e.key.toLowerCase()==='r'){cancelInteraction();reset();}const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(dir){e.preventDefault();target.set(...dir);inside=true;idle=0;}});
 // HDR highlight bloom: light spreads from bright surfaces, rather than a white overlay.
 const hdr=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:true,samples:2});
 const bloomA=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType,depthBuffer:false});
